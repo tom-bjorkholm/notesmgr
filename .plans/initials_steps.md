@@ -140,6 +140,8 @@ One flat package, small modules, model and view kept apart.
 
 ### Step 1 — Framework repair and a window that opens
 
+Status: **Implemented and committed**
+
 **Goal:** a repaired stub, a green build on 3.12/3.13/3.14, and an
 application that starts.
 
@@ -193,6 +195,8 @@ exclude it with `pytest_exclude_folders`.
 
 ### Step 2 — Configuration, its editor, and version reporting
 
+Status: **Not implemented yet.**
+
 **Goal:** the configuration exists, can be edited in the
 `edit-cfg-json-tk` panel, and the application can report its versions.
 
@@ -229,6 +233,8 @@ save, and see `~/.notesmgr.cfg` written.
 
 ### Step 3 — Project model and the explorer tree
 
+Status: **Not implemented yet.**
+
 **Goal:** open and create projects, and see them in the tree.
 
 - `note_file.py`: extension classification with the longest suffix first,
@@ -258,6 +264,8 @@ the tree appear and `.notes_order.txt` be written; restart with
 
 ### Step 4 — Note preview, external editor, `Copy raw`
 
+Status: **Not implemented yet.**
+
 **Goal:** see a note, edit it outside, watch it update, copy it.
 
 - `editor_command.py`: `shlex.split` with the platform's rules, `{file}`
@@ -282,6 +290,8 @@ and watch the panel follow; press `Copy raw` and paste.
 
 ### Step 5 — Note and folder operations
 
+Status: **Not implemented yet.**
+
 **Goal:** every button and menu item that changes the tree.
 
 - `project_ops.py`: `new_note` (template content, appended to the order
@@ -304,6 +314,8 @@ the window, then look at `.notes_order.txt` and the trash.
 
 ### Step 6 — Markdown rendering spike and decision
 
+Status: **Not implemented yet.**
+
 **Goal:** settle the HTML widget dependency on evidence.
 
 - Install `tkinterweb` and `tkhtmlview` into the venv and render the same
@@ -318,6 +330,8 @@ the window, then look at `.notes_order.txt` and the trash.
 you choose.
 
 ### Step 7 — Formatted note preview
+
+Status: **Not implemented yet.**
 
 **Goal:** markdown notes shown formatted for reading.
 
@@ -336,6 +350,8 @@ is missing); widget population smoke tests with the Tk root fixture.
 `.txt` note and see raw text.
 
 ### Step 8 — `Copy formatted`
+
+Status: **Not implemented yet.**
 
 **Goal:** paste into Word, Mail or Slack and get formatted text.
 
@@ -361,6 +377,8 @@ and into TextEdit.
 
 ### Step 9 — Drag and drop in the explorer
 
+Status: **Not implemented yet.**
+
 **Goal:** reorder notes and move them between folders by dragging.
 
 - `explorer_drag.py`: press, motion with a drop indicator, release;
@@ -381,6 +399,8 @@ the move operation and both order files after a cross-folder move;
 order files.
 
 ### Step 10 — Polish, documentation and release readiness
+
+Status: **Not implemented yet.**
 
 **Goal:** a finished application.
 

@@ -27,3 +27,5 @@ AGENTS.md
 CLAUDE.md
 AGENTS.md.old
 dep_lib_doc/*
+tmp
+tmp/*

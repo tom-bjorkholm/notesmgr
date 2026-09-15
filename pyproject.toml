@@ -33,3 +33,8 @@ dynamic = ["dependencies", "version"]
 
 [project.gui-scripts]
 notesmgr = "notesmgr.application:main"
+
+[tool.pytest.ini_options]
+markers = [
+    "focus_sensitive: needs an unlocked display and an undisturbed focused window"
+]

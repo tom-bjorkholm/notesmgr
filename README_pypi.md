@@ -150,4 +150,10 @@ Source code and tests are available at [https://github.com/tom-bjorkholm/notesmg
 
 ## Test summary
 
-(Will be filled in by build system)
+- Test result: 178 passed, 4 deselected in 3s
+- No flake8 warnings.
+- No mypy errors found.
+- No pylint warnings.
+- No python layout warnings.
+- Built version(s): 0.0.1
+- Build and test using Python 3.14.7
