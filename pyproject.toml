@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "notesmgr"
+authors = [
+  { name="Tom Björkholm", email="klausuler_linnet0q@icloud.com" },
+]
+description = "Manager for small notes and AI prompts."
+readme = "README_pypi.md"
+requires-python = ">=3.12"
+license = "MIT"
+keywords = [
+    "notes", "prompts", "AI"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Information Technology",
+    "Typing :: Typed"
+]
+dynamic = ["dependencies", "version"]
+
+[project.urls]
+"Homepage" = "https://github.com/tom-bjorkholm/notesmgr"
+"Source code" = "https://github.com/tom-bjorkholm/notesmgr"
+"Documentation" = "https://github.com/tom-bjorkholm/notesmgr/blob/master/doc"
+
+[project.gui-scripts]
+notesmgr = "notesmgr.application:main"
