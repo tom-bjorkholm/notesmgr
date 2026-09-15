@@ -4,32 +4,39 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
+import json
 from pathlib import Path
 from typing import Optional, Sequence
-from notesmgr.config import NoteExtension
+from notesmgr.config import NoteExtension, DEFAULT_NOTE_SIZE
 from notesmgr.note_file import template_name
 from notesmgr.order_file import ORDER_NAME
 from notesmgr.project import config_path
 
-CONFIG_TEXT = '{{\n    "editor": "vi",\n    "file_extension": "{name}"\n}}\n'
-"""What a configuration file of a project looks like in these tests."""
+TEST_EDITOR = 'vi'
+"""Editor that the projects of these tests are configured with."""
 
 
-def write_config(root: Path,
-                 extension: NoteExtension = NoteExtension.MD_TXT) -> Path:
+def write_config(root: Path, extension: NoteExtension = NoteExtension.MD_TXT,
+                 size: Optional[int] = None) -> Path:
     """Write the configuration file that makes a folder a project.
 
     Args:
         root: The folder to make into a project.
         extension: The extension that its notes are to carry.
+        size: How much of a note it shows, None for the default that
+            a configuration file naming no size is read with.
 
     Returns:
         The configuration file that was written.
     """
     root.mkdir(parents=True, exist_ok=True)
+    held: dict[str, object] = {'editor': TEST_EDITOR,
+                               'file_extension': extension.name,
+                               'max_note_size': DEFAULT_NOTE_SIZE}
+    if size is not None:
+        held['max_note_size'] = size
     written = config_path(root)
-    written.write_text(CONFIG_TEXT.format(name=extension.name),
-                       encoding='utf-8')
+    written.write_text(json.dumps(held, indent=4), encoding='utf-8')
     return written
 
 

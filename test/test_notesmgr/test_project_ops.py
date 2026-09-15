@@ -20,7 +20,8 @@ from notesmgr.project import Folder, config_path, read_config
 from notesmgr.project_ops import CREATED_HEAD, RENAMED_HEAD, changed_message, \
     create_project, open_project
 
-USER_CONFIG = '{"editor": "nano", "file_extension": "MD"}'
+USER_CONFIG = '{"editor": "nano", "file_extension": "MD", ' + \
+    '"max_note_size": 25000}'
 """A user wide configuration that a new project is to start out as."""
 
 

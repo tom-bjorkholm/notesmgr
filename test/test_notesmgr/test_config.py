@@ -11,8 +11,8 @@ from typing import Iterator
 import pytest
 from config_as_json import InvalidConfiguration, InvalidConfigurationType
 from notesmgr import config as config_module
-from notesmgr.config import DEFAULT_EXTENSION, NoteExtension, \
-    NotesmgrConfig
+from notesmgr.config import DEFAULT_EXTENSION, DEFAULT_NOTE_SIZE, \
+    MAX_NOTE_SIZE, MIN_NOTE_SIZE, NoteExtension, NotesmgrConfig
 
 TEST_EDITOR = 'test-editor'
 """Editor that the built-in default is replaced by in these tests."""
@@ -35,6 +35,7 @@ def test_default_values() -> None:
     config = NotesmgrConfig()
     assert config.editor == TEST_EDITOR
     assert config.file_extension is DEFAULT_EXTENSION
+    assert config.max_note_size == DEFAULT_NOTE_SIZE
 
 
 def test_default_is_md_txt() -> None:
@@ -62,9 +63,11 @@ def test_json_round_trip() -> None:
     config = NotesmgrConfig()
     config.editor = 'code -w'
     config.file_extension = NoteExtension.TXT
+    config.max_note_size = MIN_NOTE_SIZE
     read_back = config_from(config.as_json_string(io.StringIO()))
     assert read_back.editor == 'code -w'
     assert read_back.file_extension is NoteExtension.TXT
+    assert read_back.max_note_size == MIN_NOTE_SIZE
 
 
 def test_file_round_trip(tmp_path: Path) -> None:
@@ -87,7 +90,9 @@ def test_file_round_trip(tmp_path: Path) -> None:
     ('T', NoteExtension.TXT)])
 def test_reads_extension(written: str, expected: NoteExtension) -> None:
     """An extension is read by name, in any case and by a clear start."""
-    config = config_from(f'{{"editor": "vi", "file_extension": "{written}"}}')
+    cfg = {'editor': 'vi', 'file_extension': written,
+           'max_note_size': DEFAULT_NOTE_SIZE}
+    config = config_from(json.dumps(cfg))
     assert config.file_extension is expected
 
 
@@ -106,8 +111,9 @@ def test_refuses_extension(written: str) -> None:
     ('\tnotepad\n', 'notepad')])
 def test_editor_is_stripped(written: str, expected: str) -> None:
     """The editor command is kept without the blanks around it."""
-    config = config_from(json.dumps({'editor': written,
-                                     'file_extension': 'MD'}))
+    cfg = {'editor': written, 'file_extension': 'MD',
+           'max_note_size': DEFAULT_NOTE_SIZE}
+    config = config_from(json.dumps(cfg))
     assert config.editor == expected
 
 
@@ -115,7 +121,8 @@ def test_editor_is_stripped(written: str, expected: str) -> None:
 def test_refuses_empty_editor(written: str) -> None:
     """An editor command that names no program at all is refused."""
     with pytest.raises(InvalidConfiguration):
-        config_from(json.dumps({'editor': written, 'file_extension': 'MD'}))
+        config_from(json.dumps({'editor': written, 'file_extension': 'MD',
+                                'max_note_size': DEFAULT_NOTE_SIZE}))
 
 
 @pytest.mark.parametrize('written,refusal', [
@@ -132,8 +139,10 @@ def test_refuses_other_type(written: object, refusal: type[Exception]) -> None:
     match, which config_as_json reports as a KeyError rather than as
     an invalid configuration type.
     """
+    cfg = {'editor': written, 'file_extension': 'MD',
+           'max_note_size': DEFAULT_NOTE_SIZE}
     with pytest.raises(refusal):
-        config_from(json.dumps({'editor': written, 'file_extension': 'MD'}))
+        config_from(json.dumps(cfg))
 
 
 def test_validate_accepts() -> None:
@@ -147,5 +156,57 @@ def test_validate_refuses() -> None:
     """A configuration given an empty editor fails validation."""
     config = NotesmgrConfig()
     config.editor = '   '
+    with pytest.raises(InvalidConfiguration):
+        config.validate(io.StringIO())
+
+
+def sized(value: object) -> str:
+    """Return a configuration file text holding the given note size."""
+    return json.dumps({'editor': 'vi', 'file_extension': 'MD',
+                       'max_note_size': value})
+
+
+def test_editor_still_needed() -> None:
+    """A member that was there all along is still needed in a file."""
+    with pytest.raises(KeyError):
+        config_from('{"file_extension": "MD", "max_note_size": 25000}')
+
+
+@pytest.mark.parametrize('value', [MIN_NOTE_SIZE, DEFAULT_NOTE_SIZE,
+                                   MAX_NOTE_SIZE, 12345])
+def test_size_in_range(value: int) -> None:
+    """A size between the bounds is taken as it was written."""
+    assert config_from(sized(value)).max_note_size == value
+
+
+@pytest.mark.parametrize('value', [0, -1, 1, MIN_NOTE_SIZE - 1,
+                                   MAX_NOTE_SIZE + 1, 10 ** 9])
+def test_size_out_of_range(value: int) -> None:
+    """A size that no user can have meant is refused when it is read.
+
+    Far too small a size would show nothing of any note, and far too
+    large a one would make the window take minutes to fill, so both
+    are taken for a misunderstanding rather than for a wish.
+    """
+    with pytest.raises(InvalidConfiguration):
+        config_from(sized(value))
+
+
+@pytest.mark.parametrize('value', [True, False, 2500.0, '25000', None,
+                                   [25000]])
+def test_size_is_a_number(value: object) -> None:
+    """A size that is no whole number is refused when it is read.
+
+    True is a number to Python and no size to a user, so it is
+    refused as well.
+    """
+    with pytest.raises(InvalidConfigurationType):
+        config_from(sized(value))
+
+
+def test_validate_bad_size() -> None:
+    """A configuration given a size out of range fails validation."""
+    config = NotesmgrConfig()
+    config.max_note_size = MIN_NOTE_SIZE - 1
     with pytest.raises(InvalidConfiguration):
         config.validate(io.StringIO())

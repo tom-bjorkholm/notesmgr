@@ -45,6 +45,7 @@ def test_nothing_open_first(tmp_path: Path) -> None:
     session = Session(tmp_path)
     assert session.project is None
     assert session.config_file() is None
+    assert session.config() is None
 
 
 def test_chooser_starts_there(tmp_path: Path) -> None:
@@ -72,3 +73,10 @@ def test_config_after_open(tmp_path: Path, project: Project) -> None:
     session.opened(project)
     assert session.project is project
     assert session.config_file() == config_path(project.root)
+
+
+def test_config_of_project(tmp_path: Path, project: Project) -> None:
+    """The configuration in use is the open project's own."""
+    session = Session(tmp_path)
+    session.opened(project)
+    assert session.config() is project.config

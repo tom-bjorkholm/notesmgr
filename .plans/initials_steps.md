@@ -107,7 +107,7 @@ One flat package, small modules, model and view kept apart.
 
 | Module | Responsibility |
 | --- | --- |
-| `config.py` | `NotesmgrConfig(Config)`: `editor`, `file_extension`, validation plan |
+| `config.py` | `NotesmgrConfig(Config)`: `editor`, `file_extension`, `max_note_size`, validation plan |
 | `config_defaults.py` | Built-in defaults, default editor discovery per platform |
 | `config_files.py` | User-wide path lookup, load, save, copy to user-wide |
 | `descriptions.py` | `Descriptions` mapping for the configuration editor |
@@ -117,6 +117,7 @@ One flat package, small modules, model and view kept apart.
 | `project_ops.py` | New, duplicate, delete, move, reorder, folder operations |
 | `editor_command.py` | Editor argv construction and detached launch |
 | `file_watch.py` | Modification-time polling of the shown note |
+| `note_text.py` | Reading a note: decoding, size limit, what cannot be shown |
 | `markdown_render.py` | Markdown → HTML, and the stylesheet for the widget |
 | `rich_clipboard.py` | Backend selection and payload construction |
 | `clipboard_macos.py`, `clipboard_windows.py`, `clipboard_linux.py` | One platform each |
@@ -133,6 +134,7 @@ One flat package, small modules, model and view kept apart.
 | `explorer_tree.py` | `ttk.Treeview` of the project |
 | `explorer_drag.py` | Drag-and-drop behaviour of the tree (step 9) |
 | `note_panel.py` | Right panel: button row and note area |
+| `button_row.py` | The button row, laid out in as many rows as fit |
 | `note_view.py` | Raw and formatted display of a note |
 | `dialogs.py` | Name/folder dialogs, confirmations, error reporting |
 
@@ -339,7 +341,52 @@ the tree appear and `.notes_order.txt` be written; restart with
 
 ### Step 4 — Note preview, external editor, `Copy raw`
 
-Status: **Not implemented yet.**
+Status: **Implemented and committed.**
+
+Decisions taken while implementing it, which later steps build on:
+
+- `max_note_size` joins the configuration: how many characters of a note
+  the panel shows, 25000 by default and refused outside 2000 to 100000,
+  so that a file that is no note at all cannot fill the window. A note
+  longer than that is shown as far as the limit, and `Copy raw` then
+  copies what is shown, which is what the warning above it says.
+- A note that is not valid UTF-8 is not shown at all, warning only, so
+  that nothing misleading is ever shown or copied. A note that cannot be
+  read, and one that has been taken away, say so the same way.
+- `config_as_json` wants every member named in the file, so adding a
+  member would refuse every configuration file written before it.
+  `OldNotesmgrConfig(ReadOldConfiguration)` fills in the default for a
+  file that names no `max_note_size`, which is the library's own way of
+  reading a file of an older version. Before first release (as we are
+  now) there is no need to be compatible with old configuration files.
+- The menu bar grows a `Note` menu holding `Edit` and `Copy raw`, greyed
+  out until there is a note. Step 5 adds its entries to a menu that is
+  there already.
+- The template of a folder is a note to the panel: it is shown, edited
+  and copied like any other. Only a folder and nothing at all leave the
+  buttons greyed out.
+- The poll follows the note that is shown and nothing else. A note that
+  is gone leaves the panel saying so and every button greyed out, while
+  the tree is left as it is until the project is opened again.
+- `note_text.py` beyond the inventory holds the whole decision about
+  decoding, warnings and limits, and `note_view.py` arrives here rather
+  than in step 7, which grows the formatted display into it.
+- `NotePanel` is given the `Session` and a `PanelHooks` pair of
+  callbacks, which keeps both it and `MainWindow` inside the seven
+  attributes that pylint allows. The hooks are how a note that
+  disappears greys out the menu entries as well as the buttons.
+- `subprocess.Popen(argv, start_new_session=True)` is the whole of
+  launching detached: Windows ignores the argument, and a program
+  started there is independent already.
+- The eight buttons do not fit side by side in every window that
+  notesmgr can be given: they need 708 pixels in the aqua theme, and
+  the panel has 724 at the initial size and 364 at the smallest window
+  size. `button_row.py` therefore lays them out in the fewest rows
+  that fit and does it again whenever the width changes, which is one
+  row at the initial size and three at the smallest. The decision is
+  two pure functions over the button widths, so it is tested without a
+  window, and macOS is the size that matters: the aqua theme ignores
+  ttk padding, so the width of a button there cannot be reduced.
 
 **Goal:** see a note, edit it outside, watch it update, copy it.
 
@@ -513,3 +560,5 @@ the behaviour lands, not all at the end:
    (step 5).
 7. The new runtime dependencies (`markdown`, the HTML widget,
    `send2trash`) are listed (steps 5 to 7).
+8. The configuration holds `max_note_size`, and what the note area shows
+   of an awkward note is documented (step 4).

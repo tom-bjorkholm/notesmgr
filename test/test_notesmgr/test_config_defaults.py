@@ -48,9 +48,9 @@ def fixture_machine(monkeypatch: pytest.MonkeyPatch
 
 
 @pytest.mark.parametrize('case', [
-    EditorCase(True, None, 'darwin', 'code'),
-    EditorCase(True, 'vi', 'win32', 'code'),
-    EditorCase(True, 'vi', 'linux', 'code'),
+    EditorCase(True, None, 'darwin', 'code -n'),
+    EditorCase(True, 'vi', 'win32', 'code -n'),
+    EditorCase(True, 'vi', 'linux', 'code -n'),
     EditorCase(False, 'vi', 'darwin', 'vi'),
     EditorCase(False, 'subl -w', 'win32', 'subl -w'),
     EditorCase(False, '  vi -n  ', 'linux', 'vi -n'),

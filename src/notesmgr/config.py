@@ -7,9 +7,10 @@
 import sys
 from enum import StrEnum
 from typing import Optional, TextIO
-from config_as_json import CallingMemberValidator, Config, \
-    InvalidConfiguration, MemberValidationStep, ParseConverter, PathOrStr, \
-    ValidationPlan, ValueTypeValidator
+from config_as_json import CallingMemberValidator, Config, ConfigPath, \
+    IntFloatValidator, InvalidConfiguration, MemberValidationStep, \
+    ParseConverter, PathOrStr, ReadOldConfiguration, ValidationPlan, \
+    ValueTypeValidator
 from notesmgr.config_defaults import default_editor
 
 EMPTY_EDITOR = 'The editor command must name a program to start.'
@@ -33,13 +34,48 @@ class NoteExtension(StrEnum):
 DEFAULT_EXTENSION = NoteExtension.MD_TXT
 """Note file extension that a new configuration starts out with."""
 
+DEFAULT_NOTE_SIZE = 25000
+"""Characters of a note that are shown when nothing else is said."""
+
+MIN_NOTE_SIZE = 2000
+"""Fewest characters of a note that may be asked to be shown.
+
+A note is meant to be read whole, so a limit small enough to cut a
+short note in two is taken for a misunderstanding rather than a wish.
+"""
+
+MAX_NOTE_SIZE = 100000
+"""Most characters of a note that may be asked to be shown.
+
+Reading a note is meant to stay quick, and a window that has to draw
+far more than this is no longer a notes manager to work in.
+"""
+
+
+class OldNotesmgrConfig(ReadOldConfiguration):
+    """How a configuration file of an older notesmgr is read.
+
+    Every member of the configuration has to be named in the file,
+    so a file written before a member existed is read with the
+    built-in default of that member rather than being refused.
+    """
+
+    def get_missing_path_values(self) -> dict[ConfigPath, object]:
+        """Add configuration parameter for things missing in old files.
+
+        This is only relevant for configuration parameters that
+        have been added after the first **released** version of notesmgr.
+        """
+        return {}
+
 
 class NotesmgrConfig(Config):
     """How notesmgr edits the notes of a project and what it names them.
 
-    The editor command is started whenever a note is edited, and the
+    The editor command is started whenever a note is edited, the
     extension is the one that new notes are given and that a file must
-    have to be a note at all.
+    have to be a note at all, and the size is how much of a note is
+    shown before the rest of it is left out.
     """
 
     def __init__(self, from_json_data_text: Optional[str] = None,
@@ -57,9 +93,14 @@ class NotesmgrConfig(Config):
         """
         self.editor: str = default_editor()
         self.file_extension: NoteExtension = DEFAULT_EXTENSION
+        self.max_note_size: int = DEFAULT_NOTE_SIZE
         super().__init__(from_json_data_text=from_json_data_text,
                          from_json_filename=from_json_filename,
                          stderr_file=stderr_file, member_name=member_name)
+
+    def _get_read_old_config(self) -> ReadOldConfiguration:
+        """Return how a file of an older notesmgr is read."""
+        return OldNotesmgrConfig()
 
     def parse_converters(self) -> dict[str, ParseConverter]:
         """Return how the name in the file becomes an extension again.
@@ -77,12 +118,20 @@ class NotesmgrConfig(Config):
         is_command = CallingMemberValidator(method_name='stripped_editor',
                                             arg_name_value='value',
                                             normalizing=True)
+        is_whole = ValueTypeValidator(int, not_allowed_type=bool)
+        in_range = IntFloatValidator(min_value=MIN_NOTE_SIZE,
+                                     max_value=MAX_NOTE_SIZE,
+                                     allowed_values=None)
         return [MemberValidationStep(member_names=['editor'],
                                      validator=is_text),
                 MemberValidationStep(member_names=['editor'],
                                      validator=is_command),
                 MemberValidationStep(member_names=['file_extension'],
-                                     validator=is_extension)]
+                                     validator=is_extension),
+                MemberValidationStep(member_names=['max_note_size'],
+                                     validator=is_whole),
+                MemberValidationStep(member_names=['max_note_size'],
+                                     validator=in_range)]
 
     def stripped_editor(self, value: object) -> str:
         """Return the editor command without the blanks around it.

@@ -12,7 +12,8 @@ from notesmgr.config_files import CONFIG_NAME, CONFIG_VARIABLE, \
     user_config_source, user_wide_config, write_config_file
 from notesmgr.errors import NotesmgrError
 
-PROJECT_TEXT = '{"editor": "vi", "file_extension": "MD"}'
+PROJECT_TEXT = '{"editor": "vi", "file_extension": "MD"' + \
+               ', "max_note_size": 25000}'
 """Content of the project configuration file that is copied."""
 
 BROKEN_TEXT = 'this file holds no JSON at all'

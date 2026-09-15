@@ -12,7 +12,10 @@ DESCRIPTIONS: Descriptions = {
                   'at the end of a command that holds no {file}.'),
     ('file_extension',): ('Extension of the note files of a project. The '
                           'configuration file holds the name below, and '
-                          'not the extension it stands for.')}
+                          'not the extension it stands for.'),
+    ('max_note_size',): ('Characters of a note that are shown. A longer '
+                         'note is shown only up to here, with a warning '
+                         'saying so. Between 2000 and 100000.')}
 """What each member of the configuration is for.
 
 Python keeps no docstring of an instance attribute at runtime, so what

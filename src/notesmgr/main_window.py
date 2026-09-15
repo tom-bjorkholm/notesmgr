@@ -19,7 +19,7 @@ from notesmgr.dialogs import ask_choice, ask_folder, ask_yes_no, \
 from notesmgr.errors import NotesmgrError
 from notesmgr.explorer_tree import ExplorerTree
 from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar, set_enabled
-from notesmgr.note_panel import NotePanel
+from notesmgr.note_panel import COPY_RAW, EDIT, NotePanel, PanelHooks
 from notesmgr.project import is_project
 from notesmgr.project_ops import OpenReport, changed_message, \
     create_project, open_project
@@ -31,6 +31,7 @@ INITIAL_GEOMETRY = '1000x650'
 MINIMUM_WIDTH = 640
 MINIMUM_HEIGHT = 400
 FILE_MENU = 'File'
+NOTE_MENU = 'Note'
 CONFIG_MENU = 'Configuration'
 HELP_MENU = 'Help'
 NEW_PROJECT_ENTRY = 'New project…'
@@ -40,6 +41,7 @@ EDIT_CONFIG_ENTRY = 'Edit configuration…'
 USER_WIDE_ENTRY = 'Save configuration as user wide…'
 VERSION_ENTRY = 'Version information…'
 VERSION_TITLE = 'notesmgr versions'
+NOTE_TITLE = 'Note'
 CONFIG_TITLE = 'Configuration'
 PROJECT_TITLE = 'Project'
 TEMPLATE_TITLE = 'Templates'
@@ -86,10 +88,11 @@ class MainWindow:
     def __init__(self, window: Union[tkinter.Tk, tkinter.Toplevel]) -> None:
         """Fill the given toplevel window with the notesmgr main window."""
         self.window = window
+        self.session = Session()
         self.panes = ttk.PanedWindow(window, orient=tkinter.HORIZONTAL)
         self.explorer = ExplorerTree(self.panes, self.show_selected)
-        self.note_panel = NotePanel(self.panes)
-        self.session = Session()
+        hooks = PanelHooks(self.report_error, self.enable_note_entries)
+        self.note_panel = NotePanel(self.panes, self.session, hooks)
         self.config_panel: Optional[TkEditorPanel] = None
         shortcut = quit_shortcut(tk_window_system(window))
         self.menu_bar = build_menu_bar(window, self._menu_specs(shortcut))
@@ -100,18 +103,22 @@ class MainWindow:
     def _menu_specs(self, shortcut: Shortcut) -> list[MenuSpec]:
         """Return the menus of the main window and what they hold.
 
-        Copying the configuration to the user wide location asks for a
-        project configuration file to copy, so it is greyed out until
-        a project is open.
+        The entries that act on a note need a note to act on, and
+        copying the configuration to the user wide location asks for a
+        project configuration file to copy, so all of them are greyed
+        out until there is one.
         """
         new_entry = MenuEntry(NEW_PROJECT_ENTRY, self.new_project_dialog)
         open_entry = MenuEntry(OPEN_PROJECT_ENTRY, self.open_project_dialog)
         quit_entry = MenuEntry(QUIT_ENTRY, self.quit, shortcut.label)
+        edit_note = MenuEntry(EDIT, self.note_panel.edit_note, enabled=False)
+        copy_raw = MenuEntry(COPY_RAW, self.note_panel.copy_raw, enabled=False)
         edit_entry = MenuEntry(EDIT_CONFIG_ENTRY, self.edit_configuration)
         user_wide = MenuEntry(USER_WIDE_ENTRY, self.save_user_wide,
                               enabled=False)
         versions = MenuEntry(VERSION_ENTRY, self.show_version)
         return [MenuSpec(FILE_MENU, [new_entry, open_entry, quit_entry]),
+                MenuSpec(NOTE_MENU, [edit_note, copy_raw]),
                 MenuSpec(CONFIG_MENU, [edit_entry, user_wide]),
                 MenuSpec(HELP_MENU, [versions])]
 
@@ -143,6 +150,24 @@ class MainWindow:
     def show_selected(self, path: Optional[Path]) -> None:
         """Show what the explorer has selected in the note panel."""
         self.note_panel.show_path(path)
+
+    def enable_note_entries(self, enabled: bool) -> None:
+        """Offer the menu entries acting on a note while there is one.
+
+        The panel says when that changes, which is when another item
+        is selected and when the note that is shown is taken away by
+        another program.
+
+        Args:
+            enabled: Whether there is a note to act on.
+        """
+        menu = self.menu_bar.menus[NOTE_MENU]
+        for label in (EDIT, COPY_RAW):
+            set_enabled(menu, label, enabled)
+
+    def report_error(self, message: str) -> None:
+        """Tell the user what the note panel could not do."""
+        show_error(self.window, NOTE_TITLE, message)
 
     def new_project_dialog(self) -> None:
         """Ask for a folder and make a notesmgr project of it.
@@ -206,7 +231,7 @@ class MainWindow:
         set_enabled(self.menu_bar.menus[CONFIG_MENU], USER_WIDE_ENTRY, True)
         self.show_project(report.project.root.name)
         self.explorer.show(report.project)
-        self.note_panel.show_path(None)
+        self.show_selected(None)
         self.tell_about_opening(report)
 
     def tell_about_opening(self, report: OpenReport) -> None:

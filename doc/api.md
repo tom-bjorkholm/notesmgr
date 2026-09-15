@@ -8,6 +8,8 @@
     * [\_\_init\_\_](#notesmgr.main_window.MainWindow.__init__)
     * [show\_project](#notesmgr.main_window.MainWindow.show_project)
     * [show\_selected](#notesmgr.main_window.MainWindow.show_selected)
+    * [enable\_note\_entries](#notesmgr.main_window.MainWindow.enable_note_entries)
+    * [report\_error](#notesmgr.main_window.MainWindow.report_error)
     * [new\_project\_dialog](#notesmgr.main_window.MainWindow.new_project_dialog)
     * [open\_project\_dialog](#notesmgr.main_window.MainWindow.open_project_dialog)
     * [load\_project](#notesmgr.main_window.MainWindow.load_project)
@@ -47,10 +49,27 @@
   * [CommandLine](#notesmgr.cmd_line.CommandLine)
   * [argument\_parser](#notesmgr.cmd_line.argument_parser)
   * [parse\_command\_line](#notesmgr.cmd_line.parse_command_line)
+* [notesmgr.editor\_command](#notesmgr.editor_command)
+  * [PLACEHOLDER](#notesmgr.editor_command.PLACEHOLDER)
+  * [ON\_WINDOWS](#notesmgr.editor_command.ON_WINDOWS)
+  * [QUOTES](#notesmgr.editor_command.QUOTES)
+  * [UNREADABLE](#notesmgr.editor_command.UNREADABLE)
+  * [NO\_PROGRAM](#notesmgr.editor_command.NO_PROGRAM)
+  * [NOT\_STARTED](#notesmgr.editor_command.NOT_STARTED)
+  * [unquoted](#notesmgr.editor_command.unquoted)
+  * [split\_command](#notesmgr.editor_command.split_command)
+  * [editor\_argv](#notesmgr.editor_command.editor_argv)
+  * [start\_detached](#notesmgr.editor_command.start_detached)
+  * [launch\_editor](#notesmgr.editor_command.launch_editor)
 * [notesmgr.config](#notesmgr.config)
   * [EMPTY\_EDITOR](#notesmgr.config.EMPTY_EDITOR)
   * [NoteExtension](#notesmgr.config.NoteExtension)
   * [DEFAULT\_EXTENSION](#notesmgr.config.DEFAULT_EXTENSION)
+  * [DEFAULT\_NOTE\_SIZE](#notesmgr.config.DEFAULT_NOTE_SIZE)
+  * [MIN\_NOTE\_SIZE](#notesmgr.config.MIN_NOTE_SIZE)
+  * [MAX\_NOTE\_SIZE](#notesmgr.config.MAX_NOTE_SIZE)
+  * [OldNotesmgrConfig](#notesmgr.config.OldNotesmgrConfig)
+    * [get\_missing\_path\_values](#notesmgr.config.OldNotesmgrConfig.get_missing_path_values)
   * [NotesmgrConfig](#notesmgr.config.NotesmgrConfig)
     * [\_\_init\_\_](#notesmgr.config.NotesmgrConfig.__init__)
     * [parse\_converters](#notesmgr.config.NotesmgrConfig.parse_converters)
@@ -63,6 +82,7 @@
     * [opened](#notesmgr.session.Session.opened)
     * [chooser\_folder](#notesmgr.session.Session.chooser_folder)
     * [config\_file](#notesmgr.session.Session.config_file)
+    * [config](#notesmgr.session.Session.config)
 * [notesmgr.config\_files](#notesmgr.config_files)
   * [CONFIG\_VARIABLE](#notesmgr.config_files.CONFIG_VARIABLE)
   * [CONFIG\_NAME](#notesmgr.config_files.CONFIG_NAME)
@@ -76,6 +96,17 @@
   * [read\_config\_file](#notesmgr.config_files.read_config_file)
   * [write\_config\_file](#notesmgr.config_files.write_config_file)
   * [user\_wide\_config](#notesmgr.config_files.user_wide_config)
+* [notesmgr.button\_row](#notesmgr.button_row)
+  * [GAP](#notesmgr.button_row.GAP)
+  * [ButtonSpec](#notesmgr.button_row.ButtonSpec)
+  * [grid\_width](#notesmgr.button_row.grid_width)
+  * [fitting\_columns](#notesmgr.button_row.fitting_columns)
+  * [ButtonRow](#notesmgr.button_row.ButtonRow)
+    * [\_\_init\_\_](#notesmgr.button_row.ButtonRow.__init__)
+    * [widths](#notesmgr.button_row.ButtonRow.widths)
+    * [fit\_into](#notesmgr.button_row.ButtonRow.fit_into)
+    * [lay\_out](#notesmgr.button_row.ButtonRow.lay_out)
+    * [offer](#notesmgr.button_row.ButtonRow.offer)
 * [notesmgr.config\_editor](#notesmgr.config_editor)
   * [editor\_files](#notesmgr.config_editor.editor_files)
   * [open\_config\_editor](#notesmgr.config_editor.open_config_editor)
@@ -83,16 +114,33 @@
   * [main](#notesmgr.application.main)
 * [notesmgr.config\_defaults](#notesmgr.config_defaults)
   * [VISUAL\_CODE](#notesmgr.config_defaults.VISUAL_CODE)
+  * [VISUAL\_CODE\_FLAG](#notesmgr.config_defaults.VISUAL_CODE_FLAG)
   * [EDITOR\_VARIABLE](#notesmgr.config_defaults.EDITOR_VARIABLE)
   * [PLATFORM\_EDITORS](#notesmgr.config_defaults.PLATFORM_EDITORS)
   * [OTHER\_EDITOR](#notesmgr.config_defaults.OTHER_EDITOR)
   * [default\_editor](#notesmgr.config_defaults.default_editor)
 * [notesmgr.note\_panel](#notesmgr.note_panel)
   * [PADDING](#notesmgr.note_panel.PADDING)
+  * [COPY\_RAW](#notesmgr.note_panel.COPY_RAW)
+  * [COPY\_FORMATTED](#notesmgr.note_panel.COPY_FORMATTED)
+  * [DUPLICATE](#notesmgr.note_panel.DUPLICATE)
+  * [EDIT](#notesmgr.note_panel.EDIT)
+  * [NEW](#notesmgr.note_panel.NEW)
+  * [DELETE](#notesmgr.note_panel.DELETE)
+  * [MOVE\_UP](#notesmgr.note_panel.MOVE_UP)
+  * [MOVE\_DOWN](#notesmgr.note_panel.MOVE_DOWN)
+  * [PanelHooks](#notesmgr.note_panel.PanelHooks)
   * [NotePanel](#notesmgr.note_panel.NotePanel)
     * [\_\_init\_\_](#notesmgr.note_panel.NotePanel.__init__)
+    * [note\_limit](#notesmgr.note_panel.NotePanel.note_limit)
+    * [note\_path](#notesmgr.note_panel.NotePanel.note_path)
+    * [has\_note](#notesmgr.note_panel.NotePanel.has_note)
     * [show\_path](#notesmgr.note_panel.NotePanel.show_path)
+    * [reload](#notesmgr.note_panel.NotePanel.reload)
+    * [offer\_actions](#notesmgr.note_panel.NotePanel.offer_actions)
     * [shown\_path](#notesmgr.note_panel.NotePanel.shown_path)
+    * [edit\_note](#notesmgr.note_panel.NotePanel.edit_note)
+    * [copy\_raw](#notesmgr.note_panel.NotePanel.copy_raw)
 * [notesmgr.project\_ops](#notesmgr.project_ops)
   * [ALREADY\_PROJECT](#notesmgr.project_ops.ALREADY_PROJECT)
   * [UNRESOLVED](#notesmgr.project_ops.UNRESOLVED)
@@ -164,6 +212,25 @@
     * [cancel](#notesmgr.dialogs.ChoiceDialog.cancel)
     * [choose](#notesmgr.dialogs.ChoiceDialog.choose)
   * [ask\_choice](#notesmgr.dialogs.ask_choice)
+* [notesmgr.note\_text](#notesmgr.note_text)
+  * [NOT\_UTF8](#notesmgr.note_text.NOT_UTF8)
+  * [NOT\_READ](#notesmgr.note_text.NOT_READ)
+  * [TOO\_LONG](#notesmgr.note_text.TOO_LONG)
+  * [NoteText](#notesmgr.note_text.NoteText)
+  * [EMPTY\_NOTE](#notesmgr.note_text.EMPTY_NOTE)
+  * [read\_note\_text](#notesmgr.note_text.read_note_text)
+* [notesmgr.file\_watch](#notesmgr.file_watch)
+  * [POLL\_INTERVAL](#notesmgr.file_watch.POLL_INTERVAL)
+  * [FileState](#notesmgr.file_watch.FileState)
+  * [MISSING](#notesmgr.file_watch.MISSING)
+  * [file\_state](#notesmgr.file_watch.file_state)
+  * [FileWatch](#notesmgr.file_watch.FileWatch)
+    * [\_\_init\_\_](#notesmgr.file_watch.FileWatch.__init__)
+    * [watch](#notesmgr.file_watch.FileWatch.watch)
+    * [poll](#notesmgr.file_watch.FileWatch.poll)
+    * [tick](#notesmgr.file_watch.FileWatch.tick)
+    * [schedule](#notesmgr.file_watch.FileWatch.schedule)
+    * [cancel](#notesmgr.file_watch.FileWatch.cancel)
 * [notesmgr.note\_file](#notesmgr.note_file)
   * [TEMPLATE\_STEM](#notesmgr.note_file.TEMPLATE_STEM)
   * [NOTE\_EXTENSIONS](#notesmgr.note_file.NOTE_EXTENSIONS)
@@ -183,6 +250,20 @@
   * [sorted\_names](#notesmgr.note_file.sorted_names)
   * [checked\_extension](#notesmgr.note_file.checked_extension)
   * [note\_file\_name](#notesmgr.note_file.note_file_name)
+* [notesmgr.note\_view](#notesmgr.note_view)
+  * [WARNING\_COLOUR](#notesmgr.note_view.WARNING_COLOUR)
+  * [WARNING\_FONT](#notesmgr.note_view.WARNING_FONT)
+  * [WRAP\_WIDTH](#notesmgr.note_view.WRAP_WIDTH)
+  * [PADDING](#notesmgr.note_view.PADDING)
+  * [TEXT\_ROW](#notesmgr.note_view.TEXT_ROW)
+  * [NoteView](#notesmgr.note_view.NoteView)
+    * [\_\_init\_\_](#notesmgr.note_view.NoteView.__init__)
+    * [show](#notesmgr.note_view.NoteView.show)
+    * [show\_warning](#notesmgr.note_view.NoteView.show_warning)
+    * [show\_text](#notesmgr.note_view.NoteView.show_text)
+    * [shown\_note](#notesmgr.note_view.NoteView.shown_note)
+    * [area\_text](#notesmgr.note_view.NoteView.area_text)
+    * [warning\_shown](#notesmgr.note_view.NoteView.warning_shown)
 * [notesmgr.descriptions](#notesmgr.descriptions)
   * [DESCRIPTIONS](#notesmgr.descriptions.DESCRIPTIONS)
 * [notesmgr.project](#notesmgr.project)
@@ -280,6 +361,34 @@ def show_selected(path: Optional[Path]) -> None
 ```
 
 Show what the explorer has selected in the note panel.
+
+<a id="notesmgr.main_window.MainWindow.enable_note_entries"></a>
+
+#### enable\_note\_entries
+
+```python
+def enable_note_entries(enabled: bool) -> None
+```
+
+Offer the menu entries acting on a note while there is one.
+
+The panel says when that changes, which is when another item
+is selected and when the note that is shown is taken away by
+another program.
+
+**Arguments**:
+
+- `enabled` - Whether there is a note to act on.
+
+<a id="notesmgr.main_window.MainWindow.report_error"></a>
+
+#### report\_error
+
+```python
+def report_error(message: str) -> None
+```
+
+Tell the user what the note panel could not do.
 
 <a id="notesmgr.main_window.MainWindow.new_project_dialog"></a>
 
@@ -720,6 +829,175 @@ an error stream that a program started from a desktop has not got.
 
   What was asked for.
 
+<a id="notesmgr.editor_command"></a>
+
+# notesmgr.editor\_command
+
+Starting the editor that a project is configured with.
+
+<a id="notesmgr.editor_command.PLACEHOLDER"></a>
+
+#### PLACEHOLDER
+
+What the name of the note replaces in the editor command.
+
+<a id="notesmgr.editor_command.ON_WINDOWS"></a>
+
+#### ON\_WINDOWS
+
+Whether a command line is to be read the way Windows reads one.
+
+<a id="notesmgr.editor_command.QUOTES"></a>
+
+#### QUOTES
+
+What a Windows command line may have around one of its words.
+
+<a id="notesmgr.editor_command.UNREADABLE"></a>
+
+#### UNREADABLE
+
+What is said about a command whose quotes do not match.
+
+<a id="notesmgr.editor_command.NO_PROGRAM"></a>
+
+#### NO\_PROGRAM
+
+What is said about a command that holds no word at all.
+
+<a id="notesmgr.editor_command.NOT_STARTED"></a>
+
+#### NOT\_STARTED
+
+What is said about an editor that the system did not start.
+
+<a id="notesmgr.editor_command.unquoted"></a>
+
+#### unquoted
+
+```python
+def unquoted(word: str) -> str
+```
+
+Return one word of a command line without the quotes around it.
+
+**Arguments**:
+
+- `word` - A word as a Windows command line holds it.
+  
+
+**Returns**:
+
+  The word itself, which is what is to be passed on.
+
+<a id="notesmgr.editor_command.split_command"></a>
+
+#### split\_command
+
+```python
+def split_command(command: str, windows: bool = ON_WINDOWS) -> list[str]
+```
+
+Return the words that an editor command is made of.
+
+A backslash is an escape character to a POSIX shell and a path
+separator on Windows, so a Windows command line is split by the
+rules that keep its paths whole, and the quotes that splitting
+leaves behind are then taken off.
+
+**Arguments**:
+
+- `command` - The editor command as the configuration holds it.
+- `windows` - Whether to split it the way Windows does.
+  
+
+**Returns**:
+
+  The words of the command, quotes taken off.
+  
+
+**Raises**:
+
+- `ValueError` - The quotes of the command do not match.
+
+<a id="notesmgr.editor_command.editor_argv"></a>
+
+#### editor\_argv
+
+```python
+def editor_argv(command: str, path: Path) -> list[str]
+```
+
+Return the command line that opens one note in the editor.
+
+The name of the note takes the place of every {file} in the
+command, and is added at the end of a command that holds none,
+so that 'code' and 'code {file}' mean the same thing.
+
+**Arguments**:
+
+- `command` - The editor command as the configuration holds it.
+- `path` - The note to open.
+  
+
+**Returns**:
+
+  The program to start and the arguments to give it.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The command cannot be read, or names nothing
+  to start.
+
+<a id="notesmgr.editor_command.start_detached"></a>
+
+#### start\_detached
+
+```python
+def start_detached(argv: list[str]) -> None
+```
+
+Start a program and leave it running on its own.
+
+The editor outlives the command that started it and is not to be
+stopped by what stops notesmgr, so it is put in a session of its
+own. Windows knows no sessions and ignores that, which is right
+there, where a started program is independent already.
+
+**Arguments**:
+
+- `argv` - The program to start and the arguments to give it.
+  
+
+**Raises**:
+
+- `OSError` - The program cannot be started.
+
+<a id="notesmgr.editor_command.launch_editor"></a>
+
+#### launch\_editor
+
+```python
+def launch_editor(command: str,
+                  path: Path,
+                  run: Callable[[list[str]], None] = start_detached) -> None
+```
+
+Open one note in the editor that the project is configured with.
+
+**Arguments**:
+
+- `command` - The editor command as the configuration holds it.
+- `path` - The note to open.
+- `run` - What starts the editor, for a test to stand in for.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The command cannot be read, names nothing to
+  start, or names a program that the system did not start.
+
 <a id="notesmgr.config"></a>
 
 # notesmgr.config
@@ -753,6 +1031,57 @@ file type.
 
 Note file extension that a new configuration starts out with.
 
+<a id="notesmgr.config.DEFAULT_NOTE_SIZE"></a>
+
+#### DEFAULT\_NOTE\_SIZE
+
+Characters of a note that are shown when nothing else is said.
+
+<a id="notesmgr.config.MIN_NOTE_SIZE"></a>
+
+#### MIN\_NOTE\_SIZE
+
+Fewest characters of a note that may be asked to be shown.
+
+A note is meant to be read whole, so a limit small enough to cut a
+short note in two is taken for a misunderstanding rather than a wish.
+
+<a id="notesmgr.config.MAX_NOTE_SIZE"></a>
+
+#### MAX\_NOTE\_SIZE
+
+Most characters of a note that may be asked to be shown.
+
+Reading a note is meant to stay quick, and a window that has to draw
+far more than this is no longer a notes manager to work in.
+
+<a id="notesmgr.config.OldNotesmgrConfig"></a>
+
+## OldNotesmgrConfig Objects
+
+```python
+class OldNotesmgrConfig(ReadOldConfiguration)
+```
+
+How a configuration file of an older notesmgr is read.
+
+Every member of the configuration has to be named in the file,
+so a file written before a member existed is read with the
+built-in default of that member rather than being refused.
+
+<a id="notesmgr.config.OldNotesmgrConfig.get_missing_path_values"></a>
+
+#### get\_missing\_path\_values
+
+```python
+def get_missing_path_values() -> dict[ConfigPath, object]
+```
+
+Add configuration parameter for things missing in old files.
+
+This is only relevant for configuration parameters that
+have been added after the first **released** version of notesmgr.
+
 <a id="notesmgr.config.NotesmgrConfig"></a>
 
 ## NotesmgrConfig Objects
@@ -763,9 +1092,10 @@ class NotesmgrConfig(Config)
 
 How notesmgr edits the notes of a project and what it names them.
 
-The editor command is started whenever a note is edited, and the
+The editor command is started whenever a note is edited, the
 extension is the one that new notes are given and that a file must
-have to be a note at all.
+have to be a note at all, and the size is how much of a note is
+shown before the rest of it is left out.
 
 <a id="notesmgr.config.NotesmgrConfig.__init__"></a>
 
@@ -915,6 +1245,20 @@ def config_file() -> Optional[Path]
 ```
 
 Return the configuration file of the open project, if any.
+
+<a id="notesmgr.session.Session.config"></a>
+
+#### config
+
+```python
+def config() -> Optional[NotesmgrConfig]
+```
+
+Return the configuration in use, None while none is.
+
+It says what the notes of the project are named, how much of
+a note is shown and what editor a note is opened in, so it is
+what the parts of the window ask when they need any of that.
 
 <a id="notesmgr.config_files"></a>
 
@@ -1097,6 +1441,163 @@ Return the user wide configuration, or the built-in defaults.
 - `NotesmgrError` - There is a user wide configuration file and it
   holds no configuration that notesmgr can use.
 
+<a id="notesmgr.button_row"></a>
+
+# notesmgr.button\_row
+
+The row of buttons above the note, and how it is made to fit.
+
+<a id="notesmgr.button_row.GAP"></a>
+
+#### GAP
+
+Pixels left between two buttons that stand side by side.
+
+<a id="notesmgr.button_row.ButtonSpec"></a>
+
+## ButtonSpec Objects
+
+```python
+class ButtonSpec(NamedTuple)
+```
+
+One button of the row, and what pressing it does.
+
+A button whose operation belongs to a later step of the plan has
+no command, and is greyed out whatever is selected, so that the
+row is the whole row from the start.
+
+<a id="notesmgr.button_row.grid_width"></a>
+
+#### grid\_width
+
+```python
+def grid_width(widths: Sequence[int], columns: int, gap: int) -> int
+```
+
+Return how wide a grid of buttons of these widths is.
+
+The buttons are placed row by row, so the buttons of one column
+are every columns-th of them, and a column is as wide as the
+widest button standing in it.
+
+**Arguments**:
+
+- `widths` - How wide each button is, in the order they are shown.
+- `columns` - How many buttons stand side by side.
+- `gap` - Pixels left beside each button.
+  
+
+**Returns**:
+
+  The width the grid needs, and nothing for no buttons at all.
+
+<a id="notesmgr.button_row.fitting_columns"></a>
+
+#### fitting\_columns
+
+```python
+def fitting_columns(widths: Sequence[int], available: int, gap: int) -> int
+```
+
+Return how many buttons to put side by side in a given width.
+
+The buttons are spread over the fewest rows that fit, so that a
+wide panel shows one row and a narrow one shows several rows of
+about the same length rather than one long row and a short one.
+A width too small for even one button still gives one column,
+because a button cut off at the edge is better than none at all.
+
+**Arguments**:
+
+- `widths` - How wide each button is, in the order they are shown.
+- `available` - Pixels the row has to lay the buttons out in.
+- `gap` - Pixels left beside each button.
+  
+
+**Returns**:
+
+  How many buttons stand side by side, at least one.
+
+<a id="notesmgr.button_row.ButtonRow"></a>
+
+## ButtonRow Objects
+
+```python
+class ButtonRow()
+```
+
+The buttons above the note, in as few rows as the width allows.
+
+A button is as wide as its text and the theme of the platform
+make it, and the panel is as wide as the user makes the window,
+so the buttons are laid out again whenever the width changes.
+That way none of them is ever cut off at the edge of the panel,
+at any size the window can be given.
+
+<a id="notesmgr.button_row.ButtonRow.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(parent: tkinter.Misc, specs: Sequence[ButtonSpec]) -> None
+```
+
+Build the described buttons in a frame of their own.
+
+**Arguments**:
+
+- `parent` - The widget that the row is placed in.
+- `specs` - The buttons, in the order they are shown.
+
+<a id="notesmgr.button_row.ButtonRow.widths"></a>
+
+#### widths
+
+```python
+def widths() -> list[int]
+```
+
+Return how wide each button of the row asks to be.
+
+<a id="notesmgr.button_row.ButtonRow.fit_into"></a>
+
+#### fit\_into
+
+```python
+def fit_into(available: int) -> None
+```
+
+Lay the buttons out for a row of the given width.
+
+Laying out a grid that is already laid out that way would
+make Tk report another width and ask again, so it is only
+done when another number of buttons fits now.
+
+**Arguments**:
+
+- `available` - Pixels the row has to lay the buttons out in.
+
+<a id="notesmgr.button_row.ButtonRow.lay_out"></a>
+
+#### lay\_out
+
+```python
+def lay_out(columns: int) -> None
+```
+
+Put the buttons into a grid so many buttons wide.
+
+<a id="notesmgr.button_row.ButtonRow.offer"></a>
+
+#### offer
+
+```python
+def offer(enabled: bool) -> None
+```
+
+Let the buttons that do something be used, or grey them out.
+
 <a id="notesmgr.config_editor"></a>
 
 # notesmgr.config\_editor
@@ -1202,6 +1703,12 @@ The values a notesmgr configuration starts out with.
 
 Command that starts Microsoft Visual Studio Code.
 
+<a id="notesmgr.config_defaults.VISUAL_CODE_FLAG"></a>
+
+#### VISUAL\_CODE\_FLAG
+
+Flag to open a new window in Microsoft Visual Studio Code.
+
 <a id="notesmgr.config_defaults.EDITOR_VARIABLE"></a>
 
 #### EDITOR\_VARIABLE
@@ -1250,6 +1757,68 @@ The panel at the right of the main window, showing a note.
 
 Space in pixels left around what the panel shows.
 
+<a id="notesmgr.note_panel.COPY_RAW"></a>
+
+#### COPY\_RAW
+
+What the button that copies the note as it is written says.
+
+<a id="notesmgr.note_panel.COPY_FORMATTED"></a>
+
+#### COPY\_FORMATTED
+
+What the button that copies the note formatted says.
+
+<a id="notesmgr.note_panel.DUPLICATE"></a>
+
+#### DUPLICATE
+
+What the button that copies the note into the project says.
+
+<a id="notesmgr.note_panel.EDIT"></a>
+
+#### EDIT
+
+What the button that opens the note in an editor says.
+
+<a id="notesmgr.note_panel.NEW"></a>
+
+#### NEW
+
+What the button that makes another note says.
+
+<a id="notesmgr.note_panel.DELETE"></a>
+
+#### DELETE
+
+What the button that takes the note away says.
+
+<a id="notesmgr.note_panel.MOVE_UP"></a>
+
+#### MOVE\_UP
+
+What the button that moves the note one place up says.
+
+<a id="notesmgr.note_panel.MOVE_DOWN"></a>
+
+#### MOVE\_DOWN
+
+What the button that moves the note one place down says.
+
+<a id="notesmgr.note_panel.PanelHooks"></a>
+
+## PanelHooks Objects
+
+```python
+class PanelHooks(NamedTuple)
+```
+
+What the panel tells the window that holds it.
+
+The window owns the menu entries that do what the buttons do, and
+it owns the way that a problem is put to the user, so the panel
+is given both rather than reaching back into the window.
+
 <a id="notesmgr.note_panel.NotePanel"></a>
 
 ## NotePanel Objects
@@ -1258,21 +1827,64 @@ Space in pixels left around what the panel shows.
 class NotePanel()
 ```
 
-Shows what is selected in the explorer.
+Shows the selected note and the buttons that act upon it.
 
-So far that is the path of the selected file or folder. The note
-itself, formatted for reading, and the row of buttons above it,
-are what this panel grows into.
+The note that the buttons act on is the file that the watch is
+following, so that one place says what the panel is showing. It
+is the selected file when that is a note or the template of a
+folder, and nothing when a folder or nothing at all is selected.
 
 <a id="notesmgr.note_panel.NotePanel.__init__"></a>
 
 #### \_\_init\_\_
 
 ```python
-def __init__(parent: tkinter.Misc) -> None
+def __init__(parent: tkinter.Misc, session: Session,
+             hooks: PanelHooks) -> None
 ```
 
 Build the panel in a frame of its own inside a parent widget.
+
+**Arguments**:
+
+- `parent` - The widget that the panel is placed in.
+- `session` - What the run knows, which is the open project and
+  therefore the editor and the size that are configured.
+- `hooks` - What the panel tells the window that holds it.
+
+<a id="notesmgr.note_panel.NotePanel.note_limit"></a>
+
+#### note\_limit
+
+```python
+def note_limit() -> int
+```
+
+Return how much of a note the open project shows.
+
+With no project open there is no note to show either, so the
+built-in default stands in for a configuration that is not
+there rather than making the panel a special case.
+
+<a id="notesmgr.note_panel.NotePanel.note_path"></a>
+
+#### note\_path
+
+```python
+def note_path() -> Optional[Path]
+```
+
+Return the note the panel is showing, None when it shows none.
+
+<a id="notesmgr.note_panel.NotePanel.has_note"></a>
+
+#### has\_note
+
+```python
+def has_note() -> bool
+```
+
+Return whether there is a note for the buttons to act on.
 
 <a id="notesmgr.note_panel.NotePanel.show_path"></a>
 
@@ -1282,11 +1894,45 @@ Build the panel in a frame of its own inside a parent widget.
 def show_path(path: Optional[Path]) -> None
 ```
 
-Show the path of what is selected, nothing for nothing.
+Show what the explorer has selected.
 
 **Arguments**:
 
 - `path` - What is selected in the explorer, None for nothing.
+  A folder is shown by its path alone, and a note and
+  the template of a folder are also read and shown.
+
+<a id="notesmgr.note_panel.NotePanel.reload"></a>
+
+#### reload
+
+```python
+def reload() -> None
+```
+
+Show what the note that is being watched holds now.
+
+This is what the watch calls when the note has been edited,
+written or taken away by another program, so a note that is
+gone leaves the panel saying so and the buttons greyed out.
+
+<a id="notesmgr.note_panel.NotePanel.offer_actions"></a>
+
+#### offer\_actions
+
+```python
+def offer_actions(enabled: bool) -> None
+```
+
+Offer what acts on a note, or grey it out.
+
+The buttons of the panel and the entries of the note menu are
+offered together, because they do the same things, so the
+window that holds the menu is told as well.
+
+**Arguments**:
+
+- `enabled` - Whether there is a note to act on.
 
 <a id="notesmgr.note_panel.NotePanel.shown_path"></a>
 
@@ -1297,6 +1943,32 @@ def shown_path() -> str
 ```
 
 Return the path the panel is showing, empty for none.
+
+<a id="notesmgr.note_panel.NotePanel.edit_note"></a>
+
+#### edit\_note
+
+```python
+def edit_note() -> None
+```
+
+Open the note that is shown in the editor of the project.
+
+<a id="notesmgr.note_panel.NotePanel.copy_raw"></a>
+
+#### copy\_raw
+
+```python
+def copy_raw() -> None
+```
+
+Put the text of the note that is shown on the clipboard.
+
+A note that could not be read at all holds no text to copy,
+so what is wrong with it is reported rather than the
+clipboard being emptied. A note that is shown only in part is
+copied as far as it is shown, which is what the warning above
+it says.
 
 <a id="notesmgr.project_ops"></a>
 
@@ -2251,6 +2923,220 @@ Ask the user to choose one of several named things.
 
   What the user chose, None when the user chose nothing.
 
+<a id="notesmgr.note_text"></a>
+
+# notesmgr.note\_text
+
+Reading the text of a note, and what cannot be read of it.
+
+<a id="notesmgr.note_text.NOT_UTF8"></a>
+
+#### NOT\_UTF8
+
+What is said about a note that holds bytes that are no text.
+
+<a id="notesmgr.note_text.NOT_READ"></a>
+
+#### NOT\_READ
+
+What is said about a note that the file system does not give.
+
+<a id="notesmgr.note_text.TOO_LONG"></a>
+
+#### TOO\_LONG
+
+What is said about a note that is longer than may be shown.
+
+<a id="notesmgr.note_text.NoteText"></a>
+
+## NoteText Objects
+
+```python
+class NoteText(NamedTuple)
+```
+
+The text of a note, and what is to be said about it.
+
+The warning is what the user is told above the text, and it is
+empty when there is nothing to tell. A note that cannot be shown
+at all has a warning and no text.
+
+<a id="notesmgr.note_text.EMPTY_NOTE"></a>
+
+#### EMPTY\_NOTE
+
+What is shown when nothing at all is selected.
+
+<a id="notesmgr.note_text.read_note_text"></a>
+
+#### read\_note\_text
+
+```python
+def read_note_text(path: Path, limit: int) -> NoteText
+```
+
+Return the text of a note, as much of it as may be shown.
+
+One character more than the limit is read, which is what tells a
+note that fits from one that has to be cut, without reading a
+note of any size into memory. Reading characters rather than
+bytes is also what keeps the cut from falling inside a character.
+
+**Arguments**:
+
+- `path` - The note to read.
+- `limit` - The most characters of it that may be shown.
+  
+
+**Returns**:
+
+  The text to show and the warning to show above it.
+
+<a id="notesmgr.file_watch"></a>
+
+# notesmgr.file\_watch
+
+Following the note that is shown while it is edited elsewhere.
+
+<a id="notesmgr.file_watch.POLL_INTERVAL"></a>
+
+#### POLL\_INTERVAL
+
+Milliseconds between two looks at the note that is shown.
+
+<a id="notesmgr.file_watch.FileState"></a>
+
+## FileState Objects
+
+```python
+class FileState(NamedTuple)
+```
+
+What a file looked like when it was last looked at.
+
+A file is taken to have changed when any of this is no longer
+what it was, so that saving a note in an editor, deleting it and
+writing it again are all seen.
+
+<a id="notesmgr.file_watch.MISSING"></a>
+
+#### MISSING
+
+What a file that is not there looks like, and no file at all.
+
+<a id="notesmgr.file_watch.file_state"></a>
+
+#### file\_state
+
+```python
+def file_state(path: Optional[Path]) -> FileState
+```
+
+Return what a file looks like now.
+
+A file that cannot be asked about cannot be shown either, so it
+is taken to be missing rather than raising here.
+
+**Arguments**:
+
+- `path` - The file to look at, None for no file at all.
+  
+
+**Returns**:
+
+  What it looks like now.
+
+<a id="notesmgr.file_watch.FileWatch"></a>
+
+## FileWatch Objects
+
+```python
+class FileWatch()
+```
+
+Tells whoever listens that the file being watched has changed.
+
+The file system is asked about the file now and then, because a
+note is edited by another program that notesmgr hears nothing
+from. The asking is done by the Tk event loop, so the polling
+holds nothing up and needs no thread of its own.
+
+<a id="notesmgr.file_watch.FileWatch.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(widget: tkinter.Misc,
+             on_change: Callable[[], None],
+             interval: int = POLL_INTERVAL) -> None
+```
+
+Get ready to watch, watching nothing yet.
+
+**Arguments**:
+
+- `widget` - The widget whose event loop does the polling, and
+  whose end is the end of the watching.
+- `on_change` - Told whenever the watched file has changed.
+- `interval` - Milliseconds between two looks at the file.
+
+<a id="notesmgr.file_watch.FileWatch.watch"></a>
+
+#### watch
+
+```python
+def watch(path: Optional[Path]) -> None
+```
+
+Watch another file from now on, or no file at all.
+
+The file as it is now is what the watching starts from, so
+that taking up a file is no change of it.
+
+**Arguments**:
+
+- `path` - The file to watch, None for no file at all.
+
+<a id="notesmgr.file_watch.FileWatch.poll"></a>
+
+#### poll
+
+```python
+def poll() -> None
+```
+
+Tell that the watched file has changed, when it has.
+
+<a id="notesmgr.file_watch.FileWatch.tick"></a>
+
+#### tick
+
+```python
+def tick() -> None
+```
+
+Look at the file again, and go on while there is a window.
+
+<a id="notesmgr.file_watch.FileWatch.schedule"></a>
+
+#### schedule
+
+```python
+def schedule() -> None
+```
+
+Ask for the next look, in place of one already asked for.
+
+<a id="notesmgr.file_watch.FileWatch.cancel"></a>
+
+#### cancel
+
+```python
+def cancel() -> None
+```
+
+Take back the look that was asked for, if there is one.
+
 <a id="notesmgr.note_file"></a>
 
 # notesmgr.note\_file
@@ -2469,6 +3355,135 @@ Return the file name that a name typed by a user asks for.
 **Raises**:
 
 - `NotesmgrError` - What was typed names no note file.
+
+<a id="notesmgr.note_view"></a>
+
+# notesmgr.note\_view
+
+The area of the main window that a note is read in.
+
+<a id="notesmgr.note_view.WARNING_COLOUR"></a>
+
+#### WARNING\_COLOUR
+
+Colour of a warning above a note, a red that is hard to miss.
+
+<a id="notesmgr.note_view.WARNING_FONT"></a>
+
+#### WARNING\_FONT
+
+Font of a warning above a note, heavier than the note itself.
+
+<a id="notesmgr.note_view.WRAP_WIDTH"></a>
+
+#### WRAP\_WIDTH
+
+Pixels after which a long warning is broken into another line.
+
+<a id="notesmgr.note_view.PADDING"></a>
+
+#### PADDING
+
+Space in pixels left around what the area shows.
+
+<a id="notesmgr.note_view.TEXT_ROW"></a>
+
+#### TEXT\_ROW
+
+Row of the area that the note itself is shown in.
+
+<a id="notesmgr.note_view.NoteView"></a>
+
+## NoteView Objects
+
+```python
+class NoteView()
+```
+
+Shows the text of one note, with any warning above it.
+
+The warning is what could not be shown and why, and it is left
+out of the way whenever there is nothing to warn about. The text
+is shown as it is read, because what a note looks like formatted
+is what step 7 of the plan adds.
+
+<a id="notesmgr.note_view.NoteView.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(parent: tkinter.Misc) -> None
+```
+
+Build the area in a frame of its own inside a parent widget.
+
+<a id="notesmgr.note_view.NoteView.show"></a>
+
+#### show
+
+```python
+def show(note: NoteText) -> None
+```
+
+Show a note that was read, warning and all.
+
+**Arguments**:
+
+- `note` - The text to show and the warning to show above it.
+
+<a id="notesmgr.note_view.NoteView.show_warning"></a>
+
+#### show\_warning
+
+```python
+def show_warning(warning: str) -> None
+```
+
+Show a warning above the note, and none when there is none.
+
+<a id="notesmgr.note_view.NoteView.show_text"></a>
+
+#### show\_text
+
+```python
+def show_text(text: str) -> None
+```
+
+Show a text in an area that the user cannot type in.
+
+<a id="notesmgr.note_view.NoteView.shown_note"></a>
+
+#### shown\_note
+
+```python
+def shown_note() -> NoteText
+```
+
+Return the note that is shown, warning and all.
+
+<a id="notesmgr.note_view.NoteView.area_text"></a>
+
+#### area\_text
+
+```python
+def area_text() -> str
+```
+
+Return the text that the area holds, as the user sees it.
+
+Tk keeps a newline of its own at the end of a text area,
+which is left out here, so that what is returned is what was
+put in.
+
+<a id="notesmgr.note_view.NoteView.warning_shown"></a>
+
+#### warning\_shown
+
+```python
+def warning_shown() -> bool
+```
+
+Return whether a warning is on the screen above the note.
 
 <a id="notesmgr.descriptions"></a>
 

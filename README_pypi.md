@@ -142,7 +142,16 @@ To the right of the main window there is a wide panel with a row of buttons at
 the top and an area showing the selected note. If the selected note is written
 in markdown this area shows the note formatted for human reading.
 
-The buttons at the top of the right side of the main window are:
+The area shows the selected note, and the template of a folder is shown and
+edited just like a note. A note that is not valid UTF-8 text is not shown at
+all, and a note longer than `max_note_size` is shown as far as that, each of
+them with a warning above the note saying why. While a note is shown,
+`notesmgr` follows the file, so a note saved in the external editor, or
+changed or removed by any other program, is shown as it now stands about a
+second later.
+
+The buttons are laid out in as many rows as the width of the window needs,
+so that none of them is cut off however small the window is made. They are:
 
 - `Copy raw` take a raw copy of the note file content and store to clipboard
 - `Copy formatted` take a copy of the note content formatted for human reading
@@ -176,13 +185,19 @@ The configuration determines a few aspects of how `notesmgr` behaves.
   lets the configuration editor offer the three to be chosen from.
   When creating configuration the default is `.md.txt` (written as
   `MD_TXT`) as many systems do not recognize `.md` as a safe file type.
+- `max_note_size` is how many characters of a note the main window shows.
+  A longer note is shown up to there, with a warning saying so above it,
+  which keeps a file that is no note at all from filling the window. The
+  default is 25000, and a value below 2000 or above 100000 is refused as a
+  misunderstanding.
 
 A configuration file therefore looks like this:
 
 ````json
 {
-    "editor": "code {file}",
-    "file_extension": "MD_TXT"
+    "editor": "code -n {file}",
+    "file_extension": "MD_TXT",
+    "max_note_size": 25000
 }
 ````
 
@@ -218,7 +233,7 @@ Source code and tests are available at [https://github.com/tom-bjorkholm/notesmg
 
 ## Test summary
 
-- Test result: 536 passed, 4 deselected in 5s
+- Test result: 698 passed, 7 deselected in 5s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

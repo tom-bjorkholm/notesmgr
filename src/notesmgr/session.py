@@ -6,6 +6,7 @@
 
 from pathlib import Path
 from typing import Optional
+from notesmgr.config import NotesmgrConfig
 from notesmgr.project import Project, config_path
 
 
@@ -57,3 +58,14 @@ class Session:
         if self.project is None:
             return None
         return config_path(self.project.root)
+
+    def config(self) -> Optional[NotesmgrConfig]:
+        """Return the configuration in use, None while none is.
+
+        It says what the notes of the project are named, how much of
+        a note is shown and what editor a note is opened in, so it is
+        what the parts of the window ask when they need any of that.
+        """
+        if self.project is None:
+            return None
+        return self.project.config

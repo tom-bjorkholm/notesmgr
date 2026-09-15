@@ -11,6 +11,9 @@ import sys
 VISUAL_CODE = 'code'
 """Command that starts Microsoft Visual Studio Code."""
 
+VISUAL_CODE_FLAG = ' -n'
+"""Flag to open a new window in Microsoft Visual Studio Code."""
+
 EDITOR_VARIABLE = 'EDITOR'
 """Environment variable in which a user names a preferred editor."""
 
@@ -33,6 +36,6 @@ def default_editor() -> str:
     file is appended to a command that does not place it itself.
     """
     if shutil.which(VISUAL_CODE) is not None:
-        return VISUAL_CODE
+        return VISUAL_CODE + VISUAL_CODE_FLAG
     named = os.environ.get(EDITOR_VARIABLE, '').strip()
     return named or PLATFORM_EDITORS.get(sys.platform, OTHER_EDITOR)

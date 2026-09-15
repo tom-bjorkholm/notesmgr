@@ -13,11 +13,13 @@ from test_notesmgr.helpers import write_config, write_notes, write_template
 from notesmgr import main_window as window_module
 from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME
+from notesmgr import note_panel as panel_module
 from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
     EDIT_CONFIG_ENTRY, FILE_MENU, HELP_MENU, INITIAL_GEOMETRY, \
-    MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, OPEN_PROJECT_ENTRY, \
-    QUIT_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, VERSION_TITLE, MainWindow, \
-    Shortcut, quit_shortcut, tk_window_system
+    MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, NOTE_MENU, \
+    OPEN_PROJECT_ENTRY, QUIT_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, \
+    VERSION_TITLE, MainWindow, Shortcut, quit_shortcut, tk_window_system
+from notesmgr.note_panel import COPY_RAW, EDIT
 from notesmgr.project import config_path
 
 REPORT = 'notesmgr 0.0.1\n'
@@ -232,15 +234,17 @@ def test_menu_bar_installed(main_window: MainWindow) -> None:
 
 
 def test_menus_of_the_bar(main_window: MainWindow) -> None:
-    """The menu bar holds a File, a Configuration and a Help menu."""
-    assert set(main_window.menu_bar.menus) == {FILE_MENU, CONFIG_MENU,
-                                               HELP_MENU}
+    """The menu bar holds a File, a Note, a Configuration and a Help menu."""
+    assert set(main_window.menu_bar.menus) == {FILE_MENU, NOTE_MENU,
+                                               CONFIG_MENU, HELP_MENU}
 
 
 @pytest.mark.parametrize('menu,label', [
     (FILE_MENU, NEW_PROJECT_ENTRY),
     (FILE_MENU, OPEN_PROJECT_ENTRY),
     (FILE_MENU, QUIT_ENTRY),
+    (NOTE_MENU, EDIT),
+    (NOTE_MENU, COPY_RAW),
     (CONFIG_MENU, EDIT_CONFIG_ENTRY),
     (CONFIG_MENU, USER_WIDE_ENTRY),
     (HELP_MENU, VERSION_ENTRY)])
@@ -253,6 +257,75 @@ def test_user_wide_disabled(main_window: MainWindow) -> None:
     """Copying to the user wide file waits until a project is open."""
     menu = main_window.menu_bar.menus[CONFIG_MENU]
     assert menu.entrycget(USER_WIDE_ENTRY, 'state') == 'disabled'
+
+
+def note_entry_state(main_window: MainWindow, label: str) -> str:
+    """Return whether one entry of the note menu can be chosen."""
+    menu = main_window.menu_bar.menus[NOTE_MENU]
+    return str(menu.entrycget(label, 'state'))
+
+
+@pytest.mark.parametrize('label', [EDIT, COPY_RAW])
+def test_note_entries_dead(main_window: MainWindow, label: str) -> None:
+    """With nothing selected there is no note for an entry to act on."""
+    assert note_entry_state(main_window, label) == 'disabled'
+
+
+@pytest.mark.parametrize('label', [EDIT, COPY_RAW])
+def test_note_entries_offered(main_window: MainWindow, project: Path,
+                              label: str) -> None:
+    """Selecting a note offers the entries that act on one."""
+    main_window.load_project(project)
+    main_window.show_selected(project / NOTES[0])
+    assert note_entry_state(main_window, label) == 'normal'
+
+
+def test_note_entries_off(main_window: MainWindow, project: Path) -> None:
+    """Selecting a folder after a note leaves nothing to act on."""
+    main_window.load_project(project)
+    main_window.show_selected(project / NOTES[0])
+    main_window.show_selected(project)
+    assert note_entry_state(main_window, EDIT) == 'disabled'
+
+
+def test_opening_selects_none(main_window: MainWindow, project: Path) -> None:
+    """A project that has just been opened has nothing selected in it."""
+    main_window.load_project(project)
+    assert main_window.note_panel.shown_path() == ''
+    assert note_entry_state(main_window, COPY_RAW) == 'disabled'
+
+
+def test_panel_errors_told(main_window: MainWindow,
+                           refused: list[str]) -> None:
+    """What the note panel could not do is put to the user."""
+    main_window.report_error('nothing worked')
+    assert refused == ['nothing worked']
+
+
+def test_copy_raw_from_menu(main_window: MainWindow, project: Path) -> None:
+    """Choosing Note > Copy raw copies the note that is selected."""
+    note = project / NOTES[0]
+    main_window.load_project(project)
+    main_window.show_selected(note)
+    main_window.menu_bar.menus[NOTE_MENU].invoke(COPY_RAW)
+    assert main_window.window.clipboard_get() == \
+        note.read_text(encoding='utf-8')
+
+
+def test_edit_from_menu(main_window: MainWindow, project: Path,
+                        monkeypatch: pytest.MonkeyPatch) -> None:
+    """Choosing Note > Edit starts the editor on the note selected."""
+    started: list[Path] = []
+
+    def record(_command: str, path: Path) -> None:
+        """Stand in for starting the editor of the project."""
+        started.append(path)
+    monkeypatch.setattr(panel_module, 'launch_editor', record)
+    note = project / NOTES[0]
+    main_window.load_project(project)
+    main_window.show_selected(note)
+    main_window.menu_bar.menus[NOTE_MENU].invoke(EDIT)
+    assert started == [note]
 
 
 def test_edit_config_offered(main_window: MainWindow) -> None:
@@ -564,6 +637,34 @@ def test_cursor_after_version(main_window: MainWindow,
 def test_shown_window_size(shown_window: MainWindow) -> None:
     """A shown main window gets the size it asked for."""
     assert shown_window.window.geometry().startswith(INITIAL_GEOMETRY)
+
+
+@pytest.mark.focus_sensitive
+def test_buttons_all_shown(shown_window: MainWindow) -> None:
+    """Every button of the panel is shown whole at the initial size.
+
+    The buttons are as wide as the theme of the platform makes them,
+    and the row lays them out in as many rows as it needs, so none of
+    them is cut off at the edge of the panel.
+    """
+    row = shown_window.note_panel.row
+    shown_window.window.update()
+    width = row.frame.winfo_width()
+    over = [button for button in row.buttons
+            if button.winfo_x() + button.winfo_width() > width]
+    assert not over
+
+
+@pytest.mark.focus_sensitive
+def test_narrow_window_wraps(shown_window: MainWindow) -> None:
+    """A window made small lays the buttons out in several rows."""
+    window = shown_window.window
+    window.geometry(f'{MINIMUM_WIDTH}x{MINIMUM_HEIGHT}')
+    window.update()
+    row = shown_window.note_panel.row
+    assert row.columns < len(row.buttons)
+    assert max(button.winfo_x() + button.winfo_width()
+               for button in row.buttons) <= row.frame.winfo_width()
 
 
 @pytest.mark.focus_sensitive
