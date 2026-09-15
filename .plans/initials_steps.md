@@ -195,7 +195,35 @@ exclude it with `pytest_exclude_folders`.
 
 ### Step 2 — Configuration, its editor, and version reporting
 
-Status: **Not implemented yet.**
+Status: **Implemented, committed.**
+
+Decisions taken while implementing it, which later steps build on:
+
+- `config_as_json` writes an enum member as its **name**, and
+  `edit-cfg-json` builds its pull-down from the enum member names, so
+  `notesmgr.cfg` holds `"file_extension": "MD_TXT"` and not `".md.txt"`.
+  `NoteExtension.value` is the extension text that the rest of the code
+  uses. `README_pypi.md` documents this.
+- `--version` prints to standard output only. The graphical way of asking
+  is `Help > Version information…`, and both go through
+  `version_info.version_report(out_file)`, which the menu entry gives a
+  `StringIO` that it then shows in a window.
+- notesmgr supports a Python version for about two and a half years after
+  the next Python version was released, always ending on the first of
+  March: 3.12 ends 2027-03-01 and 3.13 ends 2028-03-01.
+- `Save configuration as user wide…` is greyed out until a project is
+  open. `MainWindow.project_config` is the path it copies, and step 3
+  sets it and calls `menu_bar.set_enabled` when a project opens.
+- `config_files.py` holds only what step 2 uses: `user_config_path`,
+  `user_config_source` and `copy_to_user_wide`. Loading the user wide
+  configuration into a `NotesmgrConfig` lands in step 3, where creating a
+  project needs it.
+- One module beyond the inventory: `config_editor.py`, which decides
+  which files the editor panel reads and writes. Step 3 gives it the
+  project variant, and it is also the seam that keeps a real editor
+  window out of the normal test run.
+- `menu_bar.py` builds menus from `MenuSpec`/`MenuEntry` descriptions and
+  offers `set_enabled` for an entry that only makes sense in some states.
 
 **Goal:** the configuration exists, can be edited in the
 `edit-cfg-json-tk` panel, and the application can report its versions.

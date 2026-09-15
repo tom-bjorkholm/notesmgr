@@ -42,6 +42,19 @@ pip install --upgrade notesmgr
 This is a simple Tk (Tkinter) based application. It has a menubar and a
 main window.
 
+#### Command line
+
+````sh
+notesmgr [PROJECT_FOLDER]
+notesmgr --version
+````
+
+Started with no arguments, `notesmgr` opens with no project and a project
+is opened from the menu. Started with a folder, it opens that project.
+`notesmgr --version` reports the versions of `notesmgr` and of the packages
+it is built on, together with the newer releases that are available, and
+opens no window. The same report is in the menu as `Version information…`.
+
 #### Projects
 
 A project in `notesmgr` is a folder tree with a few files with special meaning.
@@ -85,9 +98,12 @@ The menu bar has menus with actions for:
 - Deleting the selected note
 - Creating a new folder in the project
 - Editing the configuration
-- Saving the configuration for the project
 - Saving the configuration as the user wide configuration
 - Reporting version information and information of available updates
+
+The configuration editor writes the configuration itself when you save in
+it, so there is no separate menu item for saving the configuration of the
+project.
 
 #### Main window
 
@@ -119,18 +135,31 @@ The buttons at the top of the right side of the main window are:
 
 The configuration determines a few aspects of how `notesmgr` behaves.
 
-- `editor` is the command used to edit a note. When creating configuration
-  the default is:
+- `editor` is the command used to edit a note. The name of the note file
+  replaces `{file}` in the command, and is added at the end of a command
+  that holds no `{file}`, so `code` and `code {file}` mean the same thing.
+  When creating configuration the default is:
   - If Microsoft Visual Code is in path, it is the default editor.
   - Otherwise the default editor is taken from environment variable `$EDITOR`
     if it exists
-  - Otherwise on mac the default editor is `open {notes file name}`
+  - Otherwise on mac the default editor is `open`
   - Otherwise on Microsoft Windows the default editor is Notepad
   - Otherwise the default editor is `emacs`
 - `file_extension` is the file extension of notes. It can be one of
-  `.md`, `.txt` and `.md.txt`. When creating configuration
-  the default is `.md.txt` as many systems do not recognize `.md` as
-  a safe file type.
+  `.md`, `.txt` and `.md.txt`. The configuration file holds the name
+  `MD`, `TXT` or `MD_TXT` rather than the extension itself, which is what
+  lets the configuration editor offer the three to be chosen from.
+  When creating configuration the default is `.md.txt` (written as
+  `MD_TXT`) as many systems do not recognize `.md` as a safe file type.
+
+A configuration file therefore looks like this:
+
+````json
+{
+    "editor": "code {file}",
+    "file_extension": "MD_TXT"
+}
+````
 
 A project always has a configuration file `notesmgr.cfg` in the root
 folder of the project. That configuration is used for the project.
@@ -140,9 +169,15 @@ default values for the project's configuration file. The user wide
 configuration is read from:
 
 - The file named by the environment variable `$NOTESMGR_CFG` if
-  it exists.
+  that file exists.
 - Otherwise the file `$HOME/.notesmgr.cfg` if it exists
 - Otherwise the programs built in defaults.
+
+The user wide configuration is *written* to the file that
+`$NOTESMGR_CFG` names, whether that file exists yet or not, and to
+`$HOME/.notesmgr.cfg` when the variable names nothing. So a variable
+naming a file that has not been written yet is a place to write rather
+than a reason to refuse to start.
 
 ## Source code
 
@@ -150,7 +185,7 @@ Source code and tests are available at [https://github.com/tom-bjorkholm/notesmg
 
 ## Test summary
 
-- Test result: 178 passed, 4 deselected in 3s
+- Test result: 325 passed, 4 deselected in 4s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

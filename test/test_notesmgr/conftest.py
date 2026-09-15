@@ -6,8 +6,10 @@
 
 import tkinter
 from contextlib import suppress
+from pathlib import Path
 from typing import Iterator
 import pytest
+from notesmgr.config_files import CONFIG_VARIABLE
 
 
 @pytest.fixture(name='tk_root', scope='session')
@@ -31,3 +33,18 @@ def fixture_top_window(tk_root: tkinter.Tk) -> Iterator[tkinter.Toplevel]:
     yield window
     with suppress(tkinter.TclError):
         window.destroy()
+
+
+@pytest.fixture(name='home', autouse=True)
+def fixture_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Give every test a home folder of its own and no named file.
+
+    No test can then read or write the configuration of whoever runs
+    them, and a test that wants a user wide configuration writes one
+    into the folder it is given here.
+    """
+    home = tmp_path / 'home'
+    home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: home)
+    monkeypatch.delenv(CONFIG_VARIABLE, raising=False)
+    return home

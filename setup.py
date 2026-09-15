@@ -21,7 +21,9 @@ setup(
   install_requires=[
     'argcomplete >= 3.7.2',
     'edit-cfg-json-tk >= 0.3.0',
+    'edit-cfg-json >= 0.3.0',
     'config-as-json >= 1.7',
+    'packaging >= 26.3',
     'versionreporter >= 0.4'
   ]
 )
