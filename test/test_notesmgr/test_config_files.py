@@ -6,11 +6,17 @@
 
 from pathlib import Path
 import pytest
+from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME, CONFIG_VARIABLE, \
-    copy_to_user_wide, user_config_path, user_config_source
+    copy_to_user_wide, read_config_file, user_config_path, \
+    user_config_source, user_wide_config, write_config_file
+from notesmgr.errors import NotesmgrError
 
 PROJECT_TEXT = '{"editor": "vi", "file_extension": "MD"}'
 """Content of the project configuration file that is copied."""
+
+BROKEN_TEXT = 'this file holds no JSON at all'
+"""Content of a file that is no configuration file."""
 
 
 @pytest.fixture(name='project_config')
@@ -109,3 +115,65 @@ def test_copy_missing_source(home: Path, tmp_path: Path) -> None:
     with pytest.raises(OSError):
         copy_to_user_wide(tmp_path / 'no_such.cfg')
     assert not (home / CONFIG_NAME).exists()
+
+
+def test_read_config_file(project_config: Path) -> None:
+    """A configuration file is read as the configuration it holds."""
+    config = read_config_file(project_config)
+    assert config.editor == 'vi'
+    assert config.file_extension is NoteExtension.MD
+
+
+def test_read_missing_file(tmp_path: Path) -> None:
+    """A configuration file that is not there is reported, not exited."""
+    with pytest.raises(NotesmgrError):
+        read_config_file(tmp_path / 'no_such.cfg')
+
+
+@pytest.mark.parametrize('text', [
+    BROKEN_TEXT,
+    '',
+    '[1, 2, 3]',
+    '{"editor": "vi", "file_extension": "RTF"}',
+    '{"editor": "", "file_extension": "MD"}',
+    '{"editor": "vi", "file_extension": "MD", "extra": 1}'])
+def test_read_broken_file(tmp_path: Path, text: str) -> None:
+    """A file holding no usable configuration is reported, not raised."""
+    written = tmp_path / 'broken.cfg'
+    written.write_text(text, encoding='utf-8')
+    with pytest.raises(NotesmgrError):
+        read_config_file(written)
+
+
+def test_write_config_file(tmp_path: Path, project_config: Path) -> None:
+    """A configuration that is written is read back as it was."""
+    written = tmp_path / 'written.cfg'
+    write_config_file(read_config_file(project_config), written)
+    read_back = read_config_file(written)
+    assert read_back.editor == 'vi'
+    assert read_back.file_extension is NoteExtension.MD
+
+
+def test_write_refused(tmp_path: Path, project_config: Path) -> None:
+    """A configuration that cannot be written is reported, not raised."""
+    config = read_config_file(project_config)
+    with pytest.raises(NotesmgrError):
+        write_config_file(config, tmp_path / 'no_such' / 'written.cfg')
+
+
+def test_user_wide_defaults() -> None:
+    """With no user wide configuration file, the defaults are what there is."""
+    assert user_wide_config().file_extension is NoteExtension.MD_TXT
+
+
+def test_user_wide_read(home: Path) -> None:
+    """A user wide configuration file is what a new project starts from."""
+    (home / CONFIG_NAME).write_text(PROJECT_TEXT, encoding='utf-8')
+    assert user_wide_config().editor == 'vi'
+
+
+def test_user_wide_broken(home: Path) -> None:
+    """A user wide configuration file that is broken is reported."""
+    (home / CONFIG_NAME).write_text(BROKEN_TEXT, encoding='utf-8')
+    with pytest.raises(NotesmgrError):
+        user_wide_config()

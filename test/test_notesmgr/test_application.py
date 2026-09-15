@@ -6,10 +6,14 @@
 
 import sys
 import tkinter
+from pathlib import Path
 from typing import NamedTuple, TextIO
 import pytest
+from test_notesmgr.helpers import write_config, write_notes, write_template
 from notesmgr import application as application_module
+from notesmgr import main_window as window_module
 from notesmgr.application import main
+from notesmgr.config import NoteExtension
 from notesmgr.main_window import APPLICATION_NAME
 
 REPORT = 'notesmgr 0.0.1\n'
@@ -97,3 +101,52 @@ def test_version_is_printed(shown: list[WindowState], reported: list[TextIO],
     assert capsys.readouterr().out == REPORT
     assert len(reported) == 1
     assert not shown
+
+
+@pytest.fixture(name='no_dialogs', autouse=True)
+def fixture_no_dialogs(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Let no test of this module put a real dialog on the screen."""
+    told: list[str] = []
+
+    def record(_parent: object, _title: str, message: str) -> None:
+        """Stand in for telling the user something in a window."""
+        told.append(message)
+    monkeypatch.setattr(window_module, 'show_info', record)
+    monkeypatch.setattr(window_module, 'show_error', record)
+    return told
+
+
+@pytest.fixture(name='project')
+def fixture_project(tmp_path: Path) -> Path:
+    """Provide a project folder that a command line can name.
+
+    It holds its template already, so that opening it changes nothing
+    and has nothing to tell the user about.
+    """
+    root = tmp_path / 'notes'
+    write_config(root, NoteExtension.MD_TXT)
+    write_template(root, NoteExtension.MD_TXT)
+    write_notes(root, ['a.md.txt'])
+    return root
+
+
+def test_named_project_opened(shown: list[WindowState], project: Path,
+                              no_dialogs: list[str]) -> None:
+    """A project folder on the command line is the project that opens."""
+    main([str(project)])
+    assert shown[0].title == f'{APPLICATION_NAME} — notes'
+    assert not no_dialogs
+
+
+def test_no_project_named(shown: list[WindowState]) -> None:
+    """With no folder on the command line no project is opened."""
+    main([])
+    assert shown[0].title == APPLICATION_NAME
+
+
+def test_named_no_project(shown: list[WindowState], tmp_path: Path,
+                          no_dialogs: list[str]) -> None:
+    """A folder that is no project is reported, and the window still opens."""
+    main([str(tmp_path)])
+    assert len(no_dialogs) == 1
+    assert shown[0].title == APPLICATION_NAME

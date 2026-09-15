@@ -261,7 +261,54 @@ save, and see `~/.notesmgr.cfg` written.
 
 ### Step 3 — Project model and the explorer tree
 
-Status: **Not implemented yet.**
+Status: **Implemented, committed.**
+
+Decisions taken while implementing it, which later steps build on:
+
+- A note is any file ending in `.txt`, `.md` or `.md.txt`, whatever the
+  project is configured with. `file_extension` says what a *new* note
+  and the template of a folder are called, not what counts as a note.
+- Every folder holds exactly one template, and opening a project makes
+  that true: a folder without one gets an empty template in the root
+  and a copy of the template above it anywhere else; a template
+  carrying another extension is renamed and the user is told which
+  ones were renamed; a folder holding several templates is the one
+  question the model cannot answer, so the user is asked which to keep,
+  the others go to the trash, and answering nothing refuses to open the
+  project at all.
+- `send2trash` therefore lands in step 3 rather than step 5.
+- The order file is written only when the repair changed something, so
+  opening a project leaves the folders that were in order untouched.
+  A folder whose order file cannot be read or written, and a folder
+  that cannot be listed, is reported as a problem and shown in
+  alphabetical order; the rest of the project still opens.
+- Inside a folder the tree shows the subfolders first in alphabetical
+  order, then the template, then the notes in order-file order.
+- `errors.py` beyond the inventory: one `NotesmgrError` that every
+  model module raises and the view turns into a message box.
+- `note_panel.py` arrives in step 3 rather than step 4, holding only
+  the path of what is selected. It keeps `MainWindow` down to the
+  seven attributes pylint allows and gives step 4 its place to grow.
+- `MainWindow.project_config` is a method and no longer an attribute,
+  for the same reason: the open project is what knows the path.
+- `Edit configuration…` edits the project's own `notesmgr.cfg` while a
+  project is open, and the project is opened again when the editing
+  session ends, so that a changed `file_extension` takes effect at
+  once. `config_editor.editor_files()` is where that choice lives.
+- The Tk file chooser, the yes-or-no question, the message and the
+  window that asks which template to keep are all in `dialogs.py`, so
+  that a test can answer them without a window reaching the screen.
+- `mypy_paths=[Path('test')]` in the build spec, so that the test
+  modules can share `test/test_notesmgr/helpers.py`.
+- `session.py` beyond the inventory: `Session` holds what one run of
+  the application knows, which is the open project and the folder a
+  folder chooser starts in. That is the project opened last in this
+  run, and the folder the application was started from until one has
+  been opened; nothing is remembered from one run to the next. It
+  also keeps `MainWindow` at the seven attributes pylint allows, by
+  taking the place of the `project` attribute rather than adding to
+  it, and `MainWindow.project_config()` moved into it as
+  `Session.config_file()`.
 
 **Goal:** open and create projects, and see them in the tree.
 

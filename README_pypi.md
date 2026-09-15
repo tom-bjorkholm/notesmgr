@@ -64,9 +64,10 @@ A project in `notesmgr` is a folder tree with a few files with special meaning.
   automatically created from the user wide configuration
 
 - in each folder (including the root folder of the project) there is a file
-  called `template.txt` (or `template.md`, or `template.md.txt`). This file
-  will be the initial content of every note created in the folder. It can be
-  edited any time just like the notes files.
+  called `template.md.txt` (or `template.md`, or `template.txt`, whichever
+  the `file_extension` of the project says). This file will be the initial
+  content of every note created in the folder. It can be edited any time
+  just like the notes files.
 
 - notes files are files in the folders with an extension of either `.txt`,
   `.md` or `.md.txt`
@@ -80,10 +81,27 @@ All files in the project are normal files that can be edited using a normal
 text editor like Microsoft Visual Code, TextEdit on mac, or Notepad on Windows,
 although using the `notesmgr` Graphical User Interface is recommended.
 
-The `.notes_order.txt` is repaired whenever `notesmgr` is started.
+The `.notes_order.txt` is repaired whenever a project is opened.
 Non-existing files are removed from the `.notes_order.txt` and existing
 files not mentioned in `.notes_order.txt` are added to the end of it in
-alphabetical order.
+alphabetical order. A file that was already right is left untouched, and a
+folder whose `.notes_order.txt` cannot be read or written is reported and
+then shown in alphabetical order.
+
+The templates are put in order at the same time:
+
+- A folder that holds no template gets one. In the root folder of the
+  project it is empty, and in any other folder it is a copy of the template
+  of the folder above it.
+- A template whose extension is not the `file_extension` of the project is
+  renamed to carry it, and you are told which templates were renamed. So
+  changing `file_extension` renames the templates of the project the next
+  time it is opened.
+- A folder that holds more than one template is the one case that `notesmgr`
+  cannot settle on its own. You are asked which of them to keep; the others
+  are moved to the trash of the operating system and the one you keep is
+  renamed to carry the `file_extension` of the project. Answering nothing
+  leaves every file as it is, and the project is not opened.
 
 #### Menu bar
 
@@ -105,13 +123,20 @@ The configuration editor writes the configuration itself when you save in
 it, so there is no separate menu item for saving the configuration of the
 project.
 
+Creating a project and opening a project both ask for a folder. The folder
+chooser starts in the project that was opened last in this run of
+`notesmgr`, and in the folder that `notesmgr` was started from while no
+project has been opened yet. Nothing is remembered from one run to the next.
+
 #### Main window
 
 To the left of the main window there is a tall and narrow "explorer" similar to
 the explorer of Microsoft Visual Code and other IDEs. Here all items (notes and
-folders) are listed in tree structure. Notes can be selected in the "explorer"
-and notes can be dragged in the "explorer" to reorder the notes within a
-folder. A note can also be dragged into or out of a folder.
+folders) are listed in tree structure. Inside a folder the subfolders come
+first in alphabetical order, then the template of the folder, and after them
+the notes in the order that `.notes_order.txt` gives. Notes can be selected in
+the "explorer" and notes can be dragged in the "explorer" to reorder the notes
+within a folder. A note can also be dragged into or out of a folder.
 
 To the right of the main window there is a wide panel with a row of buttons at
 the top and an area showing the selected note. If the selected note is written
@@ -179,13 +204,21 @@ The user wide configuration is *written* to the file that
 naming a file that has not been written yet is a place to write rather
 than a reason to refuse to start.
 
+## What notesmgr is built on
+
+`notesmgr` uses `config-as-json` and `edit-cfg-json-tk` for its
+configuration, `versionreporter` for the version report, `argcomplete` for
+the command line, and `Send2Trash` for everything it removes, so that a file
+`notesmgr` takes away can be taken back out of the trash of the operating
+system.
+
 ## Source code
 
 Source code and tests are available at [https://github.com/tom-bjorkholm/notesmgr](https://github.com/tom-bjorkholm/notesmgr).
 
 ## Test summary
 
-- Test result: 325 passed, 4 deselected in 4s
+- Test result: 536 passed, 4 deselected in 5s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

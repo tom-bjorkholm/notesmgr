@@ -4,16 +4,28 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
+import io
 import os
 import shutil
 from pathlib import Path
 from typing import Optional
+from notesmgr.config import NotesmgrConfig
+from notesmgr.errors import NotesmgrError
 
 CONFIG_VARIABLE = 'NOTESMGR_CFG'
 """Environment variable in which a user names the configuration file."""
 
 CONFIG_NAME = '.notesmgr.cfg'
 """Name the user wide configuration has in the home folder."""
+
+MISSING = 'There is no configuration file {path}.'
+"""What is said about a configuration file that is not there."""
+
+NOT_READ = 'The configuration file {path} cannot be used.\n{reason}'
+"""What is said about a configuration file that cannot be read."""
+
+NOT_WRITTEN = 'The configuration file {path} cannot be written.\n{reason}'
+"""What is said about a configuration file that cannot be written."""
 
 
 def user_config_path() -> Path:
@@ -58,3 +70,78 @@ def copy_to_user_wide(source: Path) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source, target)
     return target
+
+
+def config_error(template: str, path: Path, said: str,
+                 error: Exception) -> NotesmgrError:
+    """Return what to raise when a configuration file cannot be used.
+
+    What the configuration library said while it was failing tells the
+    user far more than the exception does, so it is what is shown when
+    there is any, and the exception is what is shown when there is not.
+
+    Args:
+        template: What is said about the file, holding path and reason.
+        path: The configuration file that could not be used.
+        said: What the configuration library reported while failing.
+        error: What the configuration library raised.
+
+    Returns:
+        The error to raise, said in words meant for the user.
+    """
+    reason = said or str(error)
+    return NotesmgrError(template.format(path=path, reason=reason))
+
+
+def read_config_file(path: Path) -> NotesmgrConfig:
+    """Return the configuration that a file holds.
+
+    Args:
+        path: The configuration file to read.
+
+    Returns:
+        The configuration it holds.
+
+    Raises:
+        NotesmgrError: There is no such file, or it holds no
+            configuration that notesmgr can use.
+    """
+    if not path.is_file():
+        raise NotesmgrError(MISSING.format(path=path))
+    said = io.StringIO()
+    try:
+        return NotesmgrConfig(from_json_filename=path, stderr_file=said)
+    except (ValueError, KeyError, OSError) as error:
+        raise config_error(NOT_READ, path, said.getvalue(), error) from error
+
+
+def write_config_file(config: NotesmgrConfig, path: Path) -> None:
+    """Write a configuration to a file, replacing what was there.
+
+    Args:
+        config: The configuration to write.
+        path: The configuration file to write it to.
+
+    Raises:
+        NotesmgrError: The file cannot be written.
+    """
+    said = io.StringIO()
+    try:
+        config.write(path, stderr_file=said)
+    except (ValueError, KeyError, OSError) as error:
+        raise config_error(NOT_WRITTEN, path, said.getvalue(),
+                           error) from error
+
+
+def user_wide_config() -> NotesmgrConfig:
+    """Return the user wide configuration, or the built-in defaults.
+
+    Returns:
+        What a new project starts its own configuration out as.
+
+    Raises:
+        NotesmgrError: There is a user wide configuration file and it
+            holds no configuration that notesmgr can use.
+    """
+    source = user_config_source()
+    return NotesmgrConfig() if source is None else read_config_file(source)

@@ -6,31 +6,50 @@
 
 import io
 import tkinter
+from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import NamedTuple, Optional, Union
+from typing import Callable, NamedTuple, Optional, Sequence, Union
 from edit_cfg_json import ConfigLoadError
 from edit_cfg_json_tk import TkEditorPanel
 from notesmgr.config_editor import open_config_editor
 from notesmgr.config_files import copy_to_user_wide
-from notesmgr.dialogs import busy_cursor, show_error, show_text
-from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar
+from notesmgr.dialogs import ask_choice, ask_folder, ask_yes_no, \
+    busy_cursor, show_error, show_info, show_text
+from notesmgr.errors import NotesmgrError
+from notesmgr.explorer_tree import ExplorerTree
+from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar, set_enabled
+from notesmgr.note_panel import NotePanel
+from notesmgr.project import is_project
+from notesmgr.project_ops import OpenReport, changed_message, \
+    create_project, open_project
+from notesmgr.session import Session
 from notesmgr.version_info import version_report
 
 APPLICATION_NAME = 'notesmgr'
 INITIAL_GEOMETRY = '1000x650'
 MINIMUM_WIDTH = 640
 MINIMUM_HEIGHT = 400
-EXPLORER_WIDTH = 260
 FILE_MENU = 'File'
 CONFIG_MENU = 'Configuration'
 HELP_MENU = 'Help'
+NEW_PROJECT_ENTRY = 'New project…'
+OPEN_PROJECT_ENTRY = 'Open project…'
 QUIT_ENTRY = 'Quit'
 EDIT_CONFIG_ENTRY = 'Edit configuration…'
 USER_WIDE_ENTRY = 'Save configuration as user wide…'
 VERSION_ENTRY = 'Version information…'
 VERSION_TITLE = 'notesmgr versions'
 CONFIG_TITLE = 'Configuration'
+PROJECT_TITLE = 'Project'
+TEMPLATE_TITLE = 'Templates'
+NEW_PROJECT_TITLE = 'Folder to make into a notesmgr project'
+OPEN_PROJECT_TITLE = 'notesmgr project folder to open'
+OFFER_OPEN = 'The folder {folder} is a notesmgr project already.\n' \
+    'Open that project?'
+TEMPLATE_QUESTION = 'The folder {folder} holds more than one template.\n' \
+    'Which one is to be kept? The others are moved to the trash, and\n' \
+    'the one that is kept is given the file extension of the project.'
 
 
 class Shortcut(NamedTuple):
@@ -68,9 +87,9 @@ class MainWindow:
         """Fill the given toplevel window with the notesmgr main window."""
         self.window = window
         self.panes = ttk.PanedWindow(window, orient=tkinter.HORIZONTAL)
-        self.explorer = ttk.Frame(self.panes, width=EXPLORER_WIDTH)
-        self.note_panel = ttk.Frame(self.panes)
-        self.project_config: Optional[Path] = None
+        self.explorer = ExplorerTree(self.panes, self.show_selected)
+        self.note_panel = NotePanel(self.panes)
+        self.session = Session()
         self.config_panel: Optional[TkEditorPanel] = None
         shortcut = quit_shortcut(tk_window_system(window))
         self.menu_bar = build_menu_bar(window, self._menu_specs(shortcut))
@@ -85,12 +104,14 @@ class MainWindow:
         project configuration file to copy, so it is greyed out until
         a project is open.
         """
+        new_entry = MenuEntry(NEW_PROJECT_ENTRY, self.new_project_dialog)
+        open_entry = MenuEntry(OPEN_PROJECT_ENTRY, self.open_project_dialog)
         quit_entry = MenuEntry(QUIT_ENTRY, self.quit, shortcut.label)
         edit_entry = MenuEntry(EDIT_CONFIG_ENTRY, self.edit_configuration)
         user_wide = MenuEntry(USER_WIDE_ENTRY, self.save_user_wide,
                               enabled=False)
         versions = MenuEntry(VERSION_ENTRY, self.show_version)
-        return [MenuSpec(FILE_MENU, [quit_entry]),
+        return [MenuSpec(FILE_MENU, [new_entry, open_entry, quit_entry]),
                 MenuSpec(CONFIG_MENU, [edit_entry, user_wide]),
                 MenuSpec(HELP_MENU, [versions])]
 
@@ -106,8 +127,8 @@ class MainWindow:
 
     def _shape_window(self) -> None:
         """Lay out the panes and give the window its size."""
-        self.panes.add(self.explorer, weight=0)
-        self.panes.add(self.note_panel, weight=1)
+        self.panes.add(self.explorer.frame, weight=0)
+        self.panes.add(self.note_panel.frame, weight=1)
         self.panes.pack(fill=tkinter.BOTH, expand=True)
         self.window.geometry(INITIAL_GEOMETRY)
         self.window.minsize(MINIMUM_WIDTH, MINIMUM_HEIGHT)
@@ -119,30 +140,118 @@ class MainWindow:
         else:
             self.window.title(f'{APPLICATION_NAME} — {project_name}')
 
-    def edit_configuration(self) -> None:
-        """Open the editor of the user wide configuration.
+    def show_selected(self, path: Optional[Path]) -> None:
+        """Show what the explorer has selected in the note panel."""
+        self.note_panel.show_path(path)
 
-        One session at a time is enough, and the editor holds the
-        application while it is open, so a second one is not started.
+    def new_project_dialog(self) -> None:
+        """Ask for a folder and make a notesmgr project of it.
+
+        A folder that is a project already is not made into one twice,
+        and opening it is what the user is offered instead.
+        """
+        folder = ask_folder(self.window, NEW_PROJECT_TITLE,
+                            self.session.chooser_folder())
+        if folder is None:
+            return
+        if not is_project(folder):
+            self.make_project(folder)
+        elif ask_yes_no(self.window, PROJECT_TITLE,
+                        OFFER_OPEN.format(folder=folder)):
+            self.load_project(folder)
+
+    def open_project_dialog(self) -> None:
+        """Ask for a project folder and open the project in it."""
+        folder = ask_folder(self.window, OPEN_PROJECT_TITLE,
+                            self.session.chooser_folder())
+        if folder is not None:
+            self.load_project(folder)
+
+    def load_project(self, root: Path) -> None:
+        """Open an existing project and show what it holds."""
+        self.opened(partial(open_project, root, self.choose_template))
+
+    def make_project(self, root: Path) -> None:
+        """Make a folder into a project, then open it and show it."""
+        self.opened(partial(create_project, root, self.choose_template))
+
+    def opened(self, opening: Callable[[], OpenReport]) -> None:
+        """Show what an opening gave, or say why it gave nothing."""
+        try:
+            report = opening()
+        except NotesmgrError as error:
+            show_error(self.window, PROJECT_TITLE, str(error))
+            return
+        self.show_opened(report)
+
+    def choose_template(self, folder: Path,
+                        templates: Sequence[Path]) -> Optional[Path]:
+        """Ask which of the templates of a folder is the one to keep.
+
+        Args:
+            folder: The folder that holds more than one template.
+            templates: The templates that it holds.
+
+        Returns:
+            The template to keep, None when the user chose none.
+        """
+        question = TEMPLATE_QUESTION.format(folder=folder)
+        names = [path.name for path in templates]
+        chosen = ask_choice(self.window, TEMPLATE_TITLE, question, names)
+        return None if chosen is None else folder / chosen
+
+    def show_opened(self, report: OpenReport) -> None:
+        """Show a project that was opened, and what opening it did."""
+        self.session.opened(report.project)
+        set_enabled(self.menu_bar.menus[CONFIG_MENU], USER_WIDE_ENTRY, True)
+        self.show_project(report.project.root.name)
+        self.explorer.show(report.project)
+        self.note_panel.show_path(None)
+        self.tell_about_opening(report)
+
+    def tell_about_opening(self, report: OpenReport) -> None:
+        """Tell what opening a project changed and what it could not do."""
+        changed = changed_message(report)
+        if changed:
+            show_info(self.window, PROJECT_TITLE, changed)
+        if report.problems:
+            show_error(self.window, PROJECT_TITLE, '\n'.join(report.problems))
+
+    def edit_configuration(self) -> None:
+        """Open the editor of the configuration that is in use.
+
+        That is the configuration of the open project, and the user
+        wide configuration while no project is open. One session at a
+        time is enough, and the editor holds the application while it
+        is open, so a second one is not started.
         """
         if self.config_panel is not None:
             return
         try:
             self.config_panel = open_config_editor(self.window,
-                                                   self._config_closed)
+                                                   self._config_closed,
+                                                   self.session.config_file())
         except ConfigLoadError as error:
             show_error(self.window, CONFIG_TITLE, str(error))
 
     def _config_closed(self) -> None:
-        """Forget the configuration editor once its session has ended."""
+        """Take up again what the configuration editor may have changed.
+
+        The configuration says what the notes and the templates of a
+        project are called, so an open project is opened once more
+        when an editing session has ended.
+        """
         self.config_panel = None
+        if self.session.project is not None:
+            self.load_project(self.session.project.root)
 
     def save_user_wide(self) -> None:
         """Copy the project's configuration to the user wide file."""
-        if self.project_config is None:
+        source = self.session.config_file()
+        if source is None:
             return
         try:
-            copy_to_user_wide(self.project_config)
+            copy_to_user_wide(source)
         except OSError as error:
             show_error(self.window, CONFIG_TITLE, str(error))
 

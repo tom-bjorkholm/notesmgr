@@ -12,7 +12,7 @@ from config_as_json import Config
 from notesmgr import config_editor
 from notesmgr.config import NotesmgrConfig
 from notesmgr.config_files import CONFIG_NAME, CONFIG_VARIABLE
-from notesmgr.config_editor import open_config_editor
+from notesmgr.config_editor import editor_files, open_config_editor
 from notesmgr.descriptions import DESCRIPTIONS
 
 CONFIG_TEXT = '{"editor": "vi", "file_extension": "MD"}'
@@ -44,11 +44,12 @@ def fixture_opened(monkeypatch: pytest.MonkeyPatch) -> list[PanelCall]:
     return calls
 
 
-def open_over(window: tkinter.Toplevel) -> Callable[[], None]:
+def open_over(window: tkinter.Toplevel,
+              config_file: Optional[Path] = None) -> Callable[[], None]:
     """Open the editor over a window and return what it tells at the end."""
     def closed() -> None:
         """Stand in for what the application does at the end."""
-    open_config_editor(window, closed)
+    open_config_editor(window, closed, config_file)
     return closed
 
 
@@ -106,3 +107,27 @@ def test_writes_named_file(opened: list[PanelCall], tmp_path: Path,
     monkeypatch.setenv(CONFIG_VARIABLE, str(named))
     open_over(top_window)
     assert opened[0].out_file == named
+
+
+def test_project_file_edited(opened: list[PanelCall],
+                             top_window: tkinter.Toplevel,
+                             tmp_path: Path) -> None:
+    """The configuration of a project is read and written where it lives."""
+    project = tmp_path / 'notesmgr.cfg'
+    project.write_text(CONFIG_TEXT, encoding='utf-8')
+    open_over(top_window, project)
+    assert opened[0].in_file == project
+    assert opened[0].out_file == project
+
+
+def test_files_of_project(tmp_path: Path) -> None:
+    """A project configuration file is the file read and the file written."""
+    project = tmp_path / 'notesmgr.cfg'
+    assert editor_files(project) == (project, project)
+
+
+def test_files_of_user_wide(home: Path) -> None:
+    """With no project the user wide file is written, and read when there."""
+    assert editor_files(None) == (None, home / CONFIG_NAME)
+    (home / CONFIG_NAME).write_text(CONFIG_TEXT, encoding='utf-8')
+    assert editor_files(None) == (home / CONFIG_NAME, home / CONFIG_NAME)

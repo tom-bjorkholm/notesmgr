@@ -6,22 +6,25 @@
 
 import tkinter
 from pathlib import Path
-from typing import Callable, NamedTuple, Optional, TextIO
+from typing import Callable, NamedTuple, Optional, Sequence, TextIO
 import pytest
 from edit_cfg_json import ConfigLoadError
+from test_notesmgr.helpers import write_config, write_notes, write_template
 from notesmgr import main_window as window_module
+from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME
 from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
-    EDIT_CONFIG_ENTRY, EXPLORER_WIDTH, FILE_MENU, HELP_MENU, \
-    INITIAL_GEOMETRY, MINIMUM_HEIGHT, MINIMUM_WIDTH, QUIT_ENTRY, \
-    USER_WIDE_ENTRY, VERSION_ENTRY, VERSION_TITLE, MainWindow, Shortcut, \
-    quit_shortcut, tk_window_system
+    EDIT_CONFIG_ENTRY, FILE_MENU, HELP_MENU, INITIAL_GEOMETRY, \
+    MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, OPEN_PROJECT_ENTRY, \
+    QUIT_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, VERSION_TITLE, MainWindow, \
+    Shortcut, quit_shortcut, tk_window_system
+from notesmgr.project import config_path
 
 REPORT = 'notesmgr 0.0.1\n'
 """What the version report says in these tests."""
 
-PROJECT_TEXT = '{"editor": "vi", "file_extension": "MD"}'
-"""Content of the project configuration file in these tests."""
+NOTES = ['b.md.txt', 'a.md.txt']
+"""Notes that the project of these tests holds."""
 
 
 class ShownText(NamedTuple):
@@ -31,10 +34,27 @@ class ShownText(NamedTuple):
     text: str
 
 
+class PanelCall(NamedTuple):
+    """What the main window asked the configuration editor to edit."""
+
+    on_close: Callable[[], None]
+    config_file: Optional[Path]
+
+
 @pytest.fixture(name='main_window')
 def fixture_main_window(top_window: tkinter.Toplevel) -> MainWindow:
     """Provide a main window built in a hidden toplevel window."""
     return MainWindow(top_window)
+
+
+@pytest.fixture(name='project')
+def fixture_project(tmp_path: Path) -> Path:
+    """Provide a project folder holding two notes and a template."""
+    root = tmp_path / 'notes'
+    write_config(root, NoteExtension.MD_TXT)
+    write_template(root, NoteExtension.MD_TXT)
+    write_notes(root, NOTES)
+    return root
 
 
 @pytest.fixture(name='shortcut')
@@ -59,20 +79,33 @@ def fixture_shown_window(main_window: MainWindow) -> MainWindow:
 
 
 @pytest.fixture(name='panels')
-def fixture_panels(monkeypatch: pytest.MonkeyPatch
-                   ) -> list[Callable[[], None]]:
+def fixture_panels(monkeypatch: pytest.MonkeyPatch) -> list[PanelCall]:
     """Record the editor sessions that were asked for, opening none."""
-    opened: list[Callable[[], None]] = []
+    opened: list[PanelCall] = []
 
-    def record(_parent: tkinter.Misc, on_close: Callable[[], None]) -> object:
+    def record(_parent: tkinter.Misc, on_close: Callable[[], None],
+               config_file: Optional[Path]) -> object:
         """Stand in for opening the configuration editor panel."""
-        opened.append(on_close)
+        opened.append(PanelCall(on_close, config_file))
         return object()
     monkeypatch.setattr(window_module, 'open_config_editor', record)
     return opened
 
 
-@pytest.fixture(name='refused')
+@pytest.fixture(name='no_dialogs', autouse=True)
+def fixture_no_dialogs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Let no test of this module put a real dialog on the screen.
+
+    A test that wants another answer than these says so itself, and
+    every other test is then sure to open no window that waits for a
+    user who is not there.
+    """
+    _ = answer_folder(monkeypatch, None)
+    answer_yes_no(monkeypatch, False)
+    answer_choice(monkeypatch, None)
+
+
+@pytest.fixture(name='refused', autouse=True)
 def fixture_refused(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """Record what the main window reported to the user as an error."""
     told: list[str] = []
@@ -81,6 +114,18 @@ def fixture_refused(monkeypatch: pytest.MonkeyPatch) -> list[str]:
         """Stand in for reporting an error to the user."""
         told.append(message)
     monkeypatch.setattr(window_module, 'show_error', record)
+    return told
+
+
+@pytest.fixture(name='informed', autouse=True)
+def fixture_informed(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Record what the main window told the user was worth knowing."""
+    told: list[str] = []
+
+    def record(_parent: object, _title: str, message: str) -> None:
+        """Stand in for telling the user something."""
+        told.append(message)
+    monkeypatch.setattr(window_module, 'show_info', record)
     return told
 
 
@@ -99,6 +144,50 @@ def fixture_shown_texts(monkeypatch: pytest.MonkeyPatch) -> list[ShownText]:
     monkeypatch.setattr(window_module, 'show_text', record)
     monkeypatch.setattr(window_module, 'version_report', report)
     return shown
+
+
+def answer_folder(monkeypatch: pytest.MonkeyPatch,
+                  folder: Optional[Path]) -> list[Path]:
+    """Make the folder chooser answer with the given folder.
+
+    Returns:
+        The folders that the chooser was asked to start in, which is
+        added to every time the chooser is asked.
+    """
+    started: list[Path] = []
+
+    def chosen(_parent: object, _title: str, start: Path) -> Optional[Path]:
+        """Stand in for asking the user for a folder."""
+        started.append(start)
+        return folder
+    monkeypatch.setattr(window_module, 'ask_folder', chosen)
+    return started
+
+
+def answer_yes_no(monkeypatch: pytest.MonkeyPatch, answer: bool) -> None:
+    """Make the yes or no question be answered in the given way."""
+    def answered(_parent: object, _title: str, _question: str) -> bool:
+        """Stand in for asking the user a question of yes or no."""
+        return answer
+    monkeypatch.setattr(window_module, 'ask_yes_no', answered)
+
+
+def answer_choice(monkeypatch: pytest.MonkeyPatch,
+                  answer: Optional[str]) -> None:
+    """Make the choosing question be answered in the given way."""
+    def chosen(_parent: object, _title: str, _question: str,
+               _options: Sequence[str]) -> Optional[str]:
+        """Stand in for asking the user to choose one of several."""
+        return answer
+    monkeypatch.setattr(window_module, 'ask_choice', chosen)
+
+
+def tree_names(main_window: MainWindow) -> list[str]:
+    """Return what the explorer shows under the root of the project."""
+    tree = main_window.explorer.tree
+    root = tree.get_children('')[0]
+    return [str(tree.item(child, 'text'))
+            for child in tree.get_children(root)]
 
 
 def test_title_no_project(main_window: MainWindow) -> None:
@@ -127,17 +216,13 @@ def test_minimum_size(main_window: MainWindow) -> None:
 def test_panes_layout(main_window: MainWindow) -> None:
     """The explorer and the note panel are the panes, in that order."""
     shown = [str(pane) for pane in main_window.panes.winfo_children()]
-    assert shown == [str(main_window.explorer), str(main_window.note_panel)]
+    assert shown == [str(main_window.explorer.frame),
+                     str(main_window.note_panel.frame)]
 
 
 def test_panes_side_by_side(main_window: MainWindow) -> None:
     """The explorer is placed beside the note panel, not above it."""
     assert str(main_window.panes.cget('orient')) == 'horizontal'
-
-
-def test_explorer_is_narrow(main_window: MainWindow) -> None:
-    """The explorer asks for the width the explorer pane is meant to have."""
-    assert main_window.explorer.winfo_reqwidth() == EXPLORER_WIDTH
 
 
 def test_menu_bar_installed(main_window: MainWindow) -> None:
@@ -153,6 +238,8 @@ def test_menus_of_the_bar(main_window: MainWindow) -> None:
 
 
 @pytest.mark.parametrize('menu,label', [
+    (FILE_MENU, NEW_PROJECT_ENTRY),
+    (FILE_MENU, OPEN_PROJECT_ENTRY),
     (FILE_MENU, QUIT_ENTRY),
     (CONFIG_MENU, EDIT_CONFIG_ENTRY),
     (CONFIG_MENU, USER_WIDE_ENTRY),
@@ -213,16 +300,184 @@ def test_quit_from_menu(main_window: MainWindow) -> None:
     assert not window.winfo_exists()
 
 
+def test_nothing_open_first(main_window: MainWindow) -> None:
+    """A main window starts with no project and an empty explorer."""
+    assert main_window.session.project is None
+    assert main_window.session.config_file() is None
+    assert not main_window.explorer.tree.get_children('')
+
+
+def test_project_is_shown(main_window: MainWindow, project: Path,
+                          informed: list[str]) -> None:
+    """An opened project is named in the title and shown in the tree."""
+    main_window.load_project(project)
+    assert main_window.window.title() == f'{APPLICATION_NAME} — notes'
+    assert tree_names(main_window) == ['template.md.txt', 'a.md.txt',
+                                       'b.md.txt']
+    assert not informed
+
+
+def test_project_config_known(main_window: MainWindow, project: Path) -> None:
+    """The configuration file of the open project is the one in use."""
+    main_window.load_project(project)
+    assert main_window.session.config_file() == config_path(project)
+
+
+def test_user_wide_offered(main_window: MainWindow, project: Path) -> None:
+    """Copying to the user wide file can be chosen once a project is open."""
+    main_window.load_project(project)
+    menu = main_window.menu_bar.menus[CONFIG_MENU]
+    assert menu.entrycget(USER_WIDE_ENTRY, 'state') == 'normal'
+
+
+def test_opening_is_refused(main_window: MainWindow, tmp_path: Path,
+                            refused: list[str]) -> None:
+    """A folder that is no project is reported, and nothing is opened."""
+    main_window.load_project(tmp_path)
+    assert len(refused) == 1
+    assert main_window.session.project is None
+
+
+def test_changes_are_told(main_window: MainWindow, project: Path,
+                          informed: list[str]) -> None:
+    """A template that opening the project wrote is told about."""
+    (project / 'template.md.txt').unlink()
+    main_window.load_project(project)
+    assert len(informed) == 1
+    assert 'template.md.txt' in informed[0]
+
+
+def test_open_from_dialog(main_window: MainWindow, project: Path,
+                          monkeypatch: pytest.MonkeyPatch) -> None:
+    """Choosing File > Open project opens the folder that was chosen."""
+    answer_folder(monkeypatch, project)
+    main_window.menu_bar.menus[FILE_MENU].invoke(OPEN_PROJECT_ENTRY)
+    assert main_window.session.project is not None
+    assert main_window.session.project.root == project
+
+
+def test_open_none_chosen(main_window: MainWindow, refused: list[str],
+                          monkeypatch: pytest.MonkeyPatch) -> None:
+    """Choosing no folder at all opens nothing and reports nothing."""
+    answer_folder(monkeypatch, None)
+    main_window.open_project_dialog()
+    assert main_window.session.project is None
+    assert not refused
+
+
+def test_new_from_dialog(main_window: MainWindow, tmp_path: Path,
+                         monkeypatch: pytest.MonkeyPatch) -> None:
+    """A folder of notes that is no project yet is made into one."""
+    root = tmp_path / 'fresh'
+    write_notes(root, NOTES)
+    answer_folder(monkeypatch, root)
+    main_window.menu_bar.menus[FILE_MENU].invoke(NEW_PROJECT_ENTRY)
+    assert main_window.session.project is not None
+    assert config_path(root).is_file()
+    assert tree_names(main_window) == ['template.md.txt', 'a.md.txt',
+                                       'b.md.txt']
+
+
+def test_new_on_project(main_window: MainWindow, project: Path,
+                        monkeypatch: pytest.MonkeyPatch) -> None:
+    """A folder that is a project already is offered to be opened."""
+    answer_folder(monkeypatch, project)
+    answer_yes_no(monkeypatch, True)
+    main_window.new_project_dialog()
+    assert main_window.session.project is not None
+    assert main_window.session.project.root == project
+
+
+def test_new_on_project_no(main_window: MainWindow, project: Path,
+                           monkeypatch: pytest.MonkeyPatch) -> None:
+    """Saying no to opening it instead leaves the project unopened."""
+    answer_folder(monkeypatch, project)
+    answer_yes_no(monkeypatch, False)
+    main_window.new_project_dialog()
+    assert main_window.session.project is None
+
+
+def test_chooser_at_cwd(main_window: MainWindow,
+                        monkeypatch: pytest.MonkeyPatch) -> None:
+    """With no project opened yet, a chooser starts where the run began."""
+    started = answer_folder(monkeypatch, None)
+    main_window.open_project_dialog()
+    main_window.new_project_dialog()
+    assert started == [Path.cwd(), Path.cwd()]
+
+
+def test_chooser_after_open(main_window: MainWindow, project: Path,
+                            monkeypatch: pytest.MonkeyPatch) -> None:
+    """Once a project has been opened, a chooser starts in that project."""
+    main_window.load_project(project)
+    started = answer_folder(monkeypatch, None)
+    main_window.open_project_dialog()
+    main_window.new_project_dialog()
+    assert started == [project, project]
+
+
+def test_chooser_if_refused(main_window: MainWindow, tmp_path: Path,
+                            monkeypatch: pytest.MonkeyPatch) -> None:
+    """A folder that was no project is no place to start looking again."""
+    main_window.load_project(tmp_path)
+    started = answer_folder(monkeypatch, None)
+    main_window.open_project_dialog()
+    assert started == [Path.cwd()]
+
+
+def test_template_chosen(main_window: MainWindow, project: Path,
+                         monkeypatch: pytest.MonkeyPatch) -> None:
+    """The template to keep is asked for with the names of the templates."""
+    asked: list[Sequence[str]] = []
+
+    def choose(_parent: object, _title: str, _question: str,
+               options: Sequence[str]) -> str:
+        """Stand in for a user choosing which template to keep."""
+        asked.append(options)
+        return options[0]
+    monkeypatch.setattr(window_module, 'ask_choice', choose)
+    write_template(project, NoteExtension.TXT)
+    chosen = main_window.choose_template(project,
+                                         [project / 'template.md.txt',
+                                          project / 'template.txt'])
+    assert asked == [['template.md.txt', 'template.txt']]
+    assert chosen == project / 'template.md.txt'
+
+
+def test_template_not_chosen(main_window: MainWindow, project: Path) -> None:
+    """Choosing no template at all is passed on as choosing none.
+
+    The dialogs of this module answer nothing at all unless a test
+    says otherwise, so this is what a cancelled question gives.
+    """
+    assert main_window.choose_template(project, []) is None
+
+
 def test_editor_opened(main_window: MainWindow,
-                       panels: list[Callable[[], None]]) -> None:
+                       panels: list[PanelCall]) -> None:
     """Choosing to edit the configuration opens one editor session."""
     main_window.menu_bar.menus[CONFIG_MENU].invoke(EDIT_CONFIG_ENTRY)
     assert len(panels) == 1
     assert main_window.config_panel is not None
 
 
+def test_editor_of_user_wide(main_window: MainWindow,
+                             panels: list[PanelCall]) -> None:
+    """With no project open the user wide configuration is edited."""
+    main_window.edit_configuration()
+    assert panels[0].config_file is None
+
+
+def test_editor_of_project(main_window: MainWindow, project: Path,
+                           panels: list[PanelCall]) -> None:
+    """With a project open its own configuration file is edited."""
+    main_window.load_project(project)
+    main_window.edit_configuration()
+    assert panels[0].config_file == config_path(project)
+
+
 def test_one_editor_at_a_time(main_window: MainWindow,
-                              panels: list[Callable[[], None]]) -> None:
+                              panels: list[PanelCall]) -> None:
     """A second editor is not opened while the first one is still open."""
     main_window.edit_configuration()
     main_window.edit_configuration()
@@ -230,19 +485,34 @@ def test_one_editor_at_a_time(main_window: MainWindow,
 
 
 def test_editor_reopened(main_window: MainWindow,
-                         panels: list[Callable[[], None]]) -> None:
+                         panels: list[PanelCall]) -> None:
     """Once a session has ended, the editor can be opened again."""
     main_window.edit_configuration()
-    panels[0]()
+    panels[0].on_close()
     assert main_window.config_panel is None
     main_window.edit_configuration()
     assert len(panels) == 2
 
 
+def test_project_read_again(main_window: MainWindow, project: Path,
+                            panels: list[PanelCall]) -> None:
+    """An edited configuration is taken up by the open project.
+
+    The extension of the notes is what the configuration says, so the
+    template is renamed once the configuration names another one.
+    """
+    main_window.load_project(project)
+    main_window.edit_configuration()
+    write_config(project, NoteExtension.MD)
+    panels[0].on_close()
+    assert tree_names(main_window) == ['template.md', 'a.md.txt', 'b.md.txt']
+
+
 def test_editor_refused(main_window: MainWindow, refused: list[str],
                         monkeypatch: pytest.MonkeyPatch) -> None:
     """A configuration file that cannot be edited is reported, not raised."""
-    def refuse(_parent: tkinter.Misc, _on_close: Callable[[], None]) -> object:
+    def refuse(_parent: tkinter.Misc, _on_close: Callable[[], None],
+               _config_file: Optional[Path]) -> object:
         """Stand in for an editor that refuses the configuration file."""
         raise ConfigLoadError('the file holds no configuration')
     monkeypatch.setattr(window_module, 'open_config_editor', refuse)
@@ -258,19 +528,19 @@ def test_user_wide_without(main_window: MainWindow, home: Path) -> None:
 
 
 def test_user_wide_copied(main_window: MainWindow, home: Path,
-                          tmp_path: Path) -> None:
+                          project: Path) -> None:
     """The project's configuration file becomes the user wide one."""
-    project = tmp_path / 'notesmgr.cfg'
-    project.write_text(PROJECT_TEXT, encoding='utf-8')
-    main_window.project_config = project
+    main_window.load_project(project)
     main_window.save_user_wide()
-    assert (home / CONFIG_NAME).read_text(encoding='utf-8') == PROJECT_TEXT
+    written = (home / CONFIG_NAME).read_text(encoding='utf-8')
+    assert written == config_path(project).read_text(encoding='utf-8')
 
 
-def test_user_wide_refused(main_window: MainWindow, refused: list[str],
-                           tmp_path: Path) -> None:
+def test_user_wide_refused(main_window: MainWindow, project: Path,
+                           refused: list[str]) -> None:
     """A copy that cannot be made is reported, and does not raise."""
-    main_window.project_config = tmp_path / 'no_such.cfg'
+    main_window.load_project(project)
+    config_path(project).unlink()
     main_window.save_user_wide()
     assert len(refused) == 1
 
@@ -299,8 +569,8 @@ def test_shown_window_size(shown_window: MainWindow) -> None:
 @pytest.mark.focus_sensitive
 def test_shown_window_panes(shown_window: MainWindow) -> None:
     """The explorer is shown narrow and to the left of the note panel."""
-    explorer = shown_window.explorer
-    note_panel = shown_window.note_panel
+    explorer = shown_window.explorer.frame
+    note_panel = shown_window.note_panel.frame
     assert explorer.winfo_x() < note_panel.winfo_x()
     assert explorer.winfo_width() < note_panel.winfo_width()
 

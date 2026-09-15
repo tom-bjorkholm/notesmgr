@@ -6,8 +6,9 @@
 
 import tkinter
 from contextlib import contextmanager
-from tkinter import messagebox, ttk
-from typing import Iterator, Union
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
+from typing import Iterator, Optional, Sequence, Union
 
 MIN_TEXT_WIDTH = 40
 """Narrowest that a window showing a text is made, in characters."""
@@ -26,6 +27,12 @@ PADDING = 8
 
 BUSY_CURSOR = 'watch'
 """Mouse cursor shown while an answer is being gathered."""
+
+CHOOSE_LABEL = 'Keep'
+"""What the button that takes the chosen option says."""
+
+CANCEL_LABEL = 'Cancel'
+"""What the button that answers nothing at all says."""
 
 
 def text_size(text: str) -> tuple[int, int]:
@@ -110,3 +117,128 @@ def busy_cursor(window: Union[tkinter.Tk, tkinter.Toplevel]) -> Iterator[None]:
         yield
     finally:
         window.configure(cursor='')
+
+
+def ask_folder(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+               folder: Path) -> Optional[Path]:
+    """Ask the user for a folder that is there.
+
+    Args:
+        parent: The window that the question is asked over.
+        title: What the window asking is called.
+        folder: The folder that the chooser starts in.
+
+    Returns:
+        The folder that was chosen, None when none was.
+    """
+    chosen = filedialog.askdirectory(parent=parent, title=title,
+                                     mustexist=True, initialdir=folder)
+    return Path(chosen) if chosen else None
+
+
+def ask_yes_no(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+               question: str) -> bool:
+    """Ask the user something that is answered with yes or no.
+
+    Args:
+        parent: The window that the question is asked over.
+        title: What the window asking is called.
+        question: What the user is asked.
+
+    Returns:
+        Whether the user answered yes.
+    """
+    return messagebox.askyesno(title=title, message=question, parent=parent)
+
+
+def show_info(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+              message: str) -> None:
+    """Tell the user something that is no cause for worry.
+
+    Args:
+        parent: The window that the message is shown over.
+        title: What the message window is called.
+        message: What the user is told.
+    """
+    messagebox.showinfo(title=title, message=message, parent=parent)
+
+
+class ChoiceDialog:
+    """Asks the user to choose one of several named things.
+
+    The window is built by the constructor, and the answer is waited
+    for by choose(), so that a test can look at the window and answer
+    it without a main loop of its own.
+    """
+
+    def __init__(self, parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+                 question: str, options: Sequence[str]) -> None:
+        """Build the window that asks the question.
+
+        Args:
+            parent: The window that the question is asked over.
+            title: What the window asking is called.
+            question: What the user is asked.
+            options: What the user chooses between.
+        """
+        self.chosen: Optional[str] = None
+        self.window = tkinter.Toplevel(parent)
+        self.window.title(title)
+        self.window.transient(parent)
+        self.picked = tkinter.StringVar(self.window,
+                                        value=options[0] if options else '')
+        self._fill_with_options(question, options)
+        self.window.protocol('WM_DELETE_WINDOW', self.cancel)
+
+    def _fill_with_options(self, question: str,
+                           options: Sequence[str]) -> None:
+        """Fill the window with the question, the options and buttons."""
+        asked = ttk.Label(self.window, text=question, justify=tkinter.LEFT)
+        asked.pack(side=tkinter.TOP, anchor=tkinter.W, padx=PADDING,
+                   pady=PADDING)
+        for option in options:
+            offered = ttk.Radiobutton(self.window, text=option, value=option,
+                                      variable=self.picked)
+            offered.pack(side=tkinter.TOP, anchor=tkinter.W, padx=PADDING)
+        self.keep_button = ttk.Button(self.window, text=CHOOSE_LABEL,
+                                      command=self.accept)
+        self.cancel_button = ttk.Button(self.window, text=CANCEL_LABEL,
+                                        command=self.cancel)
+        self.cancel_button.pack(side=tkinter.RIGHT, padx=PADDING, pady=PADDING)
+        self.keep_button.pack(side=tkinter.RIGHT, pady=PADDING)
+
+    def accept(self) -> None:
+        """Take the option the user marked as the answer."""
+        self.chosen = self.picked.get()
+        self.window.destroy()
+
+    def cancel(self) -> None:
+        """Answer nothing at all."""
+        self.chosen = None
+        self.window.destroy()
+
+    def choose(self) -> Optional[str]:
+        """Wait for the answer, holding the rest of the application.
+
+        Returns:
+            What the user chose, None when the user chose nothing.
+        """
+        self.window.grab_set()
+        self.window.wait_window()
+        return self.chosen
+
+
+def ask_choice(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+               question: str, options: Sequence[str]) -> Optional[str]:
+    """Ask the user to choose one of several named things.
+
+    Args:
+        parent: The window that the question is asked over.
+        title: What the window asking is called.
+        question: What the user is asked.
+        options: What the user chooses between.
+
+    Returns:
+        What the user chose, None when the user chose nothing.
+    """
+    return ChoiceDialog(parent, title, question, options).choose()

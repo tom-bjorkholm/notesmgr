@@ -24,6 +24,8 @@ setup(
     'edit-cfg-json >= 0.3.0',
     'config-as-json >= 1.7',
     'packaging >= 26.3',
+    'send2trash >= 2.1.0',
+    'types-Send2Trash >= 2.1.0.20260408',
     'versionreporter >= 0.4'
   ]
 )

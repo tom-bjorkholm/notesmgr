@@ -17,7 +17,9 @@ def main(argv: Optional[list[str]] = None) -> None:
     """Run the notesmgr graphical user interface until the user quits.
 
     A command line asking for version information is answered on the
-    standard output stream, and no window is opened for it.
+    standard output stream, and no window is opened for it. A command
+    line naming a project folder opens that project, and says in a
+    window of its own when the folder holds no project.
 
     Args:
         argv: Command line arguments, or None for the ones this
@@ -28,7 +30,9 @@ def main(argv: Optional[list[str]] = None) -> None:
         version_report(sys.stdout)
         return
     root = tkinter.Tk()
-    MainWindow(root)
+    window = MainWindow(root)
+    if command_line.project is not None:
+        window.load_project(command_line.project)
     root.mainloop()
     # Quitting through the menu has already destroyed the root window.
     with suppress(tkinter.TclError):
