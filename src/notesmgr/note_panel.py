@@ -14,7 +14,7 @@ from notesmgr.button_row import ButtonRow, ButtonSpec
 from notesmgr.commands import Commands
 from notesmgr.config import DEFAULT_NOTE_SIZE
 from notesmgr.file_watch import FileWatch
-from notesmgr.note_file import is_note
+from notesmgr.note_file import is_markdown, is_note
 from notesmgr.note_text import EMPTY_NOTE, read_note_text
 from notesmgr.note_view import NoteView
 from notesmgr.session import Session
@@ -112,9 +112,20 @@ class NotePanel:
         gone leaves the panel saying so and the buttons greyed out.
         """
         note = self.watch.path
-        self.view.show(EMPTY_NOTE if note is None
-                       else read_note_text(note, self.note_limit()))
+        if note is None:
+            self.view.show(EMPTY_NOTE)
+        else:
+            self.view.show(read_note_text(note, self.note_limit()),
+                           is_markdown(note.name), note.parent)
         self.commands.note_shown(self.has_note())
+
+    def zoom(self, step: int) -> None:
+        """Draw the note so many steps larger, or smaller below zero."""
+        self.view.zoom(step)
+
+    def zoom_normal(self) -> None:
+        """Draw the note in the size that it started out in."""
+        self.view.zoom_normal()
 
     def offer(self, labels: AbstractSet[str]) -> None:
         """Let the buttons that can be used now be pressed.

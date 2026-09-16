@@ -9,8 +9,8 @@ import pytest
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
 from notesmgr.note_file import NOTE_EXTENSIONS, checked_extension, \
-    checked_name, is_note, is_plain_note, is_template, note_extension, \
-    note_file_name, note_stem, sorted_names, template_name
+    checked_name, is_markdown, is_note, is_plain_note, is_template, \
+    note_extension, note_file_name, note_stem, sorted_names, template_name
 
 
 def test_longest_first() -> None:
@@ -39,6 +39,24 @@ def test_note_extension(name: str, expected: Optional[NoteExtension]) -> None:
     """A file name carries the longest note extension it ends with."""
     assert note_extension(name) == expected
     assert is_note(name) == (expected is not None)
+
+
+@pytest.mark.parametrize('name,expected', [
+    ('note.md.txt', True),
+    ('note.md', True),
+    ('note.MD', True),
+    ('note.Md.Txt', True),
+    ('template.md.txt', True),
+    ('note.txt', False),
+    ('note.TXT', False),
+    ('note.markdown', False),
+    ('note', False),
+    ('notesmgr.cfg', False),
+    ('.notes_order.txt', False),
+    ('', False)])
+def test_is_markdown(name: str, expected: bool) -> None:
+    """A note is written in markdown when its own name says so."""
+    assert is_markdown(name) == expected
 
 
 @pytest.mark.parametrize('name,expected', [

@@ -20,7 +20,9 @@ from notesmgr.config_files import CONFIG_NAME
 from notesmgr.errors import NotesmgrError
 from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
     EDIT_CONFIG_ENTRY, FILE_MENU, FOLDER_MENU, HELP_MENU, INITIAL_GEOMETRY, \
-    MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, NOTE_MENU, \
+    MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, NORMAL_SIZE_ENTRY, \
+    NOTE_MENU, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, ZOOM_STEP, \
+    Shortcuts, held_shortcut, modifier, window_shortcuts, \
     OPEN_PROJECT_ENTRY, QUIT_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, \
     VERSION_TITLE, MainWindow, Shortcut, quit_shortcut, tk_window_system
 from notesmgr.order_file import read_order_text
@@ -69,6 +71,12 @@ def fixture_project(tmp_path: Path) -> Path:
 def fixture_shortcut(top_window: tkinter.Toplevel) -> Shortcut:
     """Provide the shortcut that quits on the windowing system in use."""
     return quit_shortcut(tk_window_system(top_window))
+
+
+@pytest.fixture(name='keys')
+def fixture_keys(top_window: tkinter.Toplevel) -> Shortcuts:
+    """Provide every shortcut on the windowing system in use."""
+    return window_shortcuts(tk_window_system(top_window))
 
 
 @pytest.fixture(name='shown_window')
@@ -276,8 +284,8 @@ def test_menu_bar_installed(main_window: MainWindow) -> None:
 def test_menus_of_the_bar(main_window: MainWindow) -> None:
     """The menu bar holds one menu for each kind of thing it does."""
     assert set(main_window.menu_bar.menus) == {FILE_MENU, NOTE_MENU,
-                                               FOLDER_MENU, CONFIG_MENU,
-                                               HELP_MENU}
+                                               FOLDER_MENU, VIEW_MENU,
+                                               CONFIG_MENU, HELP_MENU}
 
 
 @pytest.mark.parametrize('menu,label', [
@@ -294,6 +302,9 @@ def test_menus_of_the_bar(main_window: MainWindow) -> None:
     (FOLDER_MENU, NEW_FOLDER),
     (FOLDER_MENU, RENAME_FOLDER),
     (FOLDER_MENU, DELETE_FOLDER),
+    (VIEW_MENU, ZOOM_IN_ENTRY),
+    (VIEW_MENU, ZOOM_OUT_ENTRY),
+    (VIEW_MENU, NORMAL_SIZE_ENTRY),
     (CONFIG_MENU, EDIT_CONFIG_ENTRY),
     (CONFIG_MENU, USER_WIDE_ENTRY),
     (HELP_MENU, VERSION_ENTRY)])
@@ -505,13 +516,86 @@ def test_edit_config_offered(main_window: MainWindow) -> None:
 
 
 @pytest.mark.parametrize('window_system,expected', [
-    ('aqua', Shortcut('<Command-w>', 'Cmd+W')),
-    ('win32', Shortcut('<Control-q>', 'Ctrl+Q')),
-    ('x11', Shortcut('<Control-q>', 'Ctrl+Q')),
-    ('', Shortcut('<Control-q>', 'Ctrl+Q'))])
+    ('aqua', Shortcut(('<Command-w>',), 'Cmd+W')),
+    ('win32', Shortcut(('<Control-q>',), 'Ctrl+Q')),
+    ('x11', Shortcut(('<Control-q>',), 'Ctrl+Q')),
+    ('', Shortcut(('<Control-q>',), 'Ctrl+Q'))])
 def test_quit_shortcut(window_system: str, expected: Shortcut) -> None:
     """The shortcut is Cmd+W on macOS and Ctrl+Q on other systems."""
     assert quit_shortcut(window_system) == expected
+
+
+@pytest.mark.parametrize('window_system,expected', [
+    ('aqua', ('Command', 'Cmd')),
+    ('win32', ('Control', 'Ctrl')),
+    ('x11', ('Control', 'Ctrl')),
+    ('', ('Control', 'Ctrl'))])
+def test_modifier(window_system: str, expected: tuple[str, str]) \
+        -> None:
+    """The command key holds macOS, and the control key the rest."""
+    assert modifier(window_system) == expected
+
+
+def test_held_shortcut() -> None:
+    """A shortcut binds every key that stands for it and shows one."""
+    shortcut = held_shortcut('aqua', ('plus', 'KP_Add'), '+')
+    assert shortcut == Shortcut(('<Command-plus>', '<Command-KP_Add>'),
+                                'Cmd++')
+
+
+@pytest.mark.parametrize('window_system', ['aqua', 'win32', 'x11'])
+def test_zoom_shortcuts(window_system: str) -> None:
+    """Every way of asking for another size has keys of its own."""
+    keys = window_shortcuts(window_system)
+    zooming = (keys.larger, keys.smaller, keys.normal)
+    assert all(shortcut.sequences for shortcut in zooming)
+    assert len({shortcut.label for shortcut in zooming}) == 3
+    bound = [sequence for shortcut in zooming
+             for sequence in shortcut.sequences]
+    assert len(set(bound)) == len(bound)
+
+
+@pytest.mark.parametrize('entry', [ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY,
+                                   NORMAL_SIZE_ENTRY])
+def test_view_accelerators(main_window: MainWindow, keys: Shortcuts,
+                           entry: str) -> None:
+    """Every entry of the view menu shows the keys that stand for it."""
+    menu = main_window.menu_bar.menus[VIEW_MENU]
+    labels = {keys.larger.label, keys.smaller.label, keys.normal.label}
+    assert str(menu.entrycget(entry, 'accelerator')) in labels
+
+
+def test_view_entries_live(main_window: MainWindow) -> None:
+    """How large a note is drawn can be said whatever is selected."""
+    menu = main_window.menu_bar.menus[VIEW_MENU]
+    for entry in (ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, NORMAL_SIZE_ENTRY):
+        assert str(menu.entrycget(entry, 'state')) == 'normal'
+
+
+def note_size_of(main_window: MainWindow) -> int:
+    """Return the size that the note panel draws a note in."""
+    return main_window.note_panel.view.tags.fonts.size
+
+
+def test_zoom_menu_entries(main_window: MainWindow) -> None:
+    """The entries of the view menu draw the note larger and smaller."""
+    menu = main_window.menu_bar.menus[VIEW_MENU]
+    started = note_size_of(main_window)
+    menu.invoke(ZOOM_IN_ENTRY)
+    assert note_size_of(main_window) == started + ZOOM_STEP
+    menu.invoke(ZOOM_OUT_ENTRY)
+    assert note_size_of(main_window) == started
+    menu.invoke(ZOOM_IN_ENTRY)
+    menu.invoke(NORMAL_SIZE_ENTRY)
+    assert note_size_of(main_window) == started
+
+
+def test_zoom_keys_bound(main_window: MainWindow, keys: Shortcuts) \
+        -> None:
+    """The window listens for every key that asks for another size."""
+    for shortcut in (keys.larger, keys.smaller, keys.normal):
+        for sequence in shortcut.sequences:
+            assert main_window.window.bind(sequence)
 
 
 def test_window_system_known(top_window: tkinter.Toplevel) -> None:
@@ -527,7 +611,8 @@ def test_quit_accelerator(main_window: MainWindow, shortcut: Shortcut) -> None:
 
 def test_quit_key_bound(main_window: MainWindow, shortcut: Shortcut) -> None:
     """The window itself listens for the shortcut, as Tk binds none."""
-    assert main_window.window.bind(shortcut.sequence)
+    assert all(main_window.window.bind(sequence)
+               for sequence in shortcut.sequences)
 
 
 def test_quit_destroys(main_window: MainWindow) -> None:
@@ -860,5 +945,5 @@ def test_window_gets_focus(shown_window: MainWindow) -> None:
 def test_shortcut_quits(shown_window: MainWindow, shortcut: Shortcut) -> None:
     """Pressing the shortcut closes a main window that has the focus."""
     window = shown_window.window
-    window.event_generate(shortcut.sequence, when='now')
+    window.event_generate(shortcut.sequences[0], when='now')
     assert not window.winfo_exists()

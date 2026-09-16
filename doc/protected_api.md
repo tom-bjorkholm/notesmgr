@@ -2,14 +2,22 @@
 
 * [notesmgr.main\_window](#notesmgr.main_window)
   * [Shortcut](#notesmgr.main_window.Shortcut)
+  * [Shortcuts](#notesmgr.main_window.Shortcuts)
   * [tk\_window\_system](#notesmgr.main_window.tk_window_system)
   * [quit\_shortcut](#notesmgr.main_window.quit_shortcut)
+  * [modifier](#notesmgr.main_window.modifier)
+  * [held\_shortcut](#notesmgr.main_window.held_shortcut)
+  * [window\_shortcuts](#notesmgr.main_window.window_shortcuts)
   * [MainWindow](#notesmgr.main_window.MainWindow)
     * [\_\_init\_\_](#notesmgr.main_window.MainWindow.__init__)
     * [\_menu\_specs](#notesmgr.main_window.MainWindow._menu_specs)
     * [\_note\_entries](#notesmgr.main_window.MainWindow._note_entries)
     * [\_folder\_entries](#notesmgr.main_window.MainWindow._folder_entries)
-    * [\_bind\_quit\_shortcut](#notesmgr.main_window.MainWindow._bind_quit_shortcut)
+    * [\_view\_entries](#notesmgr.main_window.MainWindow._view_entries)
+    * [\_zoom\_command](#notesmgr.main_window.MainWindow._zoom_command)
+    * [\_normal\_command](#notesmgr.main_window.MainWindow._normal_command)
+    * [\_bind\_shortcuts](#notesmgr.main_window.MainWindow._bind_shortcuts)
+    * [\_bind](#notesmgr.main_window.MainWindow._bind)
     * [\_shape\_window](#notesmgr.main_window.MainWindow._shape_window)
     * [show\_project](#notesmgr.main_window.MainWindow.show_project)
     * [show\_selected](#notesmgr.main_window.MainWindow.show_selected)
@@ -49,6 +57,66 @@
   * [build\_menu\_bar](#notesmgr.menu_bar.build_menu_bar)
   * [set\_enabled](#notesmgr.menu_bar.set_enabled)
   * [entry\_labels](#notesmgr.menu_bar.entry_labels)
+* [notesmgr.note\_blocks](#notesmgr.note_blocks)
+  * [SpanStyle](#notesmgr.note_blocks.SpanStyle)
+  * [BlockKind](#notesmgr.note_blocks.BlockKind)
+  * [Span](#notesmgr.note_blocks.Span)
+  * [Block](#notesmgr.note_blocks.Block)
+  * [HEADINGS](#notesmgr.note_blocks.HEADINGS)
+  * [STYLES](#notesmgr.note_blocks.STYLES)
+  * [CONTAINERS](#notesmgr.note_blocks.CONTAINERS)
+  * [TEXT\_TAGS](#notesmgr.note_blocks.TEXT_TAGS)
+  * [TABLE\_TAGS](#notesmgr.note_blocks.TABLE_TAGS)
+  * [CELL\_TAGS](#notesmgr.note_blocks.CELL_TAGS)
+  * [BULLETS](#notesmgr.note_blocks.BULLETS)
+  * [BLANKS](#notesmgr.note_blocks.BLANKS)
+  * [squeezed](#notesmgr.note_blocks.squeezed)
+  * [kept](#notesmgr.note_blocks.kept)
+  * [trimmed](#notesmgr.note_blocks.trimmed)
+  * [Container](#notesmgr.note_blocks.Container)
+  * [OpenBlock](#notesmgr.note_blocks.OpenBlock)
+  * [OpenStyles](#notesmgr.note_blocks.OpenStyles)
+  * [TableReader](#notesmgr.note_blocks.TableReader)
+    * [start\_row](#notesmgr.note_blocks.TableReader.start_row)
+    * [start\_cell](#notesmgr.note_blocks.TableReader.start_cell)
+    * [add\_text](#notesmgr.note_blocks.TableReader.add_text)
+    * [end\_cell](#notesmgr.note_blocks.TableReader.end_cell)
+    * [text](#notesmgr.note_blocks.TableReader.text)
+  * [item\_prefix](#notesmgr.note_blocks.item_prefix)
+  * [NoteParser](#notesmgr.note_blocks.NoteParser)
+    * [\_\_init\_\_](#notesmgr.note_blocks.NoteParser.__init__)
+    * [note\_blocks](#notesmgr.note_blocks.NoteParser.note_blocks)
+    * [handle\_starttag](#notesmgr.note_blocks.NoteParser.handle_starttag)
+    * [handle\_endtag](#notesmgr.note_blocks.NoteParser.handle_endtag)
+    * [handle\_data](#notesmgr.note_blocks.NoteParser.handle_data)
+    * [\_open\_other](#notesmgr.note_blocks.NoteParser._open_other)
+    * [\_depth](#notesmgr.note_blocks.NoteParser._depth)
+    * [\_text\_kind](#notesmgr.note_blocks.NoteParser._text_kind)
+    * [\_open\_block](#notesmgr.note_blocks.NoteParser._open_block)
+    * [\_block\_spans](#notesmgr.note_blocks.NoteParser._block_spans)
+    * [\_flush](#notesmgr.note_blocks.NoteParser._flush)
+    * [\_open\_container](#notesmgr.note_blocks.NoteParser._open_container)
+    * [\_close\_container](#notesmgr.note_blocks.NoteParser._close_container)
+    * [\_open\_item](#notesmgr.note_blocks.NoteParser._open_item)
+    * [\_open\_code](#notesmgr.note_blocks.NoteParser._open_code)
+    * [\_close\_code](#notesmgr.note_blocks.NoteParser._close_code)
+    * [\_open\_style](#notesmgr.note_blocks.NoteParser._open_style)
+    * [\_close\_style](#notesmgr.note_blocks.NoteParser._close_style)
+    * [\_open\_link](#notesmgr.note_blocks.NoteParser._open_link)
+    * [\_close\_link](#notesmgr.note_blocks.NoteParser._close_link)
+    * [\_add\_text](#notesmgr.note_blocks.NoteParser._add_text)
+    * [\_read](#notesmgr.note_blocks.NoteParser._read)
+    * [\_after\_break](#notesmgr.note_blocks.NoteParser._after_break)
+    * [\_span](#notesmgr.note_blocks.NoteParser._span)
+    * [\_add\_break](#notesmgr.note_blocks.NoteParser._add_break)
+    * [\_add\_image](#notesmgr.note_blocks.NoteParser._add_image)
+    * [\_add\_rule](#notesmgr.note_blocks.NoteParser._add_rule)
+    * [\_open\_table\_tag](#notesmgr.note_blocks.NoteParser._open_table_tag)
+    * [\_close\_table\_tag](#notesmgr.note_blocks.NoteParser._close_table_tag)
+    * [\_open\_table](#notesmgr.note_blocks.NoteParser._open_table)
+    * [\_close\_table](#notesmgr.note_blocks.NoteParser._close_table)
+  * [html\_blocks](#notesmgr.note_blocks.html_blocks)
+  * [markdown\_blocks](#notesmgr.note_blocks.markdown_blocks)
 * [notesmgr.cmd\_line](#notesmgr.cmd_line)
   * [PROGRAM\_NAME](#notesmgr.cmd_line.PROGRAM_NAME)
   * [DESCRIPTION](#notesmgr.cmd_line.DESCRIPTION)
@@ -151,6 +219,35 @@
     * [fit\_into](#notesmgr.button_row.ButtonRow.fit_into)
     * [lay\_out](#notesmgr.button_row.ButtonRow.lay_out)
     * [offer](#notesmgr.button_row.ButtonRow.offer)
+* [notesmgr.note\_tags](#notesmgr.note_tags)
+  * [CODE\_BACKGROUND](#notesmgr.note_tags.CODE_BACKGROUND)
+  * [QUOTE\_COLOUR](#notesmgr.note_tags.QUOTE_COLOUR)
+  * [LINK\_COLOUR](#notesmgr.note_tags.LINK_COLOUR)
+  * [RULE\_COLOUR](#notesmgr.note_tags.RULE_COLOUR)
+  * [LINK\_TAG](#notesmgr.note_tags.LINK_TAG)
+  * [CODE\_SPAN\_TAG](#notesmgr.note_tags.CODE_SPAN_TAG)
+  * [STRIKE\_TAG](#notesmgr.note_tags.STRIKE_TAG)
+  * [IMAGE\_TAG](#notesmgr.note_tags.IMAGE_TAG)
+  * [GAP\_TAG](#notesmgr.note_tags.GAP_TAG)
+  * [INDENT\_TAG](#notesmgr.note_tags.INDENT_TAG)
+  * [ITEM\_TAG](#notesmgr.note_tags.ITEM_TAG)
+  * [MAX\_INDENT](#notesmgr.note_tags.MAX_INDENT)
+  * [RAW\_KEY](#notesmgr.note_tags.RAW_KEY)
+  * [GAP\_KEY](#notesmgr.note_tags.GAP_KEY)
+  * [HEADING\_GAPS](#notesmgr.note_tags.HEADING_GAPS)
+  * [BULLET\_ROOM](#notesmgr.note_tags.BULLET_ROOM)
+  * [indent\_tag](#notesmgr.note_tags.indent_tag)
+  * [gap\_lines](#notesmgr.note_tags.gap_lines)
+  * [span\_styles](#notesmgr.note_tags.span_styles)
+  * [NoteTags](#notesmgr.note_tags.NoteTags)
+    * [\_\_init\_\_](#notesmgr.note_tags.NoteTags.__init__)
+    * [\_colour\_tags](#notesmgr.note_tags.NoteTags._colour_tags)
+    * [\_sized\_tags](#notesmgr.note_tags.NoteTags._sized_tags)
+    * [font\_tag\_of](#notesmgr.note_tags.NoteTags.font_tag_of)
+    * [span\_tags](#notesmgr.note_tags.NoteTags.span_tags)
+    * [resize](#notesmgr.note_tags.NoteTags.resize)
+    * [zoom](#notesmgr.note_tags.NoteTags.zoom)
+    * [normal\_size](#notesmgr.note_tags.NoteTags.normal_size)
 * [notesmgr.config\_editor](#notesmgr.config_editor)
   * [editor\_files](#notesmgr.config_editor.editor_files)
   * [open\_config\_editor](#notesmgr.config_editor.open_config_editor)
@@ -165,6 +262,47 @@
   * [PLATFORM\_EDITORS](#notesmgr.config_defaults.PLATFORM_EDITORS)
   * [OTHER\_EDITOR](#notesmgr.config_defaults.OTHER_EDITOR)
   * [default\_editor](#notesmgr.config_defaults.default_editor)
+* [notesmgr.note\_table](#notesmgr.note_table)
+  * [MAX\_COLUMN](#notesmgr.note_table.MAX_COLUMN)
+  * [CELL\_GAP](#notesmgr.note_table.CELL_GAP)
+  * [RULE\_GAP](#notesmgr.note_table.RULE_GAP)
+  * [RULE\_CHAR](#notesmgr.note_table.RULE_CHAR)
+  * [Align](#notesmgr.note_table.Align)
+  * [cell\_align](#notesmgr.note_table.cell_align)
+  * [squared](#notesmgr.note_table.squared)
+  * [every\_align](#notesmgr.note_table.every_align)
+  * [column\_width](#notesmgr.note_table.column_width)
+  * [wrapped\_cell](#notesmgr.note_table.wrapped_cell)
+  * [line\_at](#notesmgr.note_table.line_at)
+  * [padded\_cell](#notesmgr.note_table.padded_cell)
+  * [row\_lines](#notesmgr.note_table.row_lines)
+  * [rule\_line](#notesmgr.note_table.rule_line)
+  * [table\_text](#notesmgr.note_table.table_text)
+* [notesmgr.note\_fonts](#notesmgr.note_fonts)
+  * [MIN\_SIZE](#notesmgr.note_fonts.MIN_SIZE)
+  * [MAX\_SIZE](#notesmgr.note_fonts.MAX_SIZE)
+  * [FALLBACK\_SIZE](#notesmgr.note_fonts.FALLBACK_SIZE)
+  * [TEXT\_FONT](#notesmgr.note_fonts.TEXT_FONT)
+  * [FIXED\_FONT](#notesmgr.note_fonts.FIXED_FONT)
+  * [BODY\_SCALE](#notesmgr.note_fonts.BODY_SCALE)
+  * [FIXED\_KINDS](#notesmgr.note_fonts.FIXED_KINDS)
+  * [HEADING\_SCALES](#notesmgr.note_fonts.HEADING_SCALES)
+  * [note\_size](#notesmgr.note_fonts.note_size)
+  * [default\_size](#notesmgr.note_fonts.default_size)
+  * [family\_of](#notesmgr.note_fonts.family_of)
+  * [FontKey](#notesmgr.note_fonts.FontKey)
+  * [BODY\_KEY](#notesmgr.note_fonts.BODY_KEY)
+  * [font\_key](#notesmgr.note_fonts.font_key)
+  * [font\_tag](#notesmgr.note_fonts.font_tag)
+  * [NoteFonts](#notesmgr.note_fonts.NoteFonts)
+    * [\_\_init\_\_](#notesmgr.note_fonts.NoteFonts.__init__)
+    * [font](#notesmgr.note_fonts.NoteFonts.font)
+    * [\_make](#notesmgr.note_fonts.NoteFonts._make)
+    * [scaled](#notesmgr.note_fonts.NoteFonts.scaled)
+    * [resize](#notesmgr.note_fonts.NoteFonts.resize)
+    * [zoom](#notesmgr.note_fonts.NoteFonts.zoom)
+    * [normal\_size](#notesmgr.note_fonts.NoteFonts.normal_size)
+    * [indent\_step](#notesmgr.note_fonts.NoteFonts.indent_step)
 * [notesmgr.note\_panel](#notesmgr.note_panel)
   * [PADDING](#notesmgr.note_panel.PADDING)
   * [NotePanel](#notesmgr.note_panel.NotePanel)
@@ -176,10 +314,21 @@
     * [has\_note](#notesmgr.note_panel.NotePanel.has_note)
     * [show\_path](#notesmgr.note_panel.NotePanel.show_path)
     * [reload](#notesmgr.note_panel.NotePanel.reload)
+    * [zoom](#notesmgr.note_panel.NotePanel.zoom)
+    * [zoom\_normal](#notesmgr.note_panel.NotePanel.zoom_normal)
     * [offer](#notesmgr.note_panel.NotePanel.offer)
     * [shown\_path](#notesmgr.note_panel.NotePanel.shown_path)
     * [edit\_note](#notesmgr.note_panel.NotePanel.edit_note)
     * [copy\_raw](#notesmgr.note_panel.NotePanel.copy_raw)
+* [notesmgr.markdown\_render](#notesmgr.markdown_render)
+  * [EXTENSIONS](#notesmgr.markdown_render.EXTENSIONS)
+  * [STRIKE\_PATTERN](#notesmgr.markdown_render.STRIKE_PATTERN)
+  * [STRIKE\_TAG](#notesmgr.markdown_render.STRIKE_TAG)
+  * [STRIKE\_NAME](#notesmgr.markdown_render.STRIKE_NAME)
+  * [STRIKE\_PRIORITY](#notesmgr.markdown_render.STRIKE_PRIORITY)
+  * [TAB\_LENGTH](#notesmgr.markdown_render.TAB_LENGTH)
+  * [markdown\_converter](#notesmgr.markdown_render.markdown_converter)
+  * [note\_html](#notesmgr.markdown_render.note_html)
 * [notesmgr.project\_ops](#notesmgr.project_ops)
   * [ALREADY\_PROJECT](#notesmgr.project_ops.ALREADY_PROJECT)
   * [UNRESOLVED](#notesmgr.project_ops.UNRESOLVED)
@@ -204,6 +353,11 @@
   * [create\_project](#notesmgr.project_ops.create_project)
   * [named\_list](#notesmgr.project_ops.named_list)
   * [changed\_message](#notesmgr.project_ops.changed_message)
+* [notesmgr.note\_image](#notesmgr.note_image)
+  * [MAX\_IMAGE\_WIDTH](#notesmgr.note_image.MAX_IMAGE_WIDTH)
+  * [is\_remote](#notesmgr.note_image.is_remote)
+  * [image\_path](#notesmgr.note_image.image_path)
+  * [shrink\_factor](#notesmgr.note_image.shrink_factor)
 * [notesmgr.order\_file](#notesmgr.order_file)
   * [ORDER\_NAME](#notesmgr.order_file.ORDER_NAME)
   * [WRITING\_NAME](#notesmgr.order_file.WRITING_NAME)
@@ -329,6 +483,7 @@
 * [notesmgr.note\_file](#notesmgr.note_file)
   * [TEMPLATE\_STEM](#notesmgr.note_file.TEMPLATE_STEM)
   * [NOTE\_EXTENSIONS](#notesmgr.note_file.NOTE_EXTENSIONS)
+  * [MARKDOWN\_EXTENSIONS](#notesmgr.note_file.MARKDOWN_EXTENSIONS)
   * [SEPARATORS](#notesmgr.note_file.SEPARATORS)
   * [NOT\_IN\_NAME](#notesmgr.note_file.NOT_IN_NAME)
   * [NO\_NAME](#notesmgr.note_file.NO_NAME)
@@ -338,6 +493,7 @@
   * [RESERVED](#notesmgr.note_file.RESERVED)
   * [note\_extension](#notesmgr.note_file.note_extension)
   * [is\_note](#notesmgr.note_file.is_note)
+  * [is\_markdown](#notesmgr.note_file.is_markdown)
   * [note\_stem](#notesmgr.note_file.note_stem)
   * [template\_name](#notesmgr.note_file.template_name)
   * [is\_template](#notesmgr.note_file.is_template)
@@ -353,12 +509,29 @@
   * [WRAP\_WIDTH](#notesmgr.note_view.WRAP_WIDTH)
   * [PADDING](#notesmgr.note_view.PADDING)
   * [TEXT\_ROW](#notesmgr.note_view.TEXT_ROW)
+  * [RULE\_TEXT](#notesmgr.note_view.RULE_TEXT)
+  * [IMAGE\_TEXT](#notesmgr.note_view.IMAGE_TEXT)
+  * [MISSING\_ALT](#notesmgr.note_view.MISSING_ALT)
+  * [IMAGE\_PADDING](#notesmgr.note_view.IMAGE_PADDING)
+  * [block\_spans](#notesmgr.note_view.block_spans)
+  * [image\_text](#notesmgr.note_view.image_text)
   * [NoteView](#notesmgr.note_view.NoteView)
     * [\_\_init\_\_](#notesmgr.note_view.NoteView.__init__)
     * [\_lay\_out](#notesmgr.note_view.NoteView._lay_out)
     * [show](#notesmgr.note_view.NoteView.show)
     * [show\_warning](#notesmgr.note_view.NoteView.show_warning)
+    * [\_writing](#notesmgr.note_view.NoteView._writing)
     * [show\_text](#notesmgr.note_view.NoteView.show_text)
+    * [show\_blocks](#notesmgr.note_view.NoteView.show_blocks)
+    * [\_write\_gap](#notesmgr.note_view.NoteView._write_gap)
+    * [\_write\_block](#notesmgr.note_view.NoteView._write_block)
+    * [\_write\_span](#notesmgr.note_view.NoteView._write_span)
+    * [\_write\_text](#notesmgr.note_view.NoteView._write_text)
+    * [\_draw\_picture](#notesmgr.note_view.NoteView._draw_picture)
+    * [\_picture](#notesmgr.note_view.NoteView._picture)
+    * [\_fitted](#notesmgr.note_view.NoteView._fitted)
+    * [zoom](#notesmgr.note_view.NoteView.zoom)
+    * [zoom\_normal](#notesmgr.note_view.NoteView.zoom_normal)
     * [shown\_note](#notesmgr.note_view.NoteView.shown_note)
     * [area\_text](#notesmgr.note_view.NoteView.area_text)
     * [warning\_shown](#notesmgr.note_view.NoteView.warning_shown)
@@ -403,7 +576,21 @@ The main window of the notesmgr application.
 class Shortcut(NamedTuple)
 ```
 
-A keyboard shortcut: its Tk event sequence and its menu label.
+A keyboard shortcut: its Tk event sequences and its menu label.
+
+A shortcut has more than one sequence wherever more than one key
+stands for it, such as the plus of the keypad and the plus that
+is typed with the shift key held down.
+
+<a id="notesmgr.main_window.Shortcuts"></a>
+
+## Shortcuts Objects
+
+```python
+class Shortcuts(NamedTuple)
+```
+
+The keyboard shortcuts that the main window listens for.
 
 <a id="notesmgr.main_window.tk_window_system"></a>
 
@@ -427,6 +614,56 @@ Return the keyboard shortcut that closes the main window.
 
 macOS closes a window with Cmd+W, while Windows and the X11
 desktops leave a program with Ctrl+Q.
+
+<a id="notesmgr.main_window.modifier"></a>
+
+#### modifier
+
+```python
+def modifier(window_system: str) -> tuple[str, str]
+```
+
+Return the key held down for a shortcut, and what it is called.
+
+macOS holds the command key down where Windows and the X11
+desktops hold the control key down.
+
+<a id="notesmgr.main_window.held_shortcut"></a>
+
+#### held\_shortcut
+
+```python
+def held_shortcut(window_system: str, keysyms: Sequence[str],
+                  shown: str) -> Shortcut
+```
+
+Return a shortcut of the held key and the keys that stand for it.
+
+**Arguments**:
+
+- `window_system` - The windowing system that Tk is using.
+- `keysyms` - What Tk calls each of the keys that stand for it.
+- `shown` - What the key is called on the menu entry.
+  
+
+**Returns**:
+
+  The shortcut to bind and to show.
+
+<a id="notesmgr.main_window.window_shortcuts"></a>
+
+#### window\_shortcuts
+
+```python
+def window_shortcuts(window_system: str) -> Shortcuts
+```
+
+Return the shortcuts of the main window on a windowing system.
+
+Making a note larger is asked for with a plus, which is typed
+with the shift key held down on most keyboards and is a key of
+its own on the keypad, so every key that stands for it is bound
+and the plainest of them is the one that is shown.
 
 <a id="notesmgr.main_window.MainWindow"></a>
 
@@ -457,7 +694,7 @@ Fill the given toplevel window with the notesmgr main window.
 #### \_menu\_specs
 
 ```python
-def _menu_specs(shortcut: Shortcut) -> list[MenuSpec]
+def _menu_specs(keys: Shortcuts) -> list[MenuSpec]
 ```
 
 Return the menus of the main window and what they hold.
@@ -494,20 +731,64 @@ def _folder_entries() -> list[MenuEntry]
 
 Return the entries that act on a folder of the project.
 
-<a id="notesmgr.main_window.MainWindow._bind_quit_shortcut"></a>
+<a id="notesmgr.main_window.MainWindow._view_entries"></a>
 
-#### \_bind\_quit\_shortcut
+#### \_view\_entries
 
 ```python
-def _bind_quit_shortcut(shortcut: Shortcut) -> None
+def _view_entries(keys: Shortcuts) -> list[MenuEntry]
 ```
 
-Let the shortcut shown on the Quit entry close the window.
+Return the entries that say how large a note is drawn.
 
-Tk installs no binding for a menu accelerator, so the key
-sequence has to be bound as well. It is bound on this window
-only, so that it cannot close the main window from a dialog
-that happens to have the keyboard focus.
+A note is read on whatever screen the user has, so how large
+it is drawn is theirs to say, and it can always be said
+however small or large the note itself is.
+
+<a id="notesmgr.main_window.MainWindow._zoom_command"></a>
+
+#### \_zoom\_command
+
+```python
+def _zoom_command(step: int) -> Callable[[], None]
+```
+
+Return what draws the note so many steps larger or smaller.
+
+<a id="notesmgr.main_window.MainWindow._normal_command"></a>
+
+#### \_normal\_command
+
+```python
+def _normal_command() -> Callable[[], None]
+```
+
+Return what draws the note in the size it started out in.
+
+<a id="notesmgr.main_window.MainWindow._bind_shortcuts"></a>
+
+#### \_bind\_shortcuts
+
+```python
+def _bind_shortcuts(keys: Shortcuts) -> None
+```
+
+Let the shortcuts shown on the menu entries be typed.
+
+Tk installs no binding for a menu accelerator, so every key
+sequence has to be bound as well. They are bound on this
+window only, so that a dialog which happens to have the
+keyboard focus cannot reach the main window with them.
+
+<a id="notesmgr.main_window.MainWindow._bind"></a>
+
+#### \_bind
+
+```python
+def _bind(shortcut: Shortcut, command: Callable[[], None]) -> None
+```
+
+Let every key sequence of one shortcut run a command.
 
 <a id="notesmgr.main_window.MainWindow._shape_window"></a>
 
@@ -1001,6 +1282,646 @@ Return what the entries of a menu say, in the order they are in.
 
   The label of every entry, and nothing at all for a menu that
   holds no entries.
+
+<a id="notesmgr.note_blocks"></a>
+
+# notesmgr.note\_blocks
+
+The pieces that a formatted note is drawn in, read from its HTML.
+
+Everything about a note that has a right answer is settled here: how
+deeply a piece of it is nested, what bullet or number a list item
+carries, which runs of text are bold or code or a link, and how the
+cells of a table line up. Drawing the note is then a matter of
+writing text with tags and nothing else, and all of this is tested
+without a window.
+
+<a id="notesmgr.note_blocks.SpanStyle"></a>
+
+## SpanStyle Objects
+
+```python
+class SpanStyle(StrEnum)
+```
+
+What is said about one run of text inside a piece of a note.
+
+<a id="notesmgr.note_blocks.BlockKind"></a>
+
+## BlockKind Objects
+
+```python
+class BlockKind(StrEnum)
+```
+
+What one piece of a note is, which is how it is drawn.
+
+<a id="notesmgr.note_blocks.Span"></a>
+
+## Span Objects
+
+```python
+class Span(NamedTuple)
+```
+
+One run of text of a piece of a note, and what is said about it.
+
+The target is where a link leads and which file an image is in,
+and is empty for a run of text that is neither of those.
+
+<a id="notesmgr.note_blocks.Block"></a>
+
+## Block Objects
+
+```python
+class Block(NamedTuple)
+```
+
+One piece of a note: a paragraph, a heading, a list item.
+
+The indent is how many steps from the left the piece is written,
+which is how deeply it is nested in lists and block quotes. The
+prefix is the bullet or the number of a list item, and is empty
+for every other kind of piece. A line across the note is a piece
+holding no text at all.
+
+<a id="notesmgr.note_blocks.HEADINGS"></a>
+
+#### HEADINGS
+
+The heading of each level, as the HTML of a note names them.
+
+<a id="notesmgr.note_blocks.STYLES"></a>
+
+#### STYLES
+
+What each tag of the HTML says about the text inside it.
+
+<a id="notesmgr.note_blocks.CONTAINERS"></a>
+
+#### CONTAINERS
+
+The tags that hold pieces of a note inside themselves.
+
+<a id="notesmgr.note_blocks.TEXT_TAGS"></a>
+
+#### TEXT\_TAGS
+
+The tags that hold the text of one piece of a note.
+
+<a id="notesmgr.note_blocks.TABLE_TAGS"></a>
+
+#### TABLE\_TAGS
+
+The tags of a table that say something about its cells.
+
+<a id="notesmgr.note_blocks.CELL_TAGS"></a>
+
+#### CELL\_TAGS
+
+The tags that hold one cell of a table.
+
+<a id="notesmgr.note_blocks.BULLETS"></a>
+
+#### BULLETS
+
+What the items of a list are marked with, by depth of nesting.
+
+<a id="notesmgr.note_blocks.BLANKS"></a>
+
+#### BLANKS
+
+What is written as one blank, the line breaks of a note included.
+
+<a id="notesmgr.note_blocks.squeezed"></a>
+
+#### squeezed
+
+```python
+def squeezed(text: str) -> str
+```
+
+Return a run of text with every stretch of blanks made one.
+
+The HTML of a note holds the line breaks that the note was
+written with. They are blanks between words rather than breaks
+to be drawn, because the panel breaks the lines where the window
+is wide enough for them to be broken.
+
+<a id="notesmgr.note_blocks.kept"></a>
+
+#### kept
+
+```python
+def kept(spans: Sequence[Span]) -> list[Span]
+```
+
+Return the runs of text that there is anything to draw for.
+
+<a id="notesmgr.note_blocks.trimmed"></a>
+
+#### trimmed
+
+```python
+def trimmed(spans: Sequence[Span]) -> tuple[Span, ...]
+```
+
+Return the runs of text without the blanks at either end.
+
+A piece of a note begins and ends with a word rather than with
+the line break that the note was written with.
+
+<a id="notesmgr.note_blocks.Container"></a>
+
+## Container Objects
+
+```python
+@dataclass
+class Container()
+```
+
+One list or block quote that is open, and how far it has come.
+
+<a id="notesmgr.note_blocks.OpenBlock"></a>
+
+## OpenBlock Objects
+
+```python
+@dataclass
+class OpenBlock()
+```
+
+The piece of a note that is being read, as far as it is read.
+
+<a id="notesmgr.note_blocks.OpenStyles"></a>
+
+## OpenStyles Objects
+
+```python
+@dataclass
+class OpenStyles()
+```
+
+What is said about the run of text that is being read.
+
+<a id="notesmgr.note_blocks.TableReader"></a>
+
+## TableReader Objects
+
+```python
+@dataclass
+class TableReader()
+```
+
+The cells of a table of a note, as far as they are read.
+
+The headings are counted rather than kept apart, because they
+are the first rows of the table and the only thing that being a
+heading changes is the line that is drawn under them.
+
+<a id="notesmgr.note_blocks.TableReader.start_row"></a>
+
+#### start\_row
+
+```python
+def start_row() -> None
+```
+
+Begin another row of the table.
+
+<a id="notesmgr.note_blocks.TableReader.start_cell"></a>
+
+#### start\_cell
+
+```python
+def start_cell(style: str, heading: bool) -> None
+```
+
+Begin another cell of the row that is being read.
+
+**Arguments**:
+
+- `style` - The style attribute of the cell, which is where
+  the markdown table said how the column lines up.
+- `heading` - Whether the cell is a heading of its column.
+
+<a id="notesmgr.note_blocks.TableReader.add_text"></a>
+
+#### add\_text
+
+```python
+def add_text(text: str) -> None
+```
+
+Take a run of text that belongs to the cell being read.
+
+<a id="notesmgr.note_blocks.TableReader.end_cell"></a>
+
+#### end\_cell
+
+```python
+def end_cell() -> None
+```
+
+Put the cell that was read at the end of its row.
+
+<a id="notesmgr.note_blocks.TableReader.text"></a>
+
+#### text
+
+```python
+def text() -> str
+```
+
+Return the table written in columns of monospaced text.
+
+<a id="notesmgr.note_blocks.item_prefix"></a>
+
+#### item\_prefix
+
+```python
+def item_prefix(containers: Sequence[Container]) -> str
+```
+
+Return the bullet or the number that a list item carries.
+
+An ordered list numbers its items as it goes, and an unordered
+one marks them with a bullet that says how deeply the list is
+nested, so that a nested list is told from the one holding it
+even where the indentation is easy to miss.
+
+<a id="notesmgr.note_blocks.NoteParser"></a>
+
+## NoteParser Objects
+
+```python
+class NoteParser(HTMLParser)
+```
+
+Reads the HTML of a note into the pieces that it is drawn in.
+
+<a id="notesmgr.note_blocks.NoteParser.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__() -> None
+```
+
+Get ready to read HTML, no piece of it having been read.
+
+<a id="notesmgr.note_blocks.NoteParser.note_blocks"></a>
+
+#### note\_blocks
+
+```python
+def note_blocks() -> tuple[Block, ...]
+```
+
+Return the pieces of the note, all of it having been read.
+
+<a id="notesmgr.note_blocks.NoteParser.handle_starttag"></a>
+
+#### handle\_starttag
+
+```python
+def handle_starttag(tag: str, attrs: list[tuple[str, Optional[str]]]) -> None
+```
+
+Begin what a tag begins, ignoring one that begins nothing.
+
+<a id="notesmgr.note_blocks.NoteParser.handle_endtag"></a>
+
+#### handle\_endtag
+
+```python
+def handle_endtag(tag: str) -> None
+```
+
+End what a tag ends, ignoring one that ends nothing.
+
+<a id="notesmgr.note_blocks.NoteParser.handle_data"></a>
+
+#### handle\_data
+
+```python
+def handle_data(data: str) -> None
+```
+
+Take a run of text of whatever is being read.
+
+<a id="notesmgr.note_blocks.NoteParser._open_other"></a>
+
+#### \_open\_other
+
+```python
+def _open_other(tag: str, attrs: Mapping[str, Optional[str]]) -> None
+```
+
+Begin one of the tags that stands on its own.
+
+<a id="notesmgr.note_blocks.NoteParser._depth"></a>
+
+#### \_depth
+
+```python
+def _depth() -> int
+```
+
+Return how many lists and quotes what is read is inside.
+
+<a id="notesmgr.note_blocks.NoteParser._text_kind"></a>
+
+#### \_text\_kind
+
+```python
+def _text_kind() -> BlockKind
+```
+
+Return whether text now read is quoted or an ordinary piece.
+
+<a id="notesmgr.note_blocks.NoteParser._open_block"></a>
+
+#### \_open\_block
+
+```python
+def _open_block(kind: BlockKind) -> None
+```
+
+Begin another piece of the note, at the depth it is read at.
+
+<a id="notesmgr.note_blocks.NoteParser._block_spans"></a>
+
+#### \_block\_spans
+
+```python
+def _block_spans() -> tuple[Span, ...]
+```
+
+Return the runs of text of the piece that was read.
+
+The text of a code block is kept exactly as it is written,
+while a paragraph loses the blanks at either end of it.
+
+<a id="notesmgr.note_blocks.NoteParser._flush"></a>
+
+#### \_flush
+
+```python
+def _flush() -> None
+```
+
+Put the piece that was read among the pieces of the note.
+
+<a id="notesmgr.note_blocks.NoteParser._open_container"></a>
+
+#### \_open\_container
+
+```python
+def _open_container(tag: str) -> None
+```
+
+Begin a list or a block quote, which holds pieces of its own.
+
+<a id="notesmgr.note_blocks.NoteParser._close_container"></a>
+
+#### \_close\_container
+
+```python
+def _close_container() -> None
+```
+
+End a list or a block quote, ignoring an end of neither.
+
+<a id="notesmgr.note_blocks.NoteParser._open_item"></a>
+
+#### \_open\_item
+
+```python
+def _open_item() -> None
+```
+
+Begin a list item, with the bullet or the number it carries.
+
+<a id="notesmgr.note_blocks.NoteParser._open_code"></a>
+
+#### \_open\_code
+
+```python
+def _open_code() -> None
+```
+
+Begin a code block, whose text is taken as it is written.
+
+<a id="notesmgr.note_blocks.NoteParser._close_code"></a>
+
+#### \_close\_code
+
+```python
+def _close_code() -> None
+```
+
+Put a code block among the pieces, without its indentation.
+
+A code block that is nested is written indented in the note,
+and that indentation is taken off so that the code stands
+where the piece holding it stands.
+
+<a id="notesmgr.note_blocks.NoteParser._open_style"></a>
+
+#### \_open\_style
+
+```python
+def _open_style(style: SpanStyle) -> None
+```
+
+Begin what is said about the run of text that follows.
+
+Inside a code block nothing is said about the text, because
+the tags of the HTML are the text of the note there.
+
+<a id="notesmgr.note_blocks.NoteParser._close_style"></a>
+
+#### \_close\_style
+
+```python
+def _close_style(style: SpanStyle) -> None
+```
+
+End what was said, ignoring an end of what was not said.
+
+<a id="notesmgr.note_blocks.NoteParser._open_link"></a>
+
+#### \_open\_link
+
+```python
+def _open_link(target: str) -> None
+```
+
+Begin a link, whose text is drawn as leading somewhere.
+
+<a id="notesmgr.note_blocks.NoteParser._close_link"></a>
+
+#### \_close\_link
+
+```python
+def _close_link() -> None
+```
+
+End a link, so that what follows is ordinary text again.
+
+<a id="notesmgr.note_blocks.NoteParser._add_text"></a>
+
+#### \_add\_text
+
+```python
+def _add_text(text: str) -> None
+```
+
+Take a run of text of the piece being read, if one is open.
+
+<a id="notesmgr.note_blocks.NoteParser._read"></a>
+
+#### \_read
+
+```python
+def _read(text: str) -> str
+```
+
+Return a run of text as it belongs in the piece being read.
+
+Inside a code block the text is what the note holds, and
+everywhere else every stretch of blanks is one blank. The
+blanks after a line break that the note asked for are
+dropped, because the next line begins with its first word.
+
+<a id="notesmgr.note_blocks.NoteParser._after_break"></a>
+
+#### \_after\_break
+
+```python
+def _after_break() -> bool
+```
+
+Return whether a line break was the last thing read.
+
+<a id="notesmgr.note_blocks.NoteParser._span"></a>
+
+#### \_span
+
+```python
+def _span(text: str, target: str = '') -> Span
+```
+
+Return a run of text with what is said about it now.
+
+<a id="notesmgr.note_blocks.NoteParser._add_break"></a>
+
+#### \_add\_break
+
+```python
+def _add_break() -> None
+```
+
+Take a line break that the note asks to have drawn.
+
+<a id="notesmgr.note_blocks.NoteParser._add_image"></a>
+
+#### \_add\_image
+
+```python
+def _add_image(attrs: Mapping[str, Optional[str]]) -> None
+```
+
+Take an image of the note as a run of text of its own.
+
+<a id="notesmgr.note_blocks.NoteParser._add_rule"></a>
+
+#### \_add\_rule
+
+```python
+def _add_rule() -> None
+```
+
+Put a line across the note among the pieces of it.
+
+<a id="notesmgr.note_blocks.NoteParser._open_table_tag"></a>
+
+#### \_open\_table\_tag
+
+```python
+def _open_table_tag(tag: str, attrs: Mapping[str, Optional[str]]) -> None
+```
+
+Begin a table, a row of it, or a cell of a row of it.
+
+<a id="notesmgr.note_blocks.NoteParser._close_table_tag"></a>
+
+#### \_close\_table\_tag
+
+```python
+def _close_table_tag(tag: str) -> None
+```
+
+End a table or a cell of it, a row needing no ending.
+
+<a id="notesmgr.note_blocks.NoteParser._open_table"></a>
+
+#### \_open\_table
+
+```python
+def _open_table() -> None
+```
+
+Begin a table, which is read on its own and drawn as text.
+
+<a id="notesmgr.note_blocks.NoteParser._close_table"></a>
+
+#### \_close\_table
+
+```python
+def _close_table() -> None
+```
+
+Put the table that was read among the pieces of the note.
+
+<a id="notesmgr.note_blocks.html_blocks"></a>
+
+#### html\_blocks
+
+```python
+def html_blocks(html: str) -> tuple[Block, ...]
+```
+
+Return the pieces that the HTML of a note is drawn in.
+
+**Arguments**:
+
+- `html` - The HTML of the note, as the markdown of it gave.
+  
+
+**Returns**:
+
+  Every piece of the note, in the order it is drawn in.
+
+<a id="notesmgr.note_blocks.markdown_blocks"></a>
+
+#### markdown\_blocks
+
+```python
+def markdown_blocks(text: str) -> tuple[Block, ...]
+```
+
+Return the pieces that a note written in markdown is drawn in.
+
+**Arguments**:
+
+- `text` - The markdown of the note, as much of it as is shown.
+  
+
+**Returns**:
+
+  Every piece of the note, in the order it is drawn in.
 
 <a id="notesmgr.cmd_line"></a>
 
@@ -2287,6 +3208,318 @@ much the selection would allow it.
 
 - `labels` - What the buttons that can be used now say.
 
+<a id="notesmgr.note_tags"></a>
+
+# notesmgr.note\_tags
+
+The text tags that the pieces of a formatted note are drawn with.
+
+<a id="notesmgr.note_tags.CODE_BACKGROUND"></a>
+
+#### CODE\_BACKGROUND
+
+Colour behind code, which is what sets it off from the prose.
+
+<a id="notesmgr.note_tags.QUOTE_COLOUR"></a>
+
+#### QUOTE\_COLOUR
+
+Colour of a quoted piece, a grey that is read as quieter text.
+
+<a id="notesmgr.note_tags.LINK_COLOUR"></a>
+
+#### LINK\_COLOUR
+
+Colour of the text of a link, the blue that a link is known by.
+
+<a id="notesmgr.note_tags.RULE_COLOUR"></a>
+
+#### RULE\_COLOUR
+
+Colour of a line drawn across the note.
+
+<a id="notesmgr.note_tags.LINK_TAG"></a>
+
+#### LINK\_TAG
+
+Tag of the text of a link, which is underlined and coloured.
+
+<a id="notesmgr.note_tags.CODE_SPAN_TAG"></a>
+
+#### CODE\_SPAN\_TAG
+
+Tag of code inside a line of prose, which is set off behind.
+
+<a id="notesmgr.note_tags.STRIKE_TAG"></a>
+
+#### STRIKE\_TAG
+
+Tag of text that is struck through, which Tk draws a line over.
+
+<a id="notesmgr.note_tags.IMAGE_TAG"></a>
+
+#### IMAGE\_TAG
+
+Tag of an image that is named rather than drawn.
+
+<a id="notesmgr.note_tags.GAP_TAG"></a>
+
+#### GAP\_TAG
+
+Tag of the blank line that is left between two pieces of a note.
+
+<a id="notesmgr.note_tags.INDENT_TAG"></a>
+
+#### INDENT\_TAG
+
+Tag that writes a piece of a note so many steps from the left.
+
+<a id="notesmgr.note_tags.ITEM_TAG"></a>
+
+#### ITEM\_TAG
+
+Tag that writes a list item, its bullet standing out to the left.
+
+What the bullet takes up is left free on the lines after the first
+one, so that a list item that is broken over several lines reads as
+one item rather than as the beginning of another.
+
+<a id="notesmgr.note_tags.MAX_INDENT"></a>
+
+#### MAX\_INDENT
+
+Most steps from the left that a piece of a note is written at.
+
+A note nested deeper than this is written at this depth, which
+keeps a note that is nothing but nested lists readable in a narrow
+window.
+
+<a id="notesmgr.note_tags.RAW_KEY"></a>
+
+#### RAW\_KEY
+
+The font of a note that is shown as it is written.
+
+A note that is no markdown is shown as the file holds it, so it is
+drawn with one width per letter, which is what keeps a table that
+was lined up by hand lined up. It is the font of the area itself
+rather than of a tag, so that it follows the size of the note the
+way every other font of it does.
+
+<a id="notesmgr.note_tags.GAP_KEY"></a>
+
+#### GAP\_KEY
+
+The font of the blank line that is left between two pieces.
+
+A blank line is as tall as the font of it, which is how the room
+between two pieces of a note is left. Tk would space the lines
+inside a code block and a table as well.
+
+<a id="notesmgr.note_tags.HEADING_GAPS"></a>
+
+#### HEADING\_GAPS
+
+Blank lines above a heading, which is what sets a part apart.
+
+<a id="notesmgr.note_tags.BULLET_ROOM"></a>
+
+#### BULLET\_ROOM
+
+What a bullet is taken to take up on the line that carries it.
+
+<a id="notesmgr.note_tags.indent_tag"></a>
+
+#### indent\_tag
+
+```python
+def indent_tag(block: Block) -> str
+```
+
+Return the tag that writes a piece of a note where it belongs.
+
+**Arguments**:
+
+- `block` - The piece of the note that is to be written.
+  
+
+**Returns**:
+
+  The name of the tag that indents it, which leaves room for
+  the bullet of a list item and none for anything else.
+
+<a id="notesmgr.note_tags.gap_lines"></a>
+
+#### gap\_lines
+
+```python
+def gap_lines(block: Block, previous: Optional[Block]) -> int
+```
+
+Return how many blank lines are left above a piece of a note.
+
+A heading is set off from the part above it by a wider gap, and
+the items of one list follow one another with no gap at all, the
+way the note was written. Nothing is left above the first piece
+of a note, which begins at the top of the area.
+
+**Arguments**:
+
+- `block` - The piece of the note that is to be written.
+- `previous` - The piece written above it, None for the first one.
+  
+
+**Returns**:
+
+  How many blank lines to write above it.
+
+<a id="notesmgr.note_tags.span_styles"></a>
+
+#### span\_styles
+
+```python
+def span_styles(span: Span) -> tuple[str, ...]
+```
+
+Return the tags that say how one run of text looks.
+
+The font of a run of text is a tag of its own, and these are
+what is drawn on top of it: the colour of a link, the shading
+of code inside a line of prose, the line over text that is
+struck through, and how an image is named.
+
+<a id="notesmgr.note_tags.NoteTags"></a>
+
+## NoteTags Objects
+
+```python
+class NoteTags()
+```
+
+Defines and hands out the tags that a note is drawn with.
+
+The tag that carries a font is made the first time a note needs
+it, and every tag that is measured in pixels is given afresh
+whenever the note is drawn in another size, so that the space
+between the pieces and the indentation of a list follow the text.
+
+<a id="notesmgr.note_tags.NoteTags.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(area: tkinter.Text, size: Optional[int] = None) -> None
+```
+
+Define the tags of a text area that a note is drawn in.
+
+**Arguments**:
+
+- `area` - The text area that the tags belong to.
+- `size` - The size to draw the ordinary text of a note in,
+  None for the size that Tk draws text in.
+
+<a id="notesmgr.note_tags.NoteTags._colour_tags"></a>
+
+#### \_colour\_tags
+
+```python
+def _colour_tags() -> None
+```
+
+Define the tags that say nothing about how large the text is.
+
+<a id="notesmgr.note_tags.NoteTags._sized_tags"></a>
+
+#### \_sized\_tags
+
+```python
+def _sized_tags() -> None
+```
+
+Define the tags that are measured in the size drawn in.
+
+The room between two pieces of a note is left by the blank
+line between them, and the indentation of a list is measured
+in what the text of the note takes up, so both of them are
+given again whenever the note is drawn in another size.
+
+<a id="notesmgr.note_tags.NoteTags.font_tag_of"></a>
+
+#### font\_tag\_of
+
+```python
+def font_tag_of(kind: BlockKind, span: Span) -> str
+```
+
+Return the tag that draws a run of text in its own font.
+
+The tag is defined the first time a note needs it, and from
+then on it follows the size that the note is drawn in,
+because it is the font itself that the size is changed on.
+
+**Arguments**:
+
+- `kind` - What the piece of the note holding the run of text is.
+- `span` - The run of text that is to be drawn.
+  
+
+**Returns**:
+
+  The name of the tag that carries its font.
+
+<a id="notesmgr.note_tags.NoteTags.span_tags"></a>
+
+#### span\_tags
+
+```python
+def span_tags(kind: BlockKind, span: Span, indent: str) -> tuple[str, ...]
+```
+
+Return every tag that one run of text of a piece is drawn with.
+
+**Arguments**:
+
+- `kind` - What the piece of the note holding the run of text is.
+- `span` - The run of text that is to be drawn.
+- `indent` - The tag that writes the piece where it belongs.
+  
+
+**Returns**:
+
+  The tags to give the text, the piece it belongs to first
+  and what is said about the run of text itself last.
+
+<a id="notesmgr.note_tags.NoteTags.resize"></a>
+
+#### resize
+
+```python
+def resize(size: int) -> int
+```
+
+Draw the note in another size from now on.
+
+<a id="notesmgr.note_tags.NoteTags.zoom"></a>
+
+#### zoom
+
+```python
+def zoom(step: int) -> int
+```
+
+Draw so many steps larger, or smaller for a step below zero.
+
+<a id="notesmgr.note_tags.NoteTags.normal_size"></a>
+
+#### normal\_size
+
+```python
+def normal_size() -> int
+```
+
+Draw the note in the size that it started out in.
+
 <a id="notesmgr.config_editor"></a>
 
 # notesmgr.config\_editor
@@ -2465,6 +3698,460 @@ holds nothing but blanks names no editor and is passed over.
 The command carries no arguments, because the name of the note
 file is appended to a command that does not place it itself.
 
+<a id="notesmgr.note_table"></a>
+
+# notesmgr.note\_table
+
+Laying a table of a note out in columns of monospaced text.
+
+<a id="notesmgr.note_table.MAX_COLUMN"></a>
+
+#### MAX\_COLUMN
+
+Most characters that one column of a table is made wide.
+
+A cell holding more than this is written over several lines instead
+of making the table wider than the panel can show.
+
+<a id="notesmgr.note_table.CELL_GAP"></a>
+
+#### CELL\_GAP
+
+What is written between two cells of the same row.
+
+<a id="notesmgr.note_table.RULE_GAP"></a>
+
+#### RULE\_GAP
+
+What is written between two cells of the line under the headings.
+
+<a id="notesmgr.note_table.RULE_CHAR"></a>
+
+#### RULE\_CHAR
+
+What the line under the headings of a table is drawn with.
+
+<a id="notesmgr.note_table.Align"></a>
+
+## Align Objects
+
+```python
+class Align(StrEnum)
+```
+
+Which side of its column the text of a cell is written against.
+
+<a id="notesmgr.note_table.cell_align"></a>
+
+#### cell\_align
+
+```python
+def cell_align(style: str) -> Align
+```
+
+Return the alignment that the style of a cell asks for.
+
+**Arguments**:
+
+- `style` - The style attribute of a cell of the HTML of a note,
+  empty for a cell that carries none.
+  
+
+**Returns**:
+
+  What the text-align of the style says, and LEFT when it says
+  nothing, which is what a markdown table without colons means.
+
+<a id="notesmgr.note_table.squared"></a>
+
+#### squared
+
+```python
+def squared(rows: Sequence[Sequence[str]], columns: int) -> list[list[str]]
+```
+
+Return the rows with every one of them holding every column.
+
+A markdown table is allowed to leave the cells at the end of a
+row out, and every row holding every column is what lets the
+rest of the laying out be written without asking each time.
+
+<a id="notesmgr.note_table.every_align"></a>
+
+#### every\_align
+
+```python
+def every_align(aligns: Sequence[Align], columns: int) -> list[Align]
+```
+
+Return an alignment for every column, LEFT for the unsaid ones.
+
+<a id="notesmgr.note_table.column_width"></a>
+
+#### column\_width
+
+```python
+def column_width(rows: Sequence[Sequence[str]], index: int) -> int
+```
+
+Return how wide one column of a table is made.
+
+A column is as wide as its widest cell, up to the most a column
+may be, and one character wide when all of its cells are empty,
+so that the line under the headings is drawn for it as well.
+
+<a id="notesmgr.note_table.wrapped_cell"></a>
+
+#### wrapped\_cell
+
+```python
+def wrapped_cell(text: str, width: int) -> list[str]
+```
+
+Return the lines that a cell takes up in a column of a width.
+
+<a id="notesmgr.note_table.line_at"></a>
+
+#### line\_at
+
+```python
+def line_at(lines: Sequence[str], number: int) -> str
+```
+
+Return one line of a wrapped cell, empty past its last line.
+
+<a id="notesmgr.note_table.padded_cell"></a>
+
+#### padded\_cell
+
+```python
+def padded_cell(text: str, width: int, align: Align) -> str
+```
+
+Return the text of a cell written against its side of a column.
+
+<a id="notesmgr.note_table.row_lines"></a>
+
+#### row\_lines
+
+```python
+def row_lines(row: Sequence[str], widths: Sequence[int],
+              aligns: Sequence[Align]) -> list[str]
+```
+
+Return the lines that one row of a table takes up.
+
+A row is as tall as the cell of it that takes the most lines,
+and the cells that take fewer are left blank underneath.
+
+<a id="notesmgr.note_table.rule_line"></a>
+
+#### rule\_line
+
+```python
+def rule_line(widths: Sequence[int]) -> str
+```
+
+Return the line that is drawn under the headings of a table.
+
+<a id="notesmgr.note_table.table_text"></a>
+
+#### table\_text
+
+```python
+def table_text(rows: Sequence[Sequence[str]],
+               aligns: Sequence[Align],
+               headings: int = 0) -> str
+```
+
+Return a table written in columns of monospaced text.
+
+**Arguments**:
+
+- `rows` - The cells of each row, where a row is allowed to hold
+  fewer cells than the widest row of the table does.
+- `aligns` - Which side of its column each column is written
+  against, as far as the table said.
+- `headings` - How many rows at the top of the table are heading
+  rows, which is what the line across it is drawn under.
+  
+
+**Returns**:
+
+  The lines of the table, and nothing at all for a table that
+  holds no cells to write.
+
+<a id="notesmgr.note_fonts"></a>
+
+# notesmgr.note\_fonts
+
+The fonts that a note is drawn with, and how large they are.
+
+<a id="notesmgr.note_fonts.MIN_SIZE"></a>
+
+#### MIN\_SIZE
+
+Smallest size that a note is drawn in, however small it is asked.
+
+<a id="notesmgr.note_fonts.MAX_SIZE"></a>
+
+#### MAX\_SIZE
+
+Largest size that a note is drawn in, however large it is asked.
+
+<a id="notesmgr.note_fonts.FALLBACK_SIZE"></a>
+
+#### FALLBACK\_SIZE
+
+Size used where Tk names no size for the text that it draws.
+
+<a id="notesmgr.note_fonts.TEXT_FONT"></a>
+
+#### TEXT\_FONT
+
+The font that Tk draws ordinary text with on this system.
+
+<a id="notesmgr.note_fonts.FIXED_FONT"></a>
+
+#### FIXED\_FONT
+
+The font that Tk draws text of one width per letter with.
+
+<a id="notesmgr.note_fonts.BODY_SCALE"></a>
+
+#### BODY\_SCALE
+
+How large the ordinary text of a note is drawn, which is as given.
+
+<a id="notesmgr.note_fonts.FIXED_KINDS"></a>
+
+#### FIXED\_KINDS
+
+The pieces of a note that are drawn with one width per letter.
+
+Code is written in such a font to be read in one, a table is lined
+up in columns that only such a font keeps lined up, and a line
+across the note is a row of letters that only such a font joins.
+
+<a id="notesmgr.note_fonts.HEADING_SCALES"></a>
+
+#### HEADING\_SCALES
+
+How much larger than the text of a note each heading is drawn.
+
+<a id="notesmgr.note_fonts.note_size"></a>
+
+#### note\_size
+
+```python
+def note_size(size: int) -> int
+```
+
+Return a size that a note can be read at.
+
+**Arguments**:
+
+- `size` - The size that is asked for, from wherever it came.
+  
+
+**Returns**:
+
+  That size, kept within what can be read, so that holding a
+  key down can neither make a note vanish nor fill the window
+  with a single word.
+
+<a id="notesmgr.note_fonts.default_size"></a>
+
+#### default\_size
+
+```python
+def default_size(widget: tkinter.Misc) -> int
+```
+
+Return the size that Tk draws ordinary text in on this system.
+
+Tk gives a size in points, or in pixels written as a negative
+number, and either way how large it is, is where a note starts.
+
+<a id="notesmgr.note_fonts.family_of"></a>
+
+#### family\_of
+
+```python
+def family_of(name: str, widget: tkinter.Misc) -> str
+```
+
+Return the family of one of the fonts that Tk names itself.
+
+<a id="notesmgr.note_fonts.FontKey"></a>
+
+## FontKey Objects
+
+```python
+class FontKey(NamedTuple)
+```
+
+What tells one of the fonts that a note is drawn with from another.
+
+The scale is how large the font is against the size that the
+note is drawn in, so that making the note larger or smaller is
+one size that every font of it follows.
+
+<a id="notesmgr.note_fonts.BODY_KEY"></a>
+
+#### BODY\_KEY
+
+The font that the ordinary text of a note is drawn with.
+
+<a id="notesmgr.note_fonts.font_key"></a>
+
+#### font\_key
+
+```python
+def font_key(
+    kind: BlockKind, styles: AbstractSet[SpanStyle] = frozenset()) -> FontKey
+```
+
+Return the font that one run of text of a piece is drawn with.
+
+A heading is drawn larger and bold, a quote in italics, and
+code and a table in the font of one width per letter. What is
+said about the run of text itself is added to that, so that
+code inside a heading is drawn as large as the heading is.
+
+**Arguments**:
+
+- `kind` - What the piece of the note holding the run of text is.
+- `styles` - What is said about that run of text.
+  
+
+**Returns**:
+
+  The font to draw it with.
+
+<a id="notesmgr.note_fonts.font_tag"></a>
+
+#### font\_tag
+
+```python
+def font_tag(key: FontKey) -> str
+```
+
+Return the name of the text tag that carries one of the fonts.
+
+<a id="notesmgr.note_fonts.NoteFonts"></a>
+
+## NoteFonts Objects
+
+```python
+class NoteFonts()
+```
+
+The fonts that a note is drawn with, made larger all together.
+
+A font is made when a note first needs it and is then kept, so
+that a note of headings and code brings its fonts along while a
+note of plain text needs one. Changing the size configures every
+font that was made, and the text tags that carry them draw with
+the new size from then on without being touched.
+
+<a id="notesmgr.note_fonts.NoteFonts.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(widget: tkinter.Misc, size: Optional[int] = None) -> None
+```
+
+Get ready to draw a note with fonts of a size.
+
+**Arguments**:
+
+- `widget` - The widget that the fonts belong to, which is
+  what Tk is asked about the system's own fonts over.
+- `size` - The size to draw the ordinary text of a note in,
+  None for the size that Tk draws text in.
+
+<a id="notesmgr.note_fonts.NoteFonts.font"></a>
+
+#### font
+
+```python
+def font(key: FontKey) -> Font
+```
+
+Return the font of a key, made the first time it is asked for.
+
+<a id="notesmgr.note_fonts.NoteFonts._make"></a>
+
+#### \_make
+
+```python
+def _make(key: FontKey) -> Font
+```
+
+Make the font of a key, in the size that is drawn in now.
+
+<a id="notesmgr.note_fonts.NoteFonts.scaled"></a>
+
+#### scaled
+
+```python
+def scaled(key: FontKey) -> int
+```
+
+Return how large the font of a key is at the size drawn in.
+
+<a id="notesmgr.note_fonts.NoteFonts.resize"></a>
+
+#### resize
+
+```python
+def resize(size: int) -> int
+```
+
+Draw with fonts of another size from now on.
+
+**Arguments**:
+
+- `size` - The size to draw the ordinary text of a note in.
+  
+
+**Returns**:
+
+  The size that is drawn in, which is as near the one
+  asked for as a note can be read at.
+
+<a id="notesmgr.note_fonts.NoteFonts.zoom"></a>
+
+#### zoom
+
+```python
+def zoom(step: int) -> int
+```
+
+Draw so many steps larger, or smaller for a step below zero.
+
+<a id="notesmgr.note_fonts.NoteFonts.normal_size"></a>
+
+#### normal\_size
+
+```python
+def normal_size() -> int
+```
+
+Draw in the size that the note started out in.
+
+<a id="notesmgr.note_fonts.NoteFonts.indent_step"></a>
+
+#### indent\_step
+
+```python
+def indent_step() -> int
+```
+
+Return how far one step of indentation is, in pixels.
+
 <a id="notesmgr.note_panel"></a>
 
 # notesmgr.note\_panel
@@ -2595,6 +4282,26 @@ This is what the watch calls when the note has been edited,
 written or taken away by another program, so a note that is
 gone leaves the panel saying so and the buttons greyed out.
 
+<a id="notesmgr.note_panel.NotePanel.zoom"></a>
+
+#### zoom
+
+```python
+def zoom(step: int) -> None
+```
+
+Draw the note so many steps larger, or smaller below zero.
+
+<a id="notesmgr.note_panel.NotePanel.zoom_normal"></a>
+
+#### zoom\_normal
+
+```python
+def zoom_normal() -> None
+```
+
+Draw the note in the size that it started out in.
+
 <a id="notesmgr.note_panel.NotePanel.offer"></a>
 
 #### offer
@@ -2644,6 +4351,101 @@ so what is wrong with it is reported rather than the
 clipboard being emptied. A note that is shown only in part is
 copied as far as it is shown, which is what the warning above
 it says.
+
+<a id="notesmgr.markdown_render"></a>
+
+# notesmgr.markdown\_render
+
+Turning the markdown of a note into the HTML it is drawn from.
+
+<a id="notesmgr.markdown_render.EXTENSIONS"></a>
+
+#### EXTENSIONS
+
+The markdown that a note may be written in, beyond the plain kind.
+
+Fenced code is how a note holds a program or a command line, tables
+are what a note of comparisons is written as, and sane lists keeps a
+list from beginning in the middle of a paragraph.
+
+<a id="notesmgr.markdown_render.STRIKE_PATTERN"></a>
+
+#### STRIKE\_PATTERN
+
+What a note marks text that is struck through with.
+
+Two tildes around the text is how it is written everywhere it is
+written, and Python-Markdown knows nothing of it, so notesmgr says
+what it means rather than taking a dependency for one pattern.
+
+<a id="notesmgr.markdown_render.STRIKE_TAG"></a>
+
+#### STRIKE\_TAG
+
+The HTML that text struck through in a note is turned into.
+
+<a id="notesmgr.markdown_render.STRIKE_NAME"></a>
+
+#### STRIKE\_NAME
+
+What the pattern of text struck through is registered as.
+
+<a id="notesmgr.markdown_render.STRIKE_PRIORITY"></a>
+
+#### STRIKE\_PRIORITY
+
+Where the pattern belongs among the patterns of Python-Markdown.
+
+Just above the emphasis patterns, which is where the marking of a
+run of text belongs, and well below the ones for code and links,
+so that two tildes inside them are left as the text they are.
+
+<a id="notesmgr.markdown_render.TAB_LENGTH"></a>
+
+#### TAB\_LENGTH
+
+How many spaces one step of indentation is taken to be.
+
+Python-Markdown counts four, which leaves a list nested with two
+spaces, as most editors and markdown linters write one, read as a
+list of its own rather than as a nested one. Notes are written by
+hand, so the smaller step is the one that draws what was meant.
+
+<a id="notesmgr.markdown_render.markdown_converter"></a>
+
+#### markdown\_converter
+
+```python
+def markdown_converter() -> markdown.Markdown
+```
+
+Return the converter that the HTML of a note is made with.
+
+Python-Markdown passes markup that a note holds straight through
+into its output, and a note is read rather than obeyed, so the
+two processors that let it through are taken out and the markup
+is drawn as the text that it is. Text struck through is added,
+which Python-Markdown knows nothing of on its own.
+
+<a id="notesmgr.markdown_render.note_html"></a>
+
+#### note\_html
+
+```python
+def note_html(text: str) -> str
+```
+
+Return the HTML of a note that is written in markdown.
+
+**Arguments**:
+
+- `text` - The markdown of the note, as much of it as is shown.
+  
+
+**Returns**:
+
+  The HTML that the note is drawn from, and that a formatted
+  copy of the note is taken from.
 
 <a id="notesmgr.project_ops"></a>
 
@@ -2995,6 +4797,94 @@ Return what to tell the user that opening a project changed.
 **Returns**:
 
   What to tell, and nothing at all when nothing was changed.
+
+<a id="notesmgr.note_image"></a>
+
+# notesmgr.note\_image
+
+Which file an image of a note names, and how large it is drawn.
+
+<a id="notesmgr.note_image.MAX_IMAGE_WIDTH"></a>
+
+#### MAX\_IMAGE\_WIDTH
+
+Widest that an image of a note is drawn, in pixels.
+
+An image wider than this is drawn smaller, so that a note holding a
+screenshot of a whole screen can still be read in the panel.
+
+<a id="notesmgr.note_image.is_remote"></a>
+
+#### is\_remote
+
+```python
+def is_remote(target: str) -> bool
+```
+
+Return whether what an image of a note names is on the network.
+
+A scheme of a single letter is the drive of a path on Microsoft
+Windows rather than a scheme of a URL, which is the one case
+that tells a path from an address.
+
+**Arguments**:
+
+- `target` - What the note names the image as.
+  
+
+**Returns**:
+
+  Whether that is an address rather than a file.
+
+<a id="notesmgr.note_image.image_path"></a>
+
+#### image\_path
+
+```python
+def image_path(folder: Optional[Path], target: str) -> Optional[Path]
+```
+
+Return the file that an image of a note names, None for none.
+
+An image is looked for beside the note rather than in the folder
+that the program was started from, because that is where a note
+that names an image of its own keeps it. An image that is
+somewhere on the network is not fetched at all, so that reading
+a note never waits for anything.
+
+**Arguments**:
+
+- `folder` - The folder that holds the note, None when the note
+  is shown from nowhere in particular.
+- `target` - What the note names the image as.
+  
+
+**Returns**:
+
+  The file to draw, None where the note names no file that can
+  be drawn from where it stands.
+
+<a id="notesmgr.note_image.shrink_factor"></a>
+
+#### shrink\_factor
+
+```python
+def shrink_factor(width: int, limit: int = MAX_IMAGE_WIDTH) -> int
+```
+
+Return by how much an image wider than the panel is drawn smaller.
+
+**Arguments**:
+
+- `width` - How wide the image is, in pixels.
+- `limit` - How wide it may be drawn, in pixels.
+  
+
+**Returns**:
+
+  The smallest whole factor that brings the image within the
+  width, which is what Tk can shrink an image by, and one for
+  an image that fits as it is.
 
 <a id="notesmgr.order_file"></a>
 
@@ -4469,6 +6359,15 @@ The extensions a note file can have, the longest one first.
 Trying the longest one first is what makes a name ending in .md.txt a
 markdown note rather than a text note whose name ends in .md.
 
+<a id="notesmgr.note_file.MARKDOWN_EXTENSIONS"></a>
+
+#### MARKDOWN\_EXTENSIONS
+
+The extensions of the notes that are written in markdown.
+
+A note named .txt is shown as it is written, because a file that
+says it is plain text is read as plain text.
+
 <a id="notesmgr.note_file.SEPARATORS"></a>
 
 #### SEPARATORS
@@ -4547,6 +6446,30 @@ def is_note(name: str) -> bool
 ```
 
 Return whether a file name is the name of a note.
+
+<a id="notesmgr.note_file.is_markdown"></a>
+
+#### is\_markdown
+
+```python
+def is_markdown(name: str) -> bool
+```
+
+Return whether a note is written in markdown.
+
+A note that is, is shown formatted for reading, and every other
+note is shown as it is written. The extension of the file says
+which it is, whatever the project writes its own notes as, so
+that a note that was written elsewhere is read as it was meant.
+
+**Arguments**:
+
+- `name` - File name, without any folders before it.
+  
+
+**Returns**:
+
+  Whether the name is the name of a markdown note.
 
 <a id="notesmgr.note_file.note_stem"></a>
 
@@ -4734,6 +6657,66 @@ Space in pixels left around what the area shows.
 
 Row of the area that the note itself is shown in.
 
+<a id="notesmgr.note_view.RULE_TEXT"></a>
+
+#### RULE\_TEXT
+
+What a line across the note is drawn with.
+
+The line is drawn long and is not broken where the window ends, so
+that it reaches across however wide the window is made.
+
+<a id="notesmgr.note_view.IMAGE_TEXT"></a>
+
+#### IMAGE\_TEXT
+
+How an image of a note is named where it is not drawn.
+
+<a id="notesmgr.note_view.MISSING_ALT"></a>
+
+#### MISSING\_ALT
+
+What an image that the note gives no description of is called.
+
+<a id="notesmgr.note_view.IMAGE_PADDING"></a>
+
+#### IMAGE\_PADDING
+
+Space in pixels left around an image that is drawn in a note.
+
+<a id="notesmgr.note_view.block_spans"></a>
+
+#### block\_spans
+
+```python
+def block_spans(block: Block) -> tuple[Span, ...]
+```
+
+Return everything that is written for one piece of a note.
+
+The bullet or the number of a list item and the line of a rule
+are drawn rather than read, so they are written here and are no
+part of what the note holds.
+
+**Arguments**:
+
+- `block` - The piece of the note that is to be written.
+  
+
+**Returns**:
+
+  The runs of text to write, in the order they are written in.
+
+<a id="notesmgr.note_view.image_text"></a>
+
+#### image\_text
+
+```python
+def image_text(span: Span) -> str
+```
+
+Return how an image is named where the image is not drawn.
+
 <a id="notesmgr.note_view.NoteView"></a>
 
 ## NoteView Objects
@@ -4745,9 +6728,9 @@ class NoteView()
 Shows the text of one note, with any warning above it.
 
 The warning is what could not be shown and why, and it is left
-out of the way whenever there is nothing to warn about. The text
-is shown as it is read, because what a note looks like formatted
-is what step 7 of the plan adds.
+out of the way whenever there is nothing to warn about. A note
+written in markdown is shown formatted for reading, and every
+other note is shown as it is written.
 
 <a id="notesmgr.note_view.NoteView.__init__"></a>
 
@@ -4774,7 +6757,9 @@ Put the warning above the note and let the note have the room.
 #### show
 
 ```python
-def show(note: NoteText) -> None
+def show(note: NoteText,
+         formatted: bool = False,
+         folder: Optional[Path] = None) -> None
 ```
 
 Show a note that was read, warning and all.
@@ -4782,6 +6767,11 @@ Show a note that was read, warning and all.
 **Arguments**:
 
 - `note` - The text to show and the warning to show above it.
+- `formatted` - Whether the note is written in markdown and
+  is therefore shown formatted for reading rather than
+  as it is written.
+- `folder` - The folder that holds the note, which is where
+  an image that the note shows is looked for.
 
 <a id="notesmgr.note_view.NoteView.show_warning"></a>
 
@@ -4793,6 +6783,17 @@ def show_warning(warning: str) -> None
 
 Show a warning above the note, and none when there is none.
 
+<a id="notesmgr.note_view.NoteView._writing"></a>
+
+#### \_writing
+
+```python
+@contextmanager
+def _writing() -> Iterator[None]
+```
+
+Empty the area and let it be written to, and no longer.
+
 <a id="notesmgr.note_view.NoteView.show_text"></a>
 
 #### show\_text
@@ -4802,6 +6803,123 @@ def show_text(text: str) -> None
 ```
 
 Show a text in an area that the user cannot type in.
+
+<a id="notesmgr.note_view.NoteView.show_blocks"></a>
+
+#### show\_blocks
+
+```python
+def show_blocks(blocks: Sequence[Block],
+                folder: Optional[Path] = None) -> None
+```
+
+Show the pieces that a note formatted for reading is drawn in.
+
+**Arguments**:
+
+- `blocks` - The pieces of the note, in the order they are
+  drawn in.
+- `folder` - The folder that holds the note, which is where
+  an image that the note shows is looked for.
+
+<a id="notesmgr.note_view.NoteView._write_gap"></a>
+
+#### \_write\_gap
+
+```python
+def _write_gap(block: Block, previous: Optional[Block]) -> None
+```
+
+Leave room above a piece of a note that follows another.
+
+<a id="notesmgr.note_view.NoteView._write_block"></a>
+
+#### \_write\_block
+
+```python
+def _write_block(block: Block) -> None
+```
+
+Write one piece of a note with the tags it is drawn with.
+
+<a id="notesmgr.note_view.NoteView._write_span"></a>
+
+#### \_write\_span
+
+```python
+def _write_span(kind: BlockKind, span: Span, indent: str) -> None
+```
+
+Write one run of text of a piece of a note.
+
+An image is drawn where its file can be drawn, and is named
+by its description where it cannot, so that a note always
+says what belongs where the image is.
+
+<a id="notesmgr.note_view.NoteView._write_text"></a>
+
+#### \_write\_text
+
+```python
+def _write_text(kind: BlockKind, span: Span, indent: str) -> None
+```
+
+Write the text of one run of text, image and all.
+
+<a id="notesmgr.note_view.NoteView._draw_picture"></a>
+
+#### \_draw\_picture
+
+```python
+def _draw_picture(picture: tkinter.PhotoImage, indent: str) -> None
+```
+
+Draw a picture where the note shows it, indented as it is.
+
+<a id="notesmgr.note_view.NoteView._picture"></a>
+
+#### \_picture
+
+```python
+def _picture(span: Span) -> Optional[tkinter.PhotoImage]
+```
+
+Return the picture of an image of the note, None for none.
+
+Tk reads PNG and GIF files of its own, and every other file
+is named rather than drawn. The pictures of the note are
+kept while it is shown, because Tk draws a picture that is
+nothing but the tag of an image no longer.
+
+<a id="notesmgr.note_view.NoteView._fitted"></a>
+
+#### \_fitted
+
+```python
+def _fitted(picture: tkinter.PhotoImage) -> tkinter.PhotoImage
+```
+
+Return a picture drawn small enough to be read in the panel.
+
+<a id="notesmgr.note_view.NoteView.zoom"></a>
+
+#### zoom
+
+```python
+def zoom(step: int) -> None
+```
+
+Draw the note so many steps larger, or smaller below zero.
+
+<a id="notesmgr.note_view.NoteView.zoom_normal"></a>
+
+#### zoom\_normal
+
+```python
+def zoom_normal() -> None
+```
+
+Draw the note in the size that it started out in.
 
 <a id="notesmgr.note_view.NoteView.shown_note"></a>
 

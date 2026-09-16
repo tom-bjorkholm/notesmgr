@@ -18,6 +18,13 @@ Trying the longest one first is what makes a name ending in .md.txt a
 markdown note rather than a text note whose name ends in .md.
 """
 
+MARKDOWN_EXTENSIONS = (NoteExtension.MD, NoteExtension.MD_TXT)
+"""The extensions of the notes that are written in markdown.
+
+A note named .txt is shown as it is written, because a file that
+says it is plain text is read as plain text.
+"""
+
 SEPARATORS = ('/', '\\')
 """What a name cannot hold, because it would then name a folder too.
 
@@ -70,6 +77,23 @@ def note_extension(name: str) -> Optional[NoteExtension]:
 def is_note(name: str) -> bool:
     """Return whether a file name is the name of a note."""
     return note_extension(name) is not None
+
+
+def is_markdown(name: str) -> bool:
+    """Return whether a note is written in markdown.
+
+    A note that is, is shown formatted for reading, and every other
+    note is shown as it is written. The extension of the file says
+    which it is, whatever the project writes its own notes as, so
+    that a note that was written elsewhere is read as it was meant.
+
+    Args:
+        name: File name, without any folders before it.
+
+    Returns:
+        Whether the name is the name of a markdown note.
+    """
+    return note_extension(name) in MARKDOWN_EXTENSIONS
 
 
 def note_stem(name: str) -> str:

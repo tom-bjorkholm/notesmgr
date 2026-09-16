@@ -19,6 +19,7 @@ from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
 from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config import DEFAULT_NOTE_SIZE, MIN_NOTE_SIZE, NoteExtension
 from notesmgr.errors import NotesmgrError
+from notesmgr.note_blocks import BlockKind
 from notesmgr.note_file import template_name
 from notesmgr.note_panel import NotePanel
 from notesmgr.note_text import NOT_UTF8
@@ -46,6 +47,12 @@ LATER = 100.0
 
 MARKER = 'what was on the clipboard before'
 """Text that a test puts on the clipboard to see it left alone."""
+
+PICTURE = bytes.fromhex(
+    '89504e470d0a1a0a0000000d494844520000000100000001080600000'
+    '01f15c4890000000a49444154789c6300010000050001'
+    '0d0a2db40000000049454e44ae426082')
+"""A picture of one dot, as small a PNG file as there is."""
 
 
 @pytest.fixture(name='project')
@@ -258,12 +265,60 @@ def test_not_utf8_warned(panel: NotePanel, project: Path) -> None:
 
 def test_long_note_cut(panel: NotePanel, project: Path,
                        session: Session) -> None:
-    """A note longer than the project shows is shown up to there."""
+    """A note longer than the project shows is read up to there.
+
+    What was read is what the panel knows of the note, and it is
+    what the area shows, formatted for reading in the case of a
+    note written in markdown.
+    """
     show_little(project, session, MIN_NOTE_SIZE)
     long_note = write_file(project / 'long.md.txt', 'a' * (MIN_NOTE_SIZE + 1))
     panel.show_path(long_note)
-    assert len(panel.view.area_text()) == MIN_NOTE_SIZE
+    assert len(panel.view.shown_note().text) == MIN_NOTE_SIZE
     assert panel.view.warning_shown()
+
+
+def test_markdown_formatted(panel: NotePanel, project: Path) -> None:
+    """A note written in markdown is shown formatted for reading."""
+    note = write_file(project / 'formatted.md.txt', '# A heading\n')
+    panel.show_path(note)
+    assert panel.view.area_text() == 'A heading\n'
+    tags = panel.view.area.tag_names('1.0')
+    assert str(BlockKind.HEADING1) in [str(tag) for tag in tags]
+
+
+def test_text_note_is_raw(panel: NotePanel, project: Path) -> None:
+    """A note that says it is plain text is shown as it is written."""
+    note = write_file(project / 'plain.txt', '# not a heading\n')
+    panel.show_path(note)
+    assert panel.view.area_text() == '# not a heading\n'
+    tags = [str(tag) for tag in panel.view.area.tag_names('1.0')]
+    assert str(BlockKind.HEADING1) not in tags
+
+
+def test_template_formatted(panel: NotePanel, project: Path) -> None:
+    """The template of a folder is shown the way a note of it is."""
+    write_template(project, NoteExtension.MD_TXT, '## Template\n')
+    panel.show_path(project / template_name(NoteExtension.MD_TXT))
+    assert panel.view.area_text() == 'Template\n'
+
+
+def test_image_beside_note(panel: NotePanel, project: Path) -> None:
+    """An image of a note is looked for beside the note itself."""
+    (project / 'dot.png').write_bytes(PICTURE)
+    note = write_file(project / 'shows.md.txt', '![A dot](dot.png)\n')
+    panel.show_path(note)
+    assert len(panel.view.pictures) == 1
+
+
+def test_zoom_reaches_note(panel: NotePanel, note: Path) -> None:
+    """Zooming the panel draws the note it shows larger and smaller."""
+    panel.show_path(note)
+    started = panel.view.tags.fonts.size
+    panel.zoom(2)
+    assert panel.view.tags.fonts.size == started + 2
+    panel.zoom_normal()
+    assert panel.view.tags.fonts.size == started
 
 
 def test_limit_from_project(panel: NotePanel, project: Path,

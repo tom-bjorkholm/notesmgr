@@ -118,7 +118,10 @@ One flat package, small modules, model and view kept apart.
 | `editor_command.py` | Editor argv construction and detached launch |
 | `file_watch.py` | Modification-time polling of the shown note |
 | `note_text.py` | Reading a note: decoding, size limit, what cannot be shown |
-| `markdown_render.py` | Markdown → HTML, and the stylesheet for the widget |
+| `markdown_render.py` | Markdown → HTML, with strikethrough added |
+| `note_blocks.py` | HTML → the pieces and runs of text a note is drawn in |
+| `note_table.py` | A table laid out in columns of monospaced text |
+| `note_image.py` | Which file an image names, and how much it is shrunk |
 | `rich_clipboard.py` | Backend selection and payload construction |
 | `clipboard_macos.py`, `clipboard_windows.py`, `clipboard_linux.py` | One platform each |
 | `version_info.py` | `versionreporter` wiring |
@@ -136,6 +139,8 @@ One flat package, small modules, model and view kept apart.
 | `note_panel.py` | Right panel: button row and note area |
 | `button_row.py` | The button row, laid out in as many rows as fit |
 | `note_view.py` | Raw and formatted display of a note |
+| `note_fonts.py` | The fonts of a note, and the one size they follow |
+| `note_tags.py` | The text tags that the pieces of a note are drawn with |
 | `dialogs.py` | Name/folder dialogs, confirmations, error reporting |
 
 ## The steps
@@ -536,7 +541,52 @@ you choose.
 
 ### Step 7 — Formatted note preview
 
-Status: **Not implemented yet.**
+Status: **Implemented and committed.**
+
+What was built, and the decisions taken while building it:
+
+- `markdown_render.py` gives the HTML: `fenced_code`, `tables`,
+  `sane_lists`, the `html_block` preprocessor and the `html` inline
+  pattern deregistered so that markup in a note is text, and two
+  additions the plan did not foresee:
+  - `tab_length=2`, because Python-Markdown counts four spaces to a
+    step of nesting and a list nested with two, which is how most
+    editors and markdown linters write one, is otherwise read as a
+    list of its own. A code block indented by hand keeps two spaces
+    of that, which the renderer takes off again with `dedent`.
+  - a strikethrough pattern of one line, `~~so~~` to `<del>`, which
+    Python-Markdown has none of. The alternative was a dependency on
+    `pymdown-extensions` for one pattern.
+- `note_blocks.py` reads that HTML into `Block` and `Span` over
+  `html.parser`: the kind of piece, how deeply it is nested, the
+  bullet or number of a list item, what is said about each run of
+  text, and where a link leads. Nothing here knows of Tk.
+- `note_table.py` lays a table out in columns, wrapping a cell that
+  is too wide rather than cutting it, and honouring the alignment
+  that the `tables` extension gives as a style attribute.
+- `note_image.py` answers which file an image names: beside the note,
+  never over the network, and by how much an image wider than the
+  panel is shrunk.
+- `note_fonts.py` holds the fonts, one per (scale, fixed, bold,
+  slanted), made when first needed and resized all together, which is
+  what makes zooming one call. `note_tags.py` holds the text tags and
+  hands out the tag of a font, so that only one tag of a run of text
+  ever carries a font and tag priority never has to be reasoned about.
+- `note_view.py` writes the pieces and nothing else. Room between two
+  pieces is left by a blank line in a small font rather than by Tk's
+  `spacing1`/`spacing3`, which would also space the lines inside a
+  code block and a table.
+- The switch is `note_file.is_markdown()`, over the extension of the
+  note's own name rather than the project's, so a `.txt` note in a
+  markdown project is shown as it is written. A note shown as written
+  is drawn in the fixed width font, which keeps a table lined up by
+  hand lined up.
+- Zooming was asked for during the review and was added here: `Cmd++`,
+  `Cmd+-`, `Cmd+0` on mac and `Ctrl+` the same elsewhere, a `View`
+  menu that shows those keys, and one size that every font follows.
+  `Shortcut` now carries several key sequences, because a plus is
+  typed with shift on most keyboards and is a key of its own on the
+  keypad.
 
 **Goal:** markdown notes shown formatted for reading.
 
@@ -610,6 +660,9 @@ Status: **Not implemented yet.**
   in the target folder.
 - Refused drops: onto itself, onto a template, into a note, out of the
   project.
+- also investigate if command-+, command--, command-0 + control variant
+  is possible and easy to implement for text also in explorer.
+  Implement "zoom" also for explorer if effort is not too large.
 
 **Tests:** the drop-target function over a table of positions and trees;
 the move operation and both order files after a cross-folder move;
@@ -622,7 +675,7 @@ order files.
 
 Status: **Not implemented yet.**
 
-**Goal:** a finished application.
+**Goal:** a finished application ready to be uploaded to PyPI.org
 
 - Every failure path reaches the user as a message box or a status line,
   never as a traceback in a terminal that a GUI launch does not have.
@@ -631,10 +684,18 @@ Status: **Not implemented yet.**
 - `README_pypi.md` brought in line with what was built (the list of
   changes below), `README.md` development notes, generated `doc/api.md`
   reviewed.
+- `README_pypi.md` change focus from being a description for developers
+  of what to build, into being a description for end user to
+  - decide if they want to install `notesmgr`
+  - understand how to use `notesmgr`
+  This means that details not interesting for end user are left out
+  from `README_pypi.md`
+- Step up version number to 0.1.0 from 0.0.1
 - Clean builds on 3.12, 3.13 and 3.14, the focus-sensitive suite run by
-  hand, and `./run_pypi_build.py` exercised.
+  hand.
 
-**In action:** the finished application on a real notes project.
+**In action:** the finished application on a real notes project
+ready to be uploaded to PyPI.org. (Uploading is outside this step.)
 
 ## Changes to the specification in `README_pypi.md`
 
@@ -660,3 +721,9 @@ the behaviour lands, not all at the end:
    `send2trash`) are listed (steps 5 to 7).
 8. The configuration holds `max_note_size`, and what the note area shows
    of an awkward note is documented (step 4).
+9. The menu bar has a `View` menu, and how large a note is drawn is the
+   user's to say with `Cmd++`/`Ctrl++` and its fellows. The size is not
+   remembered from one run to the next (step 7).
+10. What the formatted note shows is documented, `~~struck through~~`
+    among it, and so is the rule that the extension of the note's own
+    name decides whether it is formatted (step 7).

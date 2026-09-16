@@ -37,11 +37,19 @@ MINIMUM_HEIGHT = 400
 FILE_MENU = 'File'
 NOTE_MENU = 'Note'
 FOLDER_MENU = 'Folder'
+VIEW_MENU = 'View'
 CONFIG_MENU = 'Configuration'
 HELP_MENU = 'Help'
 NEW_PROJECT_ENTRY = 'New project…'
 OPEN_PROJECT_ENTRY = 'Open project…'
 QUIT_ENTRY = 'Quit'
+ZOOM_IN_ENTRY = 'Larger text'
+ZOOM_OUT_ENTRY = 'Smaller text'
+NORMAL_SIZE_ENTRY = 'Normal text size'
+ZOOM_STEP = 1
+ZOOM_IN_KEYS = ('plus', 'equal', 'KP_Add')
+ZOOM_OUT_KEYS = ('minus', 'KP_Subtract')
+NORMAL_SIZE_KEYS = ('Key-0', 'KP_0')
 EDIT_CONFIG_ENTRY = 'Edit configuration…'
 USER_WIDE_ENTRY = 'Save configuration as user wide…'
 VERSION_ENTRY = 'Version information…'
@@ -59,10 +67,24 @@ TEMPLATE_QUESTION = 'The folder {folder} holds more than one template.\n' \
 
 
 class Shortcut(NamedTuple):
-    """A keyboard shortcut: its Tk event sequence and its menu label."""
+    """A keyboard shortcut: its Tk event sequences and its menu label.
 
-    sequence: str
+    A shortcut has more than one sequence wherever more than one key
+    stands for it, such as the plus of the keypad and the plus that
+    is typed with the shift key held down.
+    """
+
+    sequences: tuple[str, ...]
     label: str
+
+
+class Shortcuts(NamedTuple):
+    """The keyboard shortcuts that the main window listens for."""
+
+    quit: Shortcut
+    larger: Shortcut
+    smaller: Shortcut
+    normal: Shortcut
 
 
 def tk_window_system(window: tkinter.Misc) -> str:
@@ -77,8 +99,51 @@ def quit_shortcut(window_system: str) -> Shortcut:
     desktops leave a program with Ctrl+Q.
     """
     if window_system == 'aqua':
-        return Shortcut('<Command-w>', 'Cmd+W')
-    return Shortcut('<Control-q>', 'Ctrl+Q')
+        return Shortcut(('<Command-w>',), 'Cmd+W')
+    return Shortcut(('<Control-q>',), 'Ctrl+Q')
+
+
+def modifier(window_system: str) -> tuple[str, str]:
+    """Return the key held down for a shortcut, and what it is called.
+
+    macOS holds the command key down where Windows and the X11
+    desktops hold the control key down.
+    """
+    if window_system == 'aqua':
+        return ('Command', 'Cmd')
+    return ('Control', 'Ctrl')
+
+
+def held_shortcut(window_system: str, keysyms: Sequence[str],
+                  shown: str) -> Shortcut:
+    """Return a shortcut of the held key and the keys that stand for it.
+
+    Args:
+        window_system: The windowing system that Tk is using.
+        keysyms: What Tk calls each of the keys that stand for it.
+        shown: What the key is called on the menu entry.
+
+    Returns:
+        The shortcut to bind and to show.
+    """
+    held, name = modifier(window_system)
+    sequences = tuple(f'<{held}-{keysym}>' for keysym in keysyms)
+    return Shortcut(sequences, f'{name}+{shown}')
+
+
+def window_shortcuts(window_system: str) -> Shortcuts:
+    """Return the shortcuts of the main window on a windowing system.
+
+    Making a note larger is asked for with a plus, which is typed
+    with the shift key held down on most keyboards and is a key of
+    its own on the keypad, so every key that stands for it is bound
+    and the plainest of them is the one that is shown.
+    """
+    return Shortcuts(
+        quit=quit_shortcut(window_system),
+        larger=held_shortcut(window_system, ZOOM_IN_KEYS, '+'),
+        smaller=held_shortcut(window_system, ZOOM_OUT_KEYS, '-'),
+        normal=held_shortcut(window_system, NORMAL_SIZE_KEYS, '0'))
 
 
 class MainWindow:
@@ -99,13 +164,13 @@ class MainWindow:
         commands = Commands(window, self.session, hooks)
         self.note_panel = NotePanel(self.panes, self.session, commands)
         self.config_panel: Optional[TkEditorPanel] = None
-        shortcut = quit_shortcut(tk_window_system(window))
-        self.menu_bar = build_menu_bar(window, self._menu_specs(shortcut))
+        keys = window_shortcuts(tk_window_system(window))
+        self.menu_bar = build_menu_bar(window, self._menu_specs(keys))
         self._shape_window()
-        self._bind_quit_shortcut(shortcut)
+        self._bind_shortcuts(keys)
         self.show_project(None)
 
-    def _menu_specs(self, shortcut: Shortcut) -> list[MenuSpec]:
+    def _menu_specs(self, keys: Shortcuts) -> list[MenuSpec]:
         """Return the menus of the main window and what they hold.
 
         The entries that act on a note need a note to act on, the
@@ -116,7 +181,7 @@ class MainWindow:
         """
         new_entry = MenuEntry(NEW_PROJECT_ENTRY, self.new_project_dialog)
         open_entry = MenuEntry(OPEN_PROJECT_ENTRY, self.open_project_dialog)
-        quit_entry = MenuEntry(QUIT_ENTRY, self.quit, shortcut.label)
+        quit_entry = MenuEntry(QUIT_ENTRY, self.quit, keys.quit.label)
         edit_entry = MenuEntry(EDIT_CONFIG_ENTRY, self.edit_configuration)
         user_wide = MenuEntry(USER_WIDE_ENTRY, self.save_user_wide,
                               enabled=False)
@@ -124,6 +189,7 @@ class MainWindow:
         return [MenuSpec(FILE_MENU, [new_entry, open_entry, quit_entry]),
                 MenuSpec(NOTE_MENU, self._note_entries()),
                 MenuSpec(FOLDER_MENU, self._folder_entries()),
+                MenuSpec(VIEW_MENU, self._view_entries(keys)),
                 MenuSpec(CONFIG_MENU, [edit_entry, user_wide]),
                 MenuSpec(HELP_MENU, [versions])]
 
@@ -149,15 +215,46 @@ class MainWindow:
                 MenuEntry(DELETE_FOLDER, commands.delete_folder,
                           enabled=False)]
 
-    def _bind_quit_shortcut(self, shortcut: Shortcut) -> None:
-        """Let the shortcut shown on the Quit entry close the window.
+    def _view_entries(self, keys: Shortcuts) -> list[MenuEntry]:
+        """Return the entries that say how large a note is drawn.
 
-        Tk installs no binding for a menu accelerator, so the key
-        sequence has to be bound as well. It is bound on this window
-        only, so that it cannot close the main window from a dialog
-        that happens to have the keyboard focus.
+        A note is read on whatever screen the user has, so how large
+        it is drawn is theirs to say, and it can always be said
+        however small or large the note itself is.
         """
-        self.window.bind(shortcut.sequence, lambda _event: self.quit())
+        return [MenuEntry(ZOOM_IN_ENTRY, self._zoom_command(ZOOM_STEP),
+                          keys.larger.label),
+                MenuEntry(ZOOM_OUT_ENTRY, self._zoom_command(-ZOOM_STEP),
+                          keys.smaller.label),
+                MenuEntry(NORMAL_SIZE_ENTRY, self._normal_command(),
+                          keys.normal.label)]
+
+    def _zoom_command(self, step: int) -> Callable[[], None]:
+        """Return what draws the note so many steps larger or smaller."""
+        return partial(self.note_panel.zoom, step)
+
+    def _normal_command(self) -> Callable[[], None]:
+        """Return what draws the note in the size it started out in."""
+        return self.note_panel.zoom_normal
+
+    def _bind_shortcuts(self, keys: Shortcuts) -> None:
+        """Let the shortcuts shown on the menu entries be typed.
+
+        Tk installs no binding for a menu accelerator, so every key
+        sequence has to be bound as well. They are bound on this
+        window only, so that a dialog which happens to have the
+        keyboard focus cannot reach the main window with them.
+        """
+        self._bind(keys.quit, self.quit)
+        self._bind(keys.larger, self._zoom_command(ZOOM_STEP))
+        self._bind(keys.smaller, self._zoom_command(-ZOOM_STEP))
+        self._bind(keys.normal, self._normal_command())
+
+    def _bind(self, shortcut: Shortcut, command: Callable[[], None]) \
+            -> None:
+        """Let every key sequence of one shortcut run a command."""
+        for sequence in shortcut.sequences:
+            self.window.bind(sequence, lambda _event: command())
 
     def _shape_window(self) -> None:
         """Lay out the panes and give the window its size."""

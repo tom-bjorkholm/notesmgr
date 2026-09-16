@@ -128,6 +128,8 @@ The menu bar has menus with actions for:
 - Creating a new folder in the project
 - Renaming a folder of the project
 - Deleting a folder of the project that holds nothing
+- Drawing the note that is shown larger or smaller, and back to the
+  size it started at
 - Editing the configuration
 - Saving the configuration as the user wide configuration
 - Reporting version information and information of available updates
@@ -135,7 +137,11 @@ The menu bar has menus with actions for:
 Every menu entry that acts on a note does what the button of the same
 name in the main window does, and is greyed out until there is a note
 for it to act on. The entries that act on a folder are greyed out until
-a folder is selected in the same way.
+a folder is selected in the same way. How large a note is drawn can be
+said at any time, and the entries of the `View` menu show the keys that
+say it: `Cmd++`, `Cmd+-` and `Cmd+0` on mac, and `Ctrl++`, `Ctrl+-` and
+`Ctrl+0` on Microsoft Windows and on Linux. The size is not remembered
+from one run to the next.
 
 The configuration editor writes the configuration itself when you save in
 it, so there is no separate menu item for saving the configuration of the
@@ -159,6 +165,29 @@ within a folder. A note can also be dragged into or out of a folder.
 To the right of the main window there is a wide panel with a row of buttons at
 the top and an area showing the selected note. If the selected note is written
 in markdown this area shows the note formatted for human reading.
+
+A note whose name ends with `.md` or `.md.txt` is formatted, and a note
+whose name ends with `.txt` is shown exactly as it is written, whatever
+the `file_extension` of the project is, so that a note written elsewhere
+is read as it was meant. `notesmgr` draws the formatted note itself,
+rather than through an HTML widget, so no new version of Tk can take the
+formatting away. What it draws is:
+
+- headings of six levels, paragraphs, and the line breaks of the note
+  read as the blanks between words that markdown makes them
+- text that is bold, slanted, struck through (written `~~so~~`), code
+  inside a line of prose, and the text of a link
+- lists, ordered and not, nested as deeply as the note nests them
+- code blocks, fenced or indented, shown exactly as they are written
+- tables, laid out in columns of one width per letter, a cell too wide
+  for its column written over several lines
+- block quotes, nested quotes among them, and lines across the note
+- images beside the note that are PNG or GIF files, drawn where the note
+  shows them, and every other image named by its description instead
+
+Markup that a note holds is shown as the text that it is rather than
+obeyed, and a nested list is written with either two or four spaces of
+indentation.
 
 The area shows the selected note, and the template of a folder is shown and
 edited just like a note. A note that is not valid UTF-8 text is not shown at
@@ -263,7 +292,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 863 passed, 7 deselected in 7s
+- Test result: 1165 passed, 7 deselected in 7s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
