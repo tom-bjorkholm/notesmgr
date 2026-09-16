@@ -250,18 +250,20 @@ than a reason to refuse to start.
 ## What notesmgr is built on
 
 `notesmgr` uses `config-as-json` and `edit-cfg-json-tk` for its
-configuration, `versionreporter` for the version report, `argcomplete` for
+configuration, `markdown` for reading a note that is written in markdown,
+`versionreporter` for the version report, `argcomplete` for
 the command line, and `Send2Trash` for everything it removes, so that a file
 `notesmgr` takes away can be taken back out of the trash of the operating
 system.
 
 ## Source code
 
-Source code and tests are available at [https://github.com/tom-bjorkholm/notesmgr](https://github.com/tom-bjorkholm/notesmgr).
+Source code and tests are available at
+[https://github.com/tom-bjorkholm/notesmgr](https://github.com/tom-bjorkholm/notesmgr).
 
 ## Test summary
 
-- Test result: 860 passed, 7 deselected in 6s
+- Test result: 863 passed, 7 deselected in 7s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

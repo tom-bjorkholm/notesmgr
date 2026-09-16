@@ -23,6 +23,8 @@ setup(
     'edit-cfg-json-tk >= 0.3.0',
     'edit-cfg-json >= 0.3.0',
     'config-as-json >= 1.7',
+    'markdown >= 3.10.3',
+    'types-Markdown >= 3.10.2.20260712',
     'packaging >= 26.3',
     'send2trash >= 2.1.0',
     'types-Send2Trash >= 2.1.0.20260408',

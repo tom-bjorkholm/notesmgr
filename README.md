@@ -114,7 +114,7 @@ the built and installed application in the virtual environment `./venv`.
 
 ## Test summary
 
-- Test result: 860 passed, 7 deselected in 6s
+- Test result: 863 passed, 7 deselected in 7s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

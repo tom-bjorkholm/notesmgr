@@ -44,7 +44,8 @@ def test_upgrade_installs() -> None:
 
 @pytest.mark.parametrize('package', ['notesmgr', 'edit-cfg-json-tk',
                                      'edit-cfg-json', 'config-as-json',
-                                     'versionreporter', 'argcomplete'])
+                                     'versionreporter', 'argcomplete',
+                                     'packaging', 'send2trash', 'markdown'])
 def test_package_reported(package: str) -> None:
     """Every package that notesmgr is built on is reported."""
     assert package in NotesmgrVersions().package_names()

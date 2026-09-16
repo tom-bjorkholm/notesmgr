@@ -14,7 +14,7 @@ MAIN_PACKAGE = 'notesmgr'
 
 REPORTED_PACKAGES = [MAIN_PACKAGE, 'edit-cfg-json-tk', 'edit-cfg-json',
                      'config-as-json', 'versionreporter', 'argcomplete',
-                     'packaging', 'send2trash']
+                     'packaging', 'send2trash', 'markdown']
 """Packages whose versions are worth reporting to a user."""
 
 RECOMMENDED_PYTHON = '3.14'

@@ -84,7 +84,7 @@ view.
 
 | Topic | Decision |
 | --- | --- |
-| Formatted preview | `markdown` package for markdown → HTML, drawn by an HTML widget dependency; `tkinterweb` vs `tkhtmlview` decided by the spike in step 6 |
+| Formatted preview | `markdown` package for markdown → HTML, drawn into an ordinary `tkinter.Text` by a renderer notesmgr owns. The spike in step 6 ruled out both HTML widget dependencies |
 | `Copy formatted` | Real rich text on the system pasteboard using tools the OS already ships, no new Python dependency (macOS `textutil`+`osascript`/`pbcopy`, Windows CF_HTML through `ctypes`, Linux `xclip`/`wl-copy`) |
 | Configuration editor | `TkEditorPanel(config, parent=main_window, modal=True)`; the application already owns a `tkinter.Tk`, so `edit()`/`TkEditor` cannot be used |
 | Configuration saving | The panel's own Save writes `<project>/notesmgr.cfg`; a separate menu item copies that file to the user-wide location |
@@ -496,7 +496,30 @@ the window, then look at `.notes_order.txt` and the trash.
 
 ### Step 6 — Markdown rendering spike and decision
 
-Status: **Not implemented yet.**
+Status: **Implemented, decision taken, committed.**
+
+The comparison is in `.plans/spike_report.md`, and the spike itself is
+`.plans/spike_widgets.py` over `.plans/spike_note.md`.
+
+**The decision: neither HTML widget.** `markdown` and `types-Markdown`
+are in `install_requires`, and step 7 draws the note into an ordinary
+`tkinter.Text` with tags that notesmgr owns. If that turns out to be
+harder than the spike suggests, `tkhtmlview` is the fallback to
+reconsider, and the report says what it would cost.
+
+What the spike found, in short:
+
+- `tkinterweb` cannot be used. It needs a compiled Tkhtml3 binary, and
+  no release of `tkinterweb-tkhtml` carries one for Tcl/Tk 9, which is
+  what Python 3.14 brings and therefore what this repository builds on.
+- `tkhtmlview` works on all three versions but is a 750-line tag-based
+  parser rather than an engine: block quotes come out flat, horizontal
+  rules vanish, tables become tab characters, a remote image freezes the
+  window, and a local image is looked for in the current folder.
+- The recommendation is therefore neither of the two, but a `tkinter.Text`
+  renderer that notesmgr owns, fed from the same HTML, which adds no
+  runtime dependency beyond `markdown` and cannot break on a Tk upgrade.
+  That would make step 7 somewhat larger than planned.
 
 **Goal:** settle the HTML widget dependency on evidence.
 
@@ -518,10 +541,25 @@ Status: **Not implemented yet.**
 **Goal:** markdown notes shown formatted for reading.
 
 - `markdown_render.py`: `markdown` with a documented extension set
-  (fenced code, tables, sane lists), plus the stylesheet handed to the
-  widget. Embedded HTML in a note is rendered as text, not as markup.
-- `note_view.py`: formatted for `.md` and `.md.txt`, raw for `.txt`,
-  with the switch owned by the model.
+  (fenced code, tables, sane lists). Embedded HTML in a note is rendered
+  as text, not as markup, which step 6 established needs the `html_block`
+  preprocessor and the `html` inline pattern deregistered. The HTML is
+  also what step 8 puts on the clipboard.
+- A pure function from that HTML to the segments and tags that a
+  `tkinter.Text` is filled with, over `html.parser` from the standard
+  library. This is where every question with a right answer lives, and
+  it is tested headless over the markdown fixture corpus.
+- `note_view.py`: applies the segments and owns the tag definitions
+  (headings, code, block quote indent, list indent, link). Formatted for
+  `.md` and `.md.txt`, raw for `.txt`, with the switch owned by the model.
+
+Implement in 2 sub-steps: first the rendering of a markdown note
+with basic tests, then a mid-review by a human looking at how
+a note with content from `.plans/spike_note.md` is rendered, and
+finally the implementation of the rest of the functionality and
+the extensive tests. The reason is that we want to find out as
+early as possible of the decision from the spike in step 6 is
+correct.
 
 **Tests:** the HTML for a corpus of markdown fixtures, including the
 awkward ones (nested lists, a code fence holding markdown, a table with
