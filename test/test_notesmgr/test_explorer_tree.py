@@ -8,9 +8,8 @@ import tkinter
 from pathlib import Path
 from typing import Optional
 import pytest
-from test_notesmgr.helpers import refuse_choice, write_config, write_notes, \
-    write_order, write_template
-from notesmgr.config import NoteExtension
+from test_notesmgr.helpers import build_folder_project, refuse_choice
+from notesmgr.explorer_drop import Drop
 from notesmgr.explorer_tree import EXPLORER_WIDTH, ExplorerTree
 from notesmgr.project import Project
 from notesmgr.project_ops import open_project
@@ -19,13 +18,7 @@ from notesmgr.project_ops import open_project
 @pytest.fixture(name='project')
 def fixture_project(tmp_path: Path) -> Project:
     """Provide an open project holding folders, notes and templates."""
-    root = tmp_path / 'notes'
-    write_config(root, NoteExtension.MD_TXT)
-    write_template(root, NoteExtension.MD_TXT)
-    write_notes(root, ['first.md.txt', 'second.md.txt'])
-    write_order(root, ['second.md.txt', 'first.md.txt'])
-    write_notes(root / 'zebra', ['z.md.txt'])
-    write_notes(root / 'apple', ['a.md.txt'])
+    root = build_folder_project(tmp_path / 'notes')
     return open_project(root, refuse_choice).project
 
 
@@ -35,11 +28,21 @@ def fixture_selected() -> list[Optional[Path]]:
     return []
 
 
+@pytest.fixture(name='dropped')
+def fixture_dropped() -> list[tuple[Path, Drop]]:
+    """Provide the list that the tree reports its drops into."""
+    return []
+
+
 @pytest.fixture(name='explorer')
 def fixture_explorer(top_window: tkinter.Toplevel,
-                     selected: list[Optional[Path]]) -> ExplorerTree:
+                     selected: list[Optional[Path]],
+                     dropped: list[tuple[Path, Drop]]) -> ExplorerTree:
     """Provide an explorer tree in a hidden window, showing nothing yet."""
-    return ExplorerTree(top_window, selected.append)
+    def taken(item: Path, drop: Drop) -> None:
+        """Stand in for the window that carries a drop out."""
+        dropped.append((item, drop))
+    return ExplorerTree(top_window, selected.append, taken)
 
 
 def items_under(explorer: ExplorerTree, item: str) -> list[str]:
@@ -146,3 +149,54 @@ def test_select_a_folder(explorer: ExplorerTree, project: Project) -> None:
     explorer.show(project)
     folder = project.root / 'apple'
     assert explorer.select(folder) == folder
+
+
+def test_tree_takes_its_style(explorer: ExplorerTree) -> None:
+    """The tree is drawn with the style that its own font is in."""
+    assert str(explorer.tree.cget('style')) == explorer.font.name
+
+
+def test_no_project_no_drop(explorer: ExplorerTree, project: Project) -> None:
+    """While no project is shown nothing can be dropped anywhere."""
+    note = project.root / 'first.md.txt'
+    assert explorer.drop_at(note, project.root, False) is None
+
+
+def test_drop_at_a_place(explorer: ExplorerTree, project: Project) -> None:
+    """The tree answers where a dragged note would land in the project."""
+    explorer.show(project)
+    note = project.root / 'apple' / 'a.md.txt'
+    assert explorer.drop_at(note, project.root / 'first.md.txt', True) == \
+        Drop(project.root, 2)
+
+
+def test_drop_at_nowhere(explorer: ExplorerTree, project: Project) -> None:
+    """A drag over no item of the tree lands nowhere at all."""
+    explorer.show(project)
+    note = project.root / 'apple' / 'a.md.txt'
+    assert explorer.drop_at(note, None, False) is None
+
+
+def test_showing_forgets(explorer: ExplorerTree, project: Project) -> None:
+    """Showing no project leaves nothing that can be dropped anywhere."""
+    explorer.show(project)
+    explorer.show(None)
+    assert explorer.project is None
+    assert explorer.drop_at(project.root / 'first.md.txt', project.root,
+                            False) is None
+
+
+def test_zoom_larger(explorer: ExplorerTree) -> None:
+    """The tree is drawn larger, and back in the size it started in."""
+    started = explorer.font.size
+    explorer.zoom(3)
+    assert explorer.font.size == started + 3
+    explorer.zoom_normal()
+    assert explorer.font.size == started
+
+
+def test_zoom_smaller(explorer: ExplorerTree) -> None:
+    """The tree is drawn smaller as well as larger."""
+    started = explorer.font.size
+    explorer.zoom(-2)
+    assert explorer.font.size == started - 2

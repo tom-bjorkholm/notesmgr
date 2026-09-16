@@ -20,6 +20,7 @@ from notesmgr.config_files import copy_to_user_wide
 from notesmgr.dialogs import ask_choice, ask_folder, ask_yes_no, \
     busy_cursor, show_error, show_info, show_text
 from notesmgr.errors import NotesmgrError
+from notesmgr.explorer_drop import Drop
 from notesmgr.explorer_tree import ExplorerTree
 from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar, \
     entry_labels, set_enabled
@@ -159,7 +160,8 @@ class MainWindow:
         self.window = window
         self.session = Session()
         self.panes = ttk.PanedWindow(window, orient=tkinter.HORIZONTAL)
-        self.explorer = ExplorerTree(self.panes, self.show_selected)
+        self.explorer = ExplorerTree(self.panes, self.show_selected,
+                                     self.dropped)
         hooks = WindowHooks(self.reopen, self.offer_actions)
         commands = Commands(window, self.session, hooks)
         self.note_panel = NotePanel(self.panes, self.session, commands)
@@ -229,12 +231,27 @@ class MainWindow:
                           keys.normal.label)]
 
     def _zoom_command(self, step: int) -> Callable[[], None]:
-        """Return what draws the note so many steps larger or smaller."""
-        return partial(self.note_panel.zoom, step)
+        """Return what draws the window so many steps larger or smaller."""
+        return partial(self.zoom, step)
 
     def _normal_command(self) -> Callable[[], None]:
-        """Return what draws the note in the size it started out in."""
-        return self.note_panel.zoom_normal
+        """Return what draws the window in the size it started out in."""
+        return self.zoom_normal
+
+    def zoom(self, step: int) -> None:
+        """Draw the note and the tree so many steps larger or smaller.
+
+        The note and the names of the notes are read on one screen
+        and at one distance from it, so they are made larger and
+        smaller together rather than each for itself.
+        """
+        self.note_panel.zoom(step)
+        self.explorer.zoom(step)
+
+    def zoom_normal(self) -> None:
+        """Draw the note and the tree in the size they started out in."""
+        self.note_panel.zoom_normal()
+        self.explorer.zoom_normal()
 
     def _bind_shortcuts(self, keys: Shortcuts) -> None:
         """Let the shortcuts shown on the menu entries be typed.
@@ -273,6 +290,15 @@ class MainWindow:
     def show_selected(self, path: Optional[Path]) -> None:
         """Show what the explorer has selected in the note panel."""
         self.note_panel.show_path(path)
+
+    def dropped(self, item: Path, drop: Drop) -> None:
+        """Move what was dragged in the explorer to where it was dropped.
+
+        Args:
+            item: The note or the folder that was dragged.
+            drop: Where it was dropped, as the tree worked it out.
+        """
+        self.note_panel.commands.drop(item, drop)
 
     def offer_actions(self, labels: AbstractSet[str]) -> None:
         """Offer what can be done now, and grey out what cannot.

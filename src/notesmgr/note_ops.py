@@ -26,6 +26,9 @@ NOT_COPIED = 'The note {path} cannot be copied.\n{reason}'
 NOT_TRASHED = 'The note {path} cannot be moved to the trash.\n{reason}'
 """What is said about a note that the trash would not take."""
 
+NOT_MOVED = 'The note {path} cannot be moved.\n{reason}'
+"""What is said about a note that could not be moved to a folder."""
+
 
 def resync_order(folder: Path) -> list[str]:
     """Return the notes of a folder, bringing its order file in line.
@@ -201,7 +204,48 @@ def moved_order(names: Sequence[str], name: str, offset: int) -> list[str]:
     return moved
 
 
-def move_note(note: Path, offset: int) -> Path:
+def moved_to(names: Sequence[str], name: str, index: int) -> list[str]:
+    """Return an order with one of its notes put at a place in it.
+
+    The place is where the note lands among the notes as they stand
+    now, so that a note dropped upon the note at a place takes that
+    place, and a note dropped below the last note comes last.
+
+    Args:
+        names: The notes of a folder, in the order they are shown in.
+        name: The note to put there, which may be none of them.
+        index: The place it lands at, kept within the folder.
+
+    Returns:
+        The order as it is after the move.
+    """
+    moved = list(names)
+    if name not in moved:
+        return moved
+    was = moved.index(name)
+    place = min(max(index, 0), len(moved))
+    moved.pop(was)
+    moved.insert(place - 1 if place > was else place, name)
+    return moved
+
+
+def reordered(folder: Path, order: Sequence[str],
+              moved: Sequence[str]) -> None:
+    """Write the order of a folder, when a move changed the order.
+
+    Args:
+        folder: The folder whose notes were moved.
+        order: The order the folder had.
+        moved: The order it has after the move.
+
+    Raises:
+        NotesmgrError: The order file cannot be written.
+    """
+    if list(moved) != list(order):
+        write_order(folder, order_text(moved))
+
+
+def shift_note(note: Path, offset: int) -> Path:
     """Move a note so many places in the order of its folder.
 
     Args:
@@ -217,7 +261,56 @@ def move_note(note: Path, offset: int) -> Path:
     """
     folder = note.parent
     order = resync_order(folder)
-    moved = moved_order(order, note.name, offset)
-    if moved != order:
-        write_order(folder, order_text(moved))
+    reordered(folder, order, moved_order(order, note.name, offset))
     return note
+
+
+def place_note(folder: Path, name: str, index: int) -> None:
+    """Put one of the notes of a folder at a place in its order.
+
+    Args:
+        folder: The folder that the note is in.
+        name: The name of the note that is put there.
+        index: The place it lands at, among the notes as they stand.
+
+    Raises:
+        NotesmgrError: The folder or its order file cannot be read,
+            or the order file cannot be written.
+    """
+    order = resync_order(folder)
+    reordered(folder, order, moved_to(order, name, index))
+
+
+def move_note(note: Path, folder: Path, index: int) -> Path:
+    """Move a note to a place among the notes of a folder.
+
+    The folder is the note's own folder when the note is only put at
+    another place in it, and another folder of the project when it is
+    moved there, which leaves the order of both folders in order.
+
+    Args:
+        note: The note to move.
+        folder: The folder it is to be in.
+        index: The place it lands at, among the notes of that folder
+            as they stand now.
+
+    Returns:
+        The note where it now is.
+
+    Raises:
+        NotesmgrError: The folder holds a file of that name already,
+            the note cannot be moved, or a note order cannot be read
+            or written.
+    """
+    if folder == note.parent:
+        place_note(folder, note.name, index)
+        return note
+    wanted = free_path(folder, note.name)
+    try:
+        note.rename(wanted)
+    except OSError as error:
+        raise NotesmgrError(NOT_MOVED.format(path=note,
+                                             reason=error)) from error
+    resync_order(note.parent)
+    place_note(folder, wanted.name, index)
+    return wanted

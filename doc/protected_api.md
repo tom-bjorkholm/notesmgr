@@ -16,11 +16,14 @@
     * [\_view\_entries](#notesmgr.main_window.MainWindow._view_entries)
     * [\_zoom\_command](#notesmgr.main_window.MainWindow._zoom_command)
     * [\_normal\_command](#notesmgr.main_window.MainWindow._normal_command)
+    * [zoom](#notesmgr.main_window.MainWindow.zoom)
+    * [zoom\_normal](#notesmgr.main_window.MainWindow.zoom_normal)
     * [\_bind\_shortcuts](#notesmgr.main_window.MainWindow._bind_shortcuts)
     * [\_bind](#notesmgr.main_window.MainWindow._bind)
     * [\_shape\_window](#notesmgr.main_window.MainWindow._shape_window)
     * [show\_project](#notesmgr.main_window.MainWindow.show_project)
     * [show\_selected](#notesmgr.main_window.MainWindow.show_selected)
+    * [dropped](#notesmgr.main_window.MainWindow.dropped)
     * [offer\_actions](#notesmgr.main_window.MainWindow.offer_actions)
     * [new\_project\_dialog](#notesmgr.main_window.MainWindow.new_project_dialog)
     * [open\_project\_dialog](#notesmgr.main_window.MainWindow.open_project_dialog)
@@ -137,6 +140,15 @@
   * [editor\_argv](#notesmgr.editor_command.editor_argv)
   * [start\_detached](#notesmgr.editor_command.start_detached)
   * [launch\_editor](#notesmgr.editor_command.launch_editor)
+* [notesmgr.explorer\_drop](#notesmgr.explorer_drop)
+  * [Drop](#notesmgr.explorer_drop.Drop)
+  * [folder\_drop](#notesmgr.explorer_drop.folder_drop)
+  * [note\_place](#notesmgr.explorer_drop.note_place)
+  * [stays\_put](#notesmgr.explorer_drop.stays_put)
+  * [dragged\_note](#notesmgr.explorer_drop.dragged_note)
+  * [note\_drop](#notesmgr.explorer_drop.note_drop)
+  * [drop\_target](#notesmgr.explorer_drop.drop_target)
+  * [drop\_item](#notesmgr.explorer_drop.drop_item)
 * [notesmgr.config](#notesmgr.config)
   * [EMPTY\_EDITOR](#notesmgr.config.EMPTY_EDITOR)
   * [NoteExtension](#notesmgr.config.NoteExtension)
@@ -157,6 +169,7 @@
   * [NOT\_WRITTEN](#notesmgr.note_ops.NOT_WRITTEN)
   * [NOT\_COPIED](#notesmgr.note_ops.NOT_COPIED)
   * [NOT\_TRASHED](#notesmgr.note_ops.NOT_TRASHED)
+  * [NOT\_MOVED](#notesmgr.note_ops.NOT_MOVED)
   * [resync\_order](#notesmgr.note_ops.resync_order)
   * [free\_path](#notesmgr.note_ops.free_path)
   * [new\_path](#notesmgr.note_ops.new_path)
@@ -165,6 +178,10 @@
   * [duplicate\_note](#notesmgr.note_ops.duplicate_note)
   * [delete\_note](#notesmgr.note_ops.delete_note)
   * [moved\_order](#notesmgr.note_ops.moved_order)
+  * [moved\_to](#notesmgr.note_ops.moved_to)
+  * [reordered](#notesmgr.note_ops.reordered)
+  * [shift\_note](#notesmgr.note_ops.shift_note)
+  * [place\_note](#notesmgr.note_ops.place_note)
   * [move\_note](#notesmgr.note_ops.move_note)
 * [notesmgr.clipboard\_linux](#notesmgr.clipboard_linux)
   * [XCLIP](#notesmgr.clipboard_linux.XCLIP)
@@ -368,6 +385,45 @@
   * [TAB\_LENGTH](#notesmgr.markdown_render.TAB_LENGTH)
   * [markdown\_converter](#notesmgr.markdown_render.markdown_converter)
   * [note\_html](#notesmgr.markdown_render.note_html)
+* [notesmgr.explorer\_drag](#notesmgr.explorer_drag)
+  * [PRESS\_EVENT](#notesmgr.explorer_drag.PRESS_EVENT)
+  * [MOTION\_EVENT](#notesmgr.explorer_drag.MOTION_EVENT)
+  * [RELEASE\_EVENT](#notesmgr.explorer_drag.RELEASE_EVENT)
+  * [CANCEL\_EVENT](#notesmgr.explorer_drag.CANCEL_EVENT)
+  * [DRAG\_START](#notesmgr.explorer_drag.DRAG_START)
+  * [MARK\_TAG](#notesmgr.explorer_drag.MARK_TAG)
+  * [MARK\_COLOUR](#notesmgr.explorer_drag.MARK_COLOUR)
+  * [MARK\_TEXT\_COLOUR](#notesmgr.explorer_drag.MARK_TEXT_COLOUR)
+  * [LINE\_HEIGHT](#notesmgr.explorer_drag.LINE_HEIGHT)
+  * [Dragging](#notesmgr.explorer_drag.Dragging)
+  * [row\_at](#notesmgr.explorer_drag.row_at)
+  * [row\_box](#notesmgr.explorer_drag.row_box)
+  * [lower\_half](#notesmgr.explorer_drag.lower_half)
+  * [DropMark](#notesmgr.explorer_drag.DropMark)
+    * [\_\_init\_\_](#notesmgr.explorer_drag.DropMark.__init__)
+    * [at\_folder](#notesmgr.explorer_drag.DropMark.at_folder)
+    * [at\_edge](#notesmgr.explorer_drag.DropMark.at_edge)
+    * [clear](#notesmgr.explorer_drag.DropMark.clear)
+  * [ExplorerDrag](#notesmgr.explorer_drag.ExplorerDrag)
+    * [\_\_init\_\_](#notesmgr.explorer_drag.ExplorerDrag.__init__)
+    * [press](#notesmgr.explorer_drag.ExplorerDrag.press)
+    * [motion](#notesmgr.explorer_drag.ExplorerDrag.motion)
+    * [release](#notesmgr.explorer_drag.ExplorerDrag.release)
+    * [cancelled](#notesmgr.explorer_drag.ExplorerDrag.cancelled)
+    * [cancel](#notesmgr.explorer_drag.ExplorerDrag.cancel)
+    * [dragging](#notesmgr.explorer_drag.ExplorerDrag.dragging)
+    * [show](#notesmgr.explorer_drag.ExplorerDrag.show)
+* [notesmgr.explorer\_font](#notesmgr.explorer_font)
+  * [ROW\_PADDING](#notesmgr.explorer_font.ROW_PADDING)
+  * [STYLE\_KIND](#notesmgr.explorer_font.STYLE_KIND)
+  * [STYLE\_NUMBERS](#notesmgr.explorer_font.STYLE_NUMBERS)
+  * [TreeFont](#notesmgr.explorer_font.TreeFont)
+    * [\_\_init\_\_](#notesmgr.explorer_font.TreeFont.__init__)
+    * [apply](#notesmgr.explorer_font.TreeFont.apply)
+    * [row\_height](#notesmgr.explorer_font.TreeFont.row_height)
+    * [resize](#notesmgr.explorer_font.TreeFont.resize)
+    * [zoom](#notesmgr.explorer_font.TreeFont.zoom)
+    * [normal\_size](#notesmgr.explorer_font.TreeFont.normal_size)
 * [notesmgr.project\_ops](#notesmgr.project_ops)
   * [ALREADY\_PROJECT](#notesmgr.project_ops.ALREADY_PROJECT)
   * [UNRESOLVED](#notesmgr.project_ops.UNRESOLVED)
@@ -418,6 +474,9 @@
     * [selection\_changed](#notesmgr.explorer_tree.ExplorerTree.selection_changed)
     * [selected\_path](#notesmgr.explorer_tree.ExplorerTree.selected_path)
     * [select](#notesmgr.explorer_tree.ExplorerTree.select)
+    * [drop\_at](#notesmgr.explorer_tree.ExplorerTree.drop_at)
+    * [zoom](#notesmgr.explorer_tree.ExplorerTree.zoom)
+    * [zoom\_normal](#notesmgr.explorer_tree.ExplorerTree.zoom_normal)
     * [show](#notesmgr.explorer_tree.ExplorerTree.show)
     * [add\_folder](#notesmgr.explorer_tree.ExplorerTree.add_folder)
     * [shown\_files](#notesmgr.explorer_tree.ExplorerTree.shown_files)
@@ -531,6 +590,7 @@
     * [move\_up](#notesmgr.commands.Commands.move_up)
     * [move\_down](#notesmgr.commands.Commands.move_down)
     * [move](#notesmgr.commands.Commands.move)
+    * [drop](#notesmgr.commands.Commands.drop)
     * [new\_folder](#notesmgr.commands.Commands.new_folder)
     * [rename\_folder](#notesmgr.commands.Commands.rename_folder)
     * [delete\_folder](#notesmgr.commands.Commands.delete_folder)
@@ -605,16 +665,20 @@
   * [folder\_entries](#notesmgr.project.folder_entries)
   * [folder\_content](#notesmgr.project.folder_content)
   * [folder\_paths](#notesmgr.project.folder_paths)
+  * [folder\_at](#notesmgr.project.folder_at)
 * [notesmgr.folder\_ops](#notesmgr.folder_ops)
   * [IS\_PROJECT](#notesmgr.folder_ops.IS_PROJECT)
   * [NOT\_EMPTY](#notesmgr.folder_ops.NOT_EMPTY)
   * [NOT\_MADE](#notesmgr.folder_ops.NOT_MADE)
   * [NOT\_RENAMED](#notesmgr.folder_ops.NOT_RENAMED)
   * [NOT\_TRASHED](#notesmgr.folder_ops.NOT_TRASHED)
+  * [NOT\_MOVED](#notesmgr.folder_ops.NOT_MOVED)
+  * [INTO\_ITSELF](#notesmgr.folder_ops.INTO_ITSELF)
   * [new\_folder](#notesmgr.folder_ops.new_folder)
   * [rename\_folder](#notesmgr.folder_ops.rename_folder)
   * [is\_empty](#notesmgr.folder_ops.is_empty)
   * [delete\_folder](#notesmgr.folder_ops.delete_folder)
+  * [move\_folder](#notesmgr.folder_ops.move_folder)
 
 <a id="notesmgr.main_window"></a>
 
@@ -806,7 +870,7 @@ however small or large the note itself is.
 def _zoom_command(step: int) -> Callable[[], None]
 ```
 
-Return what draws the note so many steps larger or smaller.
+Return what draws the window so many steps larger or smaller.
 
 <a id="notesmgr.main_window.MainWindow._normal_command"></a>
 
@@ -816,7 +880,31 @@ Return what draws the note so many steps larger or smaller.
 def _normal_command() -> Callable[[], None]
 ```
 
-Return what draws the note in the size it started out in.
+Return what draws the window in the size it started out in.
+
+<a id="notesmgr.main_window.MainWindow.zoom"></a>
+
+#### zoom
+
+```python
+def zoom(step: int) -> None
+```
+
+Draw the note and the tree so many steps larger or smaller.
+
+The note and the names of the notes are read on one screen
+and at one distance from it, so they are made larger and
+smaller together rather than each for itself.
+
+<a id="notesmgr.main_window.MainWindow.zoom_normal"></a>
+
+#### zoom\_normal
+
+```python
+def zoom_normal() -> None
+```
+
+Draw the note and the tree in the size they started out in.
 
 <a id="notesmgr.main_window.MainWindow._bind_shortcuts"></a>
 
@@ -872,6 +960,21 @@ def show_selected(path: Optional[Path]) -> None
 ```
 
 Show what the explorer has selected in the note panel.
+
+<a id="notesmgr.main_window.MainWindow.dropped"></a>
+
+#### dropped
+
+```python
+def dropped(item: Path, drop: Drop) -> None
+```
+
+Move what was dragged in the explorer to where it was dropped.
+
+**Arguments**:
+
+- `item` - The note or the folder that was dragged.
+- `drop` - Where it was dropped, as the tree worked it out.
 
 <a id="notesmgr.main_window.MainWindow.offer_actions"></a>
 
@@ -2219,6 +2322,213 @@ Open one note in the editor that the project is configured with.
 - `NotesmgrError` - The command cannot be read, names nothing to
   start, or names a program that the system did not start.
 
+<a id="notesmgr.explorer_drop"></a>
+
+# notesmgr.explorer\_drop
+
+Where a note or a folder lands when it is dropped in the tree.
+
+<a id="notesmgr.explorer_drop.Drop"></a>
+
+## Drop Objects
+
+```python
+class Drop(NamedTuple)
+```
+
+Where a dragged item lands: a folder, and a place in it.
+
+A note lands at a place among the notes of the folder, counted
+as the notes stand before it is moved. A folder lands in the
+folder itself and at no place in it, because the folders of a
+folder are shown in alphabetical order rather than in an order
+of their own, which is what a place of None says.
+
+The place is called so rather than an index, because a tuple
+numbers what it holds through a method of that name already.
+
+<a id="notesmgr.explorer_drop.folder_drop"></a>
+
+#### folder\_drop
+
+```python
+def folder_drop(project: Project, dragged: Path, over: Path) -> Optional[Drop]
+```
+
+Return where a dragged folder lands, None when it cannot land.
+
+A folder goes into a folder of the project and nowhere else. It
+goes neither into itself nor into a folder of its own, which
+would take it out of the project altogether, and the root folder
+of the project is the project itself and does not move.
+
+**Arguments**:
+
+- `project` - The project as the tree is showing it.
+- `dragged` - The folder that is being dragged.
+- `over` - The item of the tree that the pointer is over.
+  
+
+**Returns**:
+
+  The folder it lands in, None when it lands nowhere.
+
+<a id="notesmgr.explorer_drop.note_place"></a>
+
+#### note\_place
+
+```python
+def note_place(project: Project, over: Path,
+               lower: bool) -> Optional[tuple[Folder, int]]
+```
+
+Return the folder and the place in it that an item stands for.
+
+The upper half of a note is the place of that note and the lower
+half the place after it, a folder is the place after its last
+note, and the lower half of a template is the place of the first
+note of its folder. The upper half of a template is above every
+note of the folder, where no note can go.
+
+**Arguments**:
+
+- `project` - The project as the tree is showing it.
+- `over` - The item of the tree that the pointer is over.
+- `lower` - Whether the pointer is in the lower half of that item.
+  
+
+**Returns**:
+
+  The folder the note lands in and the place it lands at, None
+  when the item stands for no place at all.
+
+<a id="notesmgr.explorer_drop.stays_put"></a>
+
+#### stays\_put
+
+```python
+def stays_put(holder: Folder, dragged: Path, index: int) -> bool
+```
+
+Return whether a place is where a note is standing already.
+
+A note dropped upon itself, and a note dropped where it would
+land between the notes it is already between, has not moved, so
+there is nothing to do and nothing to show either.
+
+**Arguments**:
+
+- `holder` - The folder that the note would land in.
+- `dragged` - The note that is being dragged.
+- `index` - The place it would land at.
+  
+
+**Returns**:
+
+  Whether the note is at that place already.
+
+<a id="notesmgr.explorer_drop.dragged_note"></a>
+
+#### dragged\_note
+
+```python
+def dragged_note(project: Project, dragged: Path) -> bool
+```
+
+Return whether an item of the tree is a note that can be dragged.
+
+The tree is asked rather than the name, so that the template of a
+folder, which is no note of the order of that folder, and a row
+that another program has taken away under the tree, are both left
+where they are.
+
+**Arguments**:
+
+- `project` - The project as the tree is showing it.
+- `dragged` - The item that is being dragged.
+  
+
+**Returns**:
+
+  Whether the project holds it as a note of one of its folders.
+
+<a id="notesmgr.explorer_drop.note_drop"></a>
+
+#### note\_drop
+
+```python
+def note_drop(project: Project, dragged: Path, over: Path,
+              lower: bool) -> Optional[Drop]
+```
+
+Return where a dragged note lands, None when it cannot land.
+
+**Arguments**:
+
+- `project` - The project as the tree is showing it.
+- `dragged` - The note that is being dragged.
+- `over` - The item of the tree that the pointer is over.
+- `lower` - Whether the pointer is in the lower half of that item.
+  
+
+**Returns**:
+
+  The folder and the place it lands at, None for nowhere.
+
+<a id="notesmgr.explorer_drop.drop_target"></a>
+
+#### drop\_target
+
+```python
+def drop_target(project: Project, dragged: Path, over: Optional[Path],
+                lower: bool) -> Optional[Drop]
+```
+
+Return where what is dragged lands, None when it cannot land.
+
+A note and a folder of the project are dragged, and everything
+else the tree shows stays where it is: every folder has one
+template, and it is no note of the order of that folder.
+
+**Arguments**:
+
+- `project` - The project as the tree is showing it.
+- `dragged` - The item that is being dragged.
+- `over` - The item of the tree that the pointer is over, None
+  when the pointer is over no item of it at all.
+- `lower` - Whether the pointer is in the lower half of that item.
+  
+
+**Returns**:
+
+  Where it lands, None when it lands nowhere.
+
+<a id="notesmgr.explorer_drop.drop_item"></a>
+
+#### drop\_item
+
+```python
+def drop_item(item: Path, drop: Drop) -> Path
+```
+
+Move a note or a folder to where it was dropped.
+
+**Arguments**:
+
+- `item` - The note or the folder that was dragged.
+- `drop` - Where it was dropped, as the tree worked it out.
+  
+
+**Returns**:
+
+  The note or the folder where it now is.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The move cannot be made, which the message of
+  the error says why.
+
 <a id="notesmgr.config"></a>
 
 # notesmgr.config
@@ -2425,6 +2735,12 @@ What is said about a note that could not be copied.
 #### NOT\_TRASHED
 
 What is said about a note that the trash would not take.
+
+<a id="notesmgr.note_ops.NOT_MOVED"></a>
+
+#### NOT\_MOVED
+
+What is said about a note that could not be moved to a folder.
 
 <a id="notesmgr.note_ops.resync_order"></a>
 
@@ -2638,12 +2954,59 @@ is rather than moving round the end of the folder.
 
   The order as it is after the move.
 
-<a id="notesmgr.note_ops.move_note"></a>
+<a id="notesmgr.note_ops.moved_to"></a>
 
-#### move\_note
+#### moved\_to
 
 ```python
-def move_note(note: Path, offset: int) -> Path
+def moved_to(names: Sequence[str], name: str, index: int) -> list[str]
+```
+
+Return an order with one of its notes put at a place in it.
+
+The place is where the note lands among the notes as they stand
+now, so that a note dropped upon the note at a place takes that
+place, and a note dropped below the last note comes last.
+
+**Arguments**:
+
+- `names` - The notes of a folder, in the order they are shown in.
+- `name` - The note to put there, which may be none of them.
+- `index` - The place it lands at, kept within the folder.
+  
+
+**Returns**:
+
+  The order as it is after the move.
+
+<a id="notesmgr.note_ops.reordered"></a>
+
+#### reordered
+
+```python
+def reordered(folder: Path, order: Sequence[str],
+              moved: Sequence[str]) -> None
+```
+
+Write the order of a folder, when a move changed the order.
+
+**Arguments**:
+
+- `folder` - The folder whose notes were moved.
+- `order` - The order the folder had.
+- `moved` - The order it has after the move.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The order file cannot be written.
+
+<a id="notesmgr.note_ops.shift_note"></a>
+
+#### shift\_note
+
+```python
+def shift_note(note: Path, offset: int) -> Path
 ```
 
 Move a note so many places in the order of its folder.
@@ -2663,6 +3026,61 @@ Move a note so many places in the order of its folder.
 
 - `NotesmgrError` - The folder or its order file cannot be read,
   or the order file cannot be written.
+
+<a id="notesmgr.note_ops.place_note"></a>
+
+#### place\_note
+
+```python
+def place_note(folder: Path, name: str, index: int) -> None
+```
+
+Put one of the notes of a folder at a place in its order.
+
+**Arguments**:
+
+- `folder` - The folder that the note is in.
+- `name` - The name of the note that is put there.
+- `index` - The place it lands at, among the notes as they stand.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder or its order file cannot be read,
+  or the order file cannot be written.
+
+<a id="notesmgr.note_ops.move_note"></a>
+
+#### move\_note
+
+```python
+def move_note(note: Path, folder: Path, index: int) -> Path
+```
+
+Move a note to a place among the notes of a folder.
+
+The folder is the note's own folder when the note is only put at
+another place in it, and another folder of the project when it is
+moved there, which leaves the order of both folders in order.
+
+**Arguments**:
+
+- `note` - The note to move.
+- `folder` - The folder it is to be in.
+- `index` - The place it lands at, among the notes of that folder
+  as they stand now.
+  
+
+**Returns**:
+
+  The note where it now is.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder holds a file of that name already,
+  the note cannot be moved, or a note order cannot be read
+  or written.
 
 <a id="notesmgr.clipboard_linux"></a>
 
@@ -4945,6 +5363,417 @@ Return the HTML of a note that is written in markdown.
   The HTML that the note is drawn from, and that a formatted
   copy of the note is taken from.
 
+<a id="notesmgr.explorer_drag"></a>
+
+# notesmgr.explorer\_drag
+
+Moving the notes and the folders of the tree by dragging them.
+
+<a id="notesmgr.explorer_drag.PRESS_EVENT"></a>
+
+#### PRESS\_EVENT
+
+Tk event of the mouse button going down, which may begin a drag.
+
+<a id="notesmgr.explorer_drag.MOTION_EVENT"></a>
+
+#### MOTION\_EVENT
+
+Tk event of the pointer moving with the mouse button held down.
+
+<a id="notesmgr.explorer_drag.RELEASE_EVENT"></a>
+
+#### RELEASE\_EVENT
+
+Tk event of the mouse button going up, dropping what is dragged.
+
+<a id="notesmgr.explorer_drag.CANCEL_EVENT"></a>
+
+#### CANCEL\_EVENT
+
+Tk event of the key that gives up a drag that is going on.
+
+<a id="notesmgr.explorer_drag.DRAG_START"></a>
+
+#### DRAG\_START
+
+Pixels the pointer moves before a press is taken for a drag.
+
+A press that moves no further than this is the user choosing an item
+of the tree rather than taking hold of it, so nothing is marked and
+nothing is moved when the button goes up again.
+
+<a id="notesmgr.explorer_drag.MARK_TAG"></a>
+
+#### MARK\_TAG
+
+Name of the tag that marks the folder a drop would land in.
+
+<a id="notesmgr.explorer_drag.MARK_COLOUR"></a>
+
+#### MARK\_COLOUR
+
+Colour of the marks that say where a drop lands, a strong blue.
+
+<a id="notesmgr.explorer_drag.MARK_TEXT_COLOUR"></a>
+
+#### MARK\_TEXT\_COLOUR
+
+Colour of the name of a marked folder, which the mark is behind.
+
+<a id="notesmgr.explorer_drag.LINE_HEIGHT"></a>
+
+#### LINE\_HEIGHT
+
+How thick the line that says where a note lands is, in pixels.
+
+<a id="notesmgr.explorer_drag.Dragging"></a>
+
+## Dragging Objects
+
+```python
+class Dragging(NamedTuple)
+```
+
+What is being dragged now, and where it would land.
+
+Nothing is being dragged while the item is None, which is how a
+drag that was given up and a drag that has not begun are told
+from one that is going on.
+
+<a id="notesmgr.explorer_drag.row_at"></a>
+
+#### row\_at
+
+```python
+def row_at(tree: ttk.Treeview, height: int) -> Optional[Path]
+```
+
+Return the item of a tree at a height, None for no item there.
+
+<a id="notesmgr.explorer_drag.row_box"></a>
+
+#### row\_box
+
+```python
+def row_box(tree: ttk.Treeview,
+            item: Path) -> Optional[tuple[int, int, int, int]]
+```
+
+Return where the row of an item is, None when it is nowhere.
+
+A row that is scrolled out of sight has no place in the tree, and
+neither has any row of a window that is not on the screen, which
+is what the None is for.
+
+<a id="notesmgr.explorer_drag.lower_half"></a>
+
+#### lower\_half
+
+```python
+def lower_half(tree: ttk.Treeview, over: Optional[Path], height: int) -> bool
+```
+
+Return whether a height is in the lower half of an item's row.
+
+<a id="notesmgr.explorer_drag.DropMark"></a>
+
+## DropMark Objects
+
+```python
+class DropMark()
+```
+
+What the tree shows of where a drop would land.
+
+A drop into a folder is shown by marking that folder, and a drop
+among the notes of a folder by a line at the edge of a row, which
+is where the note would go.
+
+<a id="notesmgr.explorer_drag.DropMark.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(tree: ttk.Treeview) -> None
+```
+
+Get ready to mark a tree, marking nothing yet.
+
+<a id="notesmgr.explorer_drag.DropMark.at_folder"></a>
+
+#### at\_folder
+
+```python
+def at_folder(folder: Path) -> None
+```
+
+Mark the folder that what is dragged would be put into.
+
+<a id="notesmgr.explorer_drag.DropMark.at_edge"></a>
+
+#### at\_edge
+
+```python
+def at_edge(over: Path, lower: bool) -> None
+```
+
+Draw the line at an edge of a row, which a note lands at.
+
+<a id="notesmgr.explorer_drag.DropMark.clear"></a>
+
+#### clear
+
+```python
+def clear() -> None
+```
+
+Take away the marks that said where a drop would land.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag"></a>
+
+## ExplorerDrag Objects
+
+```python
+class ExplorerDrag()
+```
+
+Lets what the tree shows be moved by dragging it.
+
+The view supplies nothing but coordinates: which item the pointer
+is over, and whether it is in the lower half of that item. Where
+that lands the dragged item is answered elsewhere, and this shows
+the answer and asks for it to be carried out when the button
+goes up.
+
+A drop that lands nowhere is no drop at all, so a release over an
+item that nothing can be dropped on, and Escape while dragging,
+leave the project exactly as it was.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(tree: ttk.Treeview, target: Callable[[Path, Optional[Path], bool],
+                                                  Optional[Drop]],
+             dropped: Callable[[Path, Drop], None]) -> None
+```
+
+Let the items of a tree be dragged from now on.
+
+**Arguments**:
+
+- `tree` - The tree whose items are dragged.
+- `target` - Asked where a dragged item would land, given the
+  item, what the pointer is over, and whether it is in
+  the lower half of that item.
+- `dropped` - Told what was dragged and where it was dropped.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag.press"></a>
+
+#### press
+
+```python
+def press(event: 'tkinter.Event[ttk.Treeview]') -> None
+```
+
+Take hold of the item that the mouse button went down on.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag.motion"></a>
+
+#### motion
+
+```python
+def motion(event: 'tkinter.Event[ttk.Treeview]') -> None
+```
+
+Show where what is being dragged would land now.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag.release"></a>
+
+#### release
+
+```python
+def release(_event: 'tkinter.Event[ttk.Treeview]') -> None
+```
+
+Move what was dragged to where it was dropped.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag.cancelled"></a>
+
+#### cancelled
+
+```python
+def cancelled(_event: 'tkinter.Event[ttk.Treeview]') -> None
+```
+
+Give up the drag, leaving the project exactly as it was.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag.cancel"></a>
+
+#### cancel
+
+```python
+def cancel() -> None
+```
+
+Forget what was dragged, and unmark where it would land.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag.dragging"></a>
+
+#### dragging
+
+```python
+def dragging(height: int) -> bool
+```
+
+Return whether the press has become a drag by now.
+
+**Arguments**:
+
+- `height` - Where the pointer is in the tree.
+  
+
+**Returns**:
+
+  Whether the pointer has moved far enough from where the
+  button went down, which it goes on having done for the
+  rest of the drag.
+
+<a id="notesmgr.explorer_drag.ExplorerDrag.show"></a>
+
+#### show
+
+```python
+def show(over: Optional[Path], lower: bool) -> None
+```
+
+Mark where what is dragged would land, or mark nothing.
+
+**Arguments**:
+
+- `over` - The item of the tree that the pointer is over.
+- `lower` - Whether the pointer is in the lower half of it.
+
+<a id="notesmgr.explorer_font"></a>
+
+# notesmgr.explorer\_font
+
+The font that the explorer draws with, and how large it is.
+
+<a id="notesmgr.explorer_font.ROW_PADDING"></a>
+
+#### ROW\_PADDING
+
+Space in pixels that a row of the tree has beyond its text.
+
+<a id="notesmgr.explorer_font.STYLE_KIND"></a>
+
+#### STYLE\_KIND
+
+What a style of a tree must be called for the tree to take it.
+
+<a id="notesmgr.explorer_font.STYLE_NUMBERS"></a>
+
+#### STYLE\_NUMBERS
+
+Numbers that tell the style of one tree from the style of another.
+
+<a id="notesmgr.explorer_font.TreeFont"></a>
+
+## TreeFont Objects
+
+```python
+class TreeFont()
+```
+
+The font of one tree, and the style that the tree takes it from.
+
+A ttk widget is drawn with the font of its style rather than with
+a font of its own, so the tree is given a style of its own here,
+and drawing it larger or smaller is that one font being resized.
+The rows are made as high as the font needs, so that a name is
+not cut off by a row that stayed as high as it was.
+
+The font is the one that Tk draws text with on this system, which
+is where a note starts out as well, so that the tree and the note
+beside it are read in one size.
+
+<a id="notesmgr.explorer_font.TreeFont.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(widget: tkinter.Misc) -> None
+```
+
+Make the style of one tree, in the size the system gives.
+
+**Arguments**:
+
+- `widget` - The widget that the font and the style belong to.
+
+<a id="notesmgr.explorer_font.TreeFont.apply"></a>
+
+#### apply
+
+```python
+def apply() -> None
+```
+
+Let the tree be drawn with the font as it now stands.
+
+<a id="notesmgr.explorer_font.TreeFont.row_height"></a>
+
+#### row\_height
+
+```python
+def row_height() -> int
+```
+
+Return how high a row is, which the font says.
+
+<a id="notesmgr.explorer_font.TreeFont.resize"></a>
+
+#### resize
+
+```python
+def resize(size: int) -> int
+```
+
+Draw with a font of another size from now on.
+
+**Arguments**:
+
+- `size` - The size to draw the tree in.
+  
+
+**Returns**:
+
+  The size that is drawn in, which is as near the one asked
+  for as a tree can be read at.
+
+<a id="notesmgr.explorer_font.TreeFont.zoom"></a>
+
+#### zoom
+
+```python
+def zoom(step: int) -> int
+```
+
+Draw so many steps larger, or smaller for a step below zero.
+
+<a id="notesmgr.explorer_font.TreeFont.normal_size"></a>
+
+#### normal\_size
+
+```python
+def normal_size() -> int
+```
+
+Draw in the size that the tree started out in.
+
 <a id="notesmgr.project_ops"></a>
 
 # notesmgr.project\_ops
@@ -5607,8 +6436,8 @@ view keeps nothing of its own beside the tree itself.
 #### \_\_init\_\_
 
 ```python
-def __init__(parent: tkinter.Misc, on_select: Callable[[Optional[Path]],
-                                                       None]) -> None
+def __init__(parent: tkinter.Misc, on_select: Callable[[Optional[Path]], None],
+             on_drop: Callable[[Path, Drop], None]) -> None
 ```
 
 Build the tree in a frame of its own inside a parent widget.
@@ -5618,6 +6447,8 @@ Build the tree in a frame of its own inside a parent widget.
 - `parent` - The widget that the explorer is placed in.
 - `on_select` - Told which item is selected, whenever that
   changes, and told None when nothing is selected.
+- `on_drop` - Told what was dragged in the tree and where it
+  was dropped, once the user has let go of it.
 
 <a id="notesmgr.explorer_tree.ExplorerTree.selection_changed"></a>
 
@@ -5660,6 +6491,50 @@ Select one item of the tree, or nothing at all.
 **Returns**:
 
   What is selected now, None when nothing is.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.drop_at"></a>
+
+#### drop\_at
+
+```python
+def drop_at(dragged: Path, over: Optional[Path],
+            lower: bool) -> Optional[Drop]
+```
+
+Return where a dragged item would land, None for nowhere.
+
+**Arguments**:
+
+- `dragged` - The item that is being dragged.
+- `over` - The item of the tree that the pointer is over,
+  None when it is over no item at all.
+- `lower` - Whether the pointer is in the lower half of it.
+  
+
+**Returns**:
+
+  Where the item lands, None when it lands nowhere, which
+  is what every drag does while no project is open.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.zoom"></a>
+
+#### zoom
+
+```python
+def zoom(step: int) -> None
+```
+
+Draw the tree so many steps larger, or smaller below zero.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.zoom_normal"></a>
+
+#### zoom\_normal
+
+```python
+def zoom_normal() -> None
+```
+
+Draw the tree in the size that it started out in.
 
 <a id="notesmgr.explorer_tree.ExplorerTree.show"></a>
 
@@ -6993,6 +7868,21 @@ def move(offset: int) -> None
 
 Move the selected note so many places in its folder.
 
+<a id="notesmgr.commands.Commands.drop"></a>
+
+#### drop
+
+```python
+def drop(item: Path, drop: Drop) -> None
+```
+
+Move what was dragged in the tree to where it was dropped.
+
+**Arguments**:
+
+- `item` - The note or the folder that was dragged.
+- `drop` - Where it was dropped, as the tree worked it out.
+
 <a id="notesmgr.commands.Commands.new_folder"></a>
 
 #### new\_folder
@@ -7846,6 +8736,28 @@ Return a folder of a project and every folder below it.
   The folders, each one before the folders below it, which is
   the order that the explorer shows them in.
 
+<a id="notesmgr.project.folder_at"></a>
+
+#### folder\_at
+
+```python
+def folder_at(tree: Folder, path: Path) -> Optional[Folder]
+```
+
+Return the folder of a tree that is at a path, None for none.
+
+**Arguments**:
+
+- `tree` - The folder to look in, and every folder below it.
+- `path` - The folder that is looked for.
+  
+
+**Returns**:
+
+  The folder as the tree holds it, None when the tree holds no
+  folder of that path, which is what a note or a template of
+  the tree leaves behind.
+
 <a id="notesmgr.folder_ops"></a>
 
 # notesmgr.folder\_ops
@@ -7881,6 +8793,18 @@ What is said about a folder that could not be given its new name.
 #### NOT\_TRASHED
 
 What is said about a folder that the trash would not take.
+
+<a id="notesmgr.folder_ops.NOT_MOVED"></a>
+
+#### NOT\_MOVED
+
+What is said about a folder that could not be moved.
+
+<a id="notesmgr.folder_ops.INTO_ITSELF"></a>
+
+#### INTO\_ITSELF
+
+What is said about a folder that would be put inside its own tree.
 
 <a id="notesmgr.folder_ops.new_folder"></a>
 
@@ -7992,4 +8916,36 @@ Move a folder that holds nothing of the user's to the trash.
 - `NotesmgrError` - The folder is the root folder of the project,
   it holds notes or folders of its own, or the trash would
   not take it.
+
+<a id="notesmgr.folder_ops.move_folder"></a>
+
+#### move\_folder
+
+```python
+def move_folder(folder: Path, parent: Path) -> Path
+```
+
+Move a folder of the project into another folder of it.
+
+Everything the folder holds goes along with it, and no note order
+is touched: a note order lists the notes of one folder and knows
+nothing of the folders beside them.
+
+**Arguments**:
+
+- `folder` - The folder to move.
+- `parent` - The folder it is to be in.
+  
+
+**Returns**:
+
+  The folder where it now is, which is where it was when it is
+  in that folder already.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder is the root folder of the project,
+  it would be put inside its own tree, the name is taken in
+  the other folder already, or the folder cannot be moved.
 

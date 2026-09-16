@@ -15,6 +15,7 @@ from notesmgr.dialogs import NameFolder, ask_name, ask_name_folder, \
     ask_yes_no, show_error, show_info
 from notesmgr.editor_command import launch_editor
 from notesmgr.errors import NotesmgrError
+from notesmgr.explorer_drop import Drop, drop_item
 from notesmgr.note_file import is_plain_note, note_stem
 from notesmgr.project import Project, folder_paths, is_project
 from notesmgr.session import Session
@@ -264,7 +265,16 @@ class Commands:
         """Move the selected note so many places in its folder."""
         note = self.plain_note()
         if note is not None:
-            self.done(partial(note_ops.move_note, note, offset))
+            self.done(partial(note_ops.shift_note, note, offset))
+
+    def drop(self, item: Path, drop: Drop) -> None:
+        """Move what was dragged in the tree to where it was dropped.
+
+        Args:
+            item: The note or the folder that was dragged.
+            drop: Where it was dropped, as the tree worked it out.
+        """
+        self.done(partial(drop_item, item, drop))
 
     def new_folder(self) -> None:
         """Make a folder in the folder that is selected."""

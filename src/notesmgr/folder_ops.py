@@ -28,6 +28,12 @@ NOT_RENAMED = 'The folder {path} cannot be renamed.\n{reason}'
 NOT_TRASHED = 'The folder {path} cannot be moved to the trash.\n{reason}'
 """What is said about a folder that the trash would not take."""
 
+NOT_MOVED = 'The folder {path} cannot be moved.\n{reason}'
+"""What is said about a folder that could not be moved."""
+
+INTO_ITSELF = 'The folder {folder} cannot be moved into itself.'
+"""What is said about a folder that would be put inside its own tree."""
+
 
 def new_folder(parent: Path, typed: str, extension: NoteExtension) -> Path:
     """Make a folder in a folder of the project.
@@ -130,3 +136,38 @@ def delete_folder(folder: Path) -> None:
     if not is_empty(folder):
         raise NotesmgrError(NOT_EMPTY.format(folder=folder))
     send_to_trash(folder, NOT_TRASHED)
+
+
+def move_folder(folder: Path, parent: Path) -> Path:
+    """Move a folder of the project into another folder of it.
+
+    Everything the folder holds goes along with it, and no note order
+    is touched: a note order lists the notes of one folder and knows
+    nothing of the folders beside them.
+
+    Args:
+        folder: The folder to move.
+        parent: The folder it is to be in.
+
+    Returns:
+        The folder where it now is, which is where it was when it is
+        in that folder already.
+
+    Raises:
+        NotesmgrError: The folder is the root folder of the project,
+            it would be put inside its own tree, the name is taken in
+            the other folder already, or the folder cannot be moved.
+    """
+    if is_project(folder):
+        raise NotesmgrError(IS_PROJECT.format(folder=folder))
+    if parent == folder or folder in parent.parents:
+        raise NotesmgrError(INTO_ITSELF.format(folder=folder))
+    if parent == folder.parent:
+        return folder
+    wanted = free_path(parent, folder.name)
+    try:
+        folder.rename(wanted)
+    except OSError as error:
+        raise NotesmgrError(NOT_MOVED.format(path=folder,
+                                             reason=error)) from error
+    return wanted

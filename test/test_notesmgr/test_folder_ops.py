@@ -10,8 +10,8 @@ from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, \
     refuse_choice, write_file, write_notes
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
-from notesmgr.folder_ops import delete_folder, is_empty, new_folder, \
-    rename_folder
+from notesmgr.folder_ops import delete_folder, is_empty, move_folder, \
+    new_folder, rename_folder
 from notesmgr.order_file import ORDER_NAME, read_order_text
 from notesmgr.project_ops import open_project
 
@@ -147,3 +147,56 @@ def test_order_name_ignored(empty: Path) -> None:
     """The note order file is notesmgr's own and does not fill a folder."""
     assert (empty / ORDER_NAME).is_file()
     assert is_empty(empty)
+
+
+def test_move_folder(root: Path, empty: Path) -> None:
+    """A folder moved into another one keeps everything that it holds."""
+    moved = move_folder(root / 'full', empty)
+    assert moved == empty / 'full'
+    assert (moved / 'deep.md.txt').is_file()
+    assert not (root / 'full').exists()
+
+
+def test_move_folder_is_clean(root: Path, empty: Path) -> None:
+    """A folder that was moved leaves nothing for an opening to repair."""
+    move_folder(root / 'full', empty)
+    report = open_project(root, refuse_choice)
+    assert not report.created
+    assert not report.renamed
+    assert not report.problems
+
+
+def test_move_folder_stays(root: Path) -> None:
+    """A folder moved into the folder it is in already stays as it is."""
+    assert move_folder(root / 'full', root) == root / 'full'
+    assert (root / 'full' / 'deep.md.txt').is_file()
+
+
+def test_move_into_itself(root: Path) -> None:
+    """A folder is not moved into itself, which would lose it."""
+    with pytest.raises(NotesmgrError):
+        move_folder(root / 'full', root / 'full')
+    assert (root / 'full').is_dir()
+
+
+def test_move_into_its_own(root: Path) -> None:
+    """A folder is not moved into a folder of its own either."""
+    below = new_folder(root / 'full', 'below', EXTENSION)
+    with pytest.raises(NotesmgrError):
+        move_folder(root / 'full', below)
+    assert below.is_dir()
+
+
+def test_move_root_refused(root: Path, empty: Path) -> None:
+    """The root folder is the project itself and is not moved here."""
+    with pytest.raises(NotesmgrError):
+        move_folder(root, empty)
+    assert root.is_dir()
+
+
+def test_move_folder_taken(root: Path, empty: Path) -> None:
+    """A folder is not moved where its name is another file's already."""
+    write_file(empty / 'full', 'a file that is no folder')
+    with pytest.raises(NotesmgrError):
+        move_folder(root / 'full', empty)
+    assert (root / 'full' / 'deep.md.txt').is_file()

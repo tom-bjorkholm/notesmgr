@@ -145,3 +145,24 @@ def folder_paths(folder: Folder) -> list[Path]:
     for below in folder.folders:
         paths.extend(folder_paths(below))
     return paths
+
+
+def folder_at(tree: Folder, path: Path) -> Optional[Folder]:
+    """Return the folder of a tree that is at a path, None for none.
+
+    Args:
+        tree: The folder to look in, and every folder below it.
+        path: The folder that is looked for.
+
+    Returns:
+        The folder as the tree holds it, None when the tree holds no
+        folder of that path, which is what a note or a template of
+        the tree leaves behind.
+    """
+    if tree.path == path:
+        return tree
+    for below in tree.folders:
+        found = folder_at(below, path)
+        if found is not None:
+            return found
+    return None

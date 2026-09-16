@@ -128,8 +128,8 @@ The menu bar has menus with actions for:
 - Creating a new folder in the project
 - Renaming a folder of the project
 - Deleting a folder of the project that holds nothing
-- Drawing the note that is shown larger or smaller, and back to the
-  size it started at
+- Drawing the note that is shown, and the names in the "explorer",
+  larger or smaller, and back to the size they started at
 - Editing the configuration
 - Saving the configuration as the user wide configuration
 - Reporting version information and information of available updates
@@ -140,8 +140,9 @@ for it to act on. The entries that act on a folder are greyed out until
 a folder is selected in the same way. How large a note is drawn can be
 said at any time, and the entries of the `View` menu show the keys that
 say it: `Cmd++`, `Cmd+-` and `Cmd+0` on mac, and `Ctrl++`, `Ctrl+-` and
-`Ctrl+0` on Microsoft Windows and on Linux. The size is not remembered
-from one run to the next.
+`Ctrl+0` on Microsoft Windows and on Linux. The note and the names in
+the "explorer" are drawn in one size and are made larger and smaller
+together. The size is not remembered from one run to the next.
 
 The configuration editor writes the configuration itself when you save in
 it, so there is no separate menu item for saving the configuration of the
@@ -159,8 +160,15 @@ the explorer of Microsoft Visual Code and other IDEs. Here all items (notes and
 folders) are listed in tree structure. Inside a folder the subfolders come
 first in alphabetical order, then the template of the folder, and after them
 the notes in the order that `.notes_order.txt` gives. Notes can be selected in
-the "explorer" and notes can be dragged in the "explorer" to reorder the notes
-within a folder. A note can also be dragged into or out of a folder.
+the "explorer", and notes and folders can be dragged in it. A note dragged
+above or below another note is reordered within its folder, and a note dragged
+onto a folder is moved into that folder, after the notes it already holds. A
+folder dragged onto another folder is moved into it with everything that it
+holds. While the item is held, a line shows where a note would land, and the
+folder that would take it is marked. `Escape` gives up the drag. The template
+of a folder is dragged nowhere, a folder goes neither into itself nor into a
+folder of its own, and a name that the other folder holds already is refused
+with a message rather than moved.
 
 To the right of the main window there is a wide panel with a row of buttons at
 the top and an area showing the selected note. If the selected note is written
@@ -302,7 +310,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1260 passed, 8 deselected in 7s
+- Test result: 1362 passed, 9 deselected in 8s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

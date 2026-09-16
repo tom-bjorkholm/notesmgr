@@ -690,29 +690,63 @@ and into TextEdit.
 
 ### Step 9 — Drag and drop in the explorer
 
-Status: **Not implemented yet.**
+Status: **Implemented, awaiting review.**
 
 **Goal:** reorder notes and move them between folders by dragging.
 
-- `explorer_drag.py`: press, motion with a drop indicator, release;
-  `Escape` cancels. The whole decision — given the dragged item and the
-  pointer position, which folder and which index is the drop — is a pure
-  function in the model, and the view only supplies coordinates.
-- `project_ops.move_note(note, folder, index)` covers both reordering
-  within a folder and moving between folders, including a name collision
-  in the target folder.
-- Refused drops: onto itself, onto a template, into a note, out of the
-  project.
-- also investigate if command-+, command--, command-0 + control variant
-  is possible and easy to implement for text also in explorer.
-  Implement "zoom" also for explorer if effort is not too large.
+What was built, and the decisions taken while building it:
+
+- Folders are dragged as well as notes, which the user asked for while
+  the step was being planned. A folder is dropped on a folder and on
+  nothing else, and goes neither into itself nor into a folder of its
+  own. `README_pypi.md` said only that notes are dragged, and now says
+  what both do.
+- `explorer_drop.py` was not foreseen by the plan and holds the model:
+  `drop_target()` answers where a dragged item lands, and `drop_item()`
+  carries that out. The view supplies two coordinates and nothing more:
+  which row the pointer is over, and whether it is in the lower half of
+  that row.
+- `Drop` names its place `place` and not `index`, because a tuple has a
+  method of that name already and a `NamedTuple` field cannot shadow it.
+  A place of None is a folder, which lands in a folder and at no place
+  in it: the folders of a folder are shown in alphabetical order.
+- What a row means was chosen so that the mark can never lie. The upper
+  half of a note is that note's place and the lower half the place after
+  it, which is exactly where the line is drawn. A folder is the place
+  after its last note, and is shown by marking the folder rather than by
+  a line. The upper half of a template is above every note of its folder
+  and is therefore no place at all, rather than a line drawn above the
+  template where no note would land.
+- Whether an item can be dragged is asked of the tree and not of the
+  name: a note is one that its folder holds among its notes. A template,
+  the root folder, and a row that another program has taken away under
+  the tree are all left where they are.
+- `note_ops.move_note(note, offset)` became `shift_note`, and
+  `move_note(note, folder, index)` is the new operation that both
+  reorders within a folder and moves between folders. The plan put it in
+  `project_ops`, but that module is about opening a project; the notes
+  of a project live in `note_ops` and the folders in `folder_ops`, where
+  `move_folder` was added.
+- A name that the other folder holds already is refused with the message
+  that `New` and `Duplicate` use, and nothing is moved.
+- Zoom reaches the explorer. A ttk widget takes its font from its style,
+  so `explorer_font.py` gives each tree a style of its own with a font
+  that is resized like the note's fonts, and the rows are made as high
+  as the font needs. Tree and note start at the size Tk draws text in,
+  and the `View` menu makes both larger and smaller together.
+- A press that moves less than `DRAG_START` pixels stays an ordinary
+  click that chooses an item, so choosing a note cannot move it.
+- A window that is not on a screen has no rows to point at: Tk answers
+  nothing from `identify_row()` and `bbox()` there. The drag tests lay
+  the rows out themselves, one height per row, and the one real drag,
+  driven with `event_generate()`, is `focus_sensitive`.
 
 **Tests:** the drop-target function over a table of positions and trees;
 the move operation and both order files after a cross-folder move;
 `focus_sensitive` tests driving real drags with `event_generate`.
 
-**In action:** drag notes within and between folders, then check the
-order files.
+**In action:** drag notes within and between folders, drag a folder into
+another folder, then check the order files.
 
 ### Step 10 — Polish, documentation and release readiness
 
@@ -771,3 +805,8 @@ the behaviour lands, not all at the end:
 10. What the formatted note shows is documented, `~~struck through~~`
     among it, and so is the rule that the extension of the note's own
     name decides whether it is formatted (step 7).
+11. Folders are dragged in the explorer as well as notes, and what a
+    drag does, what it shows and what it refuses is documented
+    (step 9).
+12. The `View` menu draws the explorer larger and smaller along with
+    the note, both in one size (step 9).

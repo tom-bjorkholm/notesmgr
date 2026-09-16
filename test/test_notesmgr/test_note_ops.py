@@ -11,7 +11,8 @@ from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, \
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
 from notesmgr.note_ops import delete_note, duplicate_note, free_path, \
-    moved_order, move_note, new_note, new_path, resync_order, template_text
+    moved_order, moved_to, move_note, new_note, new_path, resync_order, \
+    shift_note, template_text
 from notesmgr.order_file import order_text, read_order_text
 from notesmgr.project_ops import open_project
 
@@ -183,27 +184,27 @@ def test_moved_order_short(names: list[str]) -> None:
     assert moved_order(names, 'only', -1) == names
 
 
-def test_move_note_up(root: Path) -> None:
+def test_shift_note_up(root: Path) -> None:
     """A note moved up changes places with the note above it."""
-    move_note(root / NOTES[2], -1)
+    shift_note(root / NOTES[2], -1)
     assert order_of(root) == [NOTES[0], NOTES[2], NOTES[1]]
 
 
-def test_move_note_down(root: Path) -> None:
+def test_shift_note_down(root: Path) -> None:
     """A note moved down changes places with the note below it."""
-    move_note(root / NOTES[0], 1)
+    shift_note(root / NOTES[0], 1)
     assert order_of(root) == [NOTES[1], NOTES[0], NOTES[2]]
 
 
-def test_move_at_the_end(root: Path) -> None:
+def test_shift_at_the_end(root: Path) -> None:
     """A note at the end of its folder stays where it is."""
-    move_note(root / NOTES[0], -1)
+    shift_note(root / NOTES[0], -1)
     assert order_of(root) == NOTES
 
 
-def test_move_gives_the_note(root: Path) -> None:
+def test_shift_gives_the_note(root: Path) -> None:
     """Moving a note gives back the note, which is what stays selected."""
-    assert move_note(root / NOTES[0], 1) == root / NOTES[0]
+    assert shift_note(root / NOTES[0], 1) == root / NOTES[0]
 
 
 def test_resync_adds_drops(root: Path) -> None:
@@ -213,3 +214,69 @@ def test_resync_adds_drops(root: Path) -> None:
     assert resync_order(root) == [NOTES[1], NOTES[2], 'added.md.txt']
     assert read_order_text(root) == \
         order_text([NOTES[1], NOTES[2], 'added.md.txt'])
+
+
+@pytest.mark.parametrize('name,index,expected', [
+    ('a', 0, ['a', 'b', 'c']), ('a', 1, ['a', 'b', 'c']),
+    ('a', 2, ['b', 'a', 'c']), ('a', 3, ['b', 'c', 'a']),
+    ('c', 0, ['c', 'a', 'b']), ('c', 1, ['a', 'c', 'b']),
+    ('c', 2, ['a', 'b', 'c']), ('c', 3, ['a', 'b', 'c']),
+    ('b', 0, ['b', 'a', 'c']), ('b', 3, ['a', 'c', 'b']),
+    ('a', -2, ['a', 'b', 'c']), ('a', 9, ['b', 'c', 'a']),
+    ('d', 0, ['a', 'b', 'c'])])
+def test_moved_to(name: str, index: int, expected: list[str]) -> None:
+    """A note lands at the place it is put, counted as the notes stand."""
+    assert moved_to(['a', 'b', 'c'], name, index) == expected
+
+
+@pytest.mark.parametrize('names', [[], ['only']])
+def test_moved_to_short(names: list[str]) -> None:
+    """A folder of one note or none has nothing to put anywhere else."""
+    assert moved_to(names, 'only', 0) == names
+
+
+@pytest.mark.parametrize('index,expected', [
+    (0, [NOTES[2], NOTES[0], NOTES[1]]), (1, [NOTES[0], NOTES[2], NOTES[1]]),
+    (3, NOTES)])
+def test_move_in_folder(root: Path, index: int, expected: list[str]) \
+        -> None:
+    """A note put at a place in its own folder is shown there."""
+    assert move_note(root / NOTES[2], root, index) == root / NOTES[2]
+    assert order_of(root) == expected
+
+
+def test_move_to_folder(root: Path) -> None:
+    """A note moved to another folder is the file that is there now."""
+    moved = move_note(root / NOTES[0], root / 'sub', 0)
+    assert moved == root / 'sub' / NOTES[0]
+    assert moved.is_file()
+    assert not (root / NOTES[0]).exists()
+
+
+def test_move_orders_both(root: Path) -> None:
+    """A note moved away leaves one order and is put into the other."""
+    move_note(root / NOTES[0], root / 'sub', 0)
+    assert order_of(root) == [NOTES[1], NOTES[2]]
+    assert order_of(root / 'sub') == [NOTES[0], 'other.md.txt']
+
+
+def test_move_to_the_end(root: Path) -> None:
+    """A note dropped below the last note of a folder comes last."""
+    move_note(root / NOTES[0], root / 'sub', 1)
+    assert order_of(root / 'sub') == ['other.md.txt', NOTES[0]]
+
+
+def test_move_name_taken(root: Path) -> None:
+    """A note is not moved into a folder that holds that name already."""
+    write_notes(root / 'sub', [NOTES[0]])
+    with pytest.raises(NotesmgrError):
+        move_note(root / NOTES[0], root / 'sub', 0)
+    assert (root / NOTES[0]).is_file()
+    assert order_of(root) == NOTES
+
+
+def test_move_keeps_content(root: Path) -> None:
+    """A note moved to another folder holds what it held before."""
+    held = (root / NOTES[0]).read_text(encoding='utf-8')
+    moved = move_note(root / NOTES[0], root / 'sub', 0)
+    assert moved.read_text(encoding='utf-8') == held

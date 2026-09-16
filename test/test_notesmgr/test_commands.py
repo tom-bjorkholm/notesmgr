@@ -17,6 +17,7 @@ from notesmgr.commands import Commands, WindowHooks, folder_of, shown_folder
 from notesmgr.dialogs import NameFolder
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
+from notesmgr.explorer_drop import Drop
 from notesmgr.order_file import read_order_text
 from notesmgr.project_ops import open_project
 from notesmgr.session import Session
@@ -335,6 +336,42 @@ def test_move_no_note(commands: Commands, root: Path,
     """With a folder selected there is no note to move anywhere."""
     commands.select(root / 'sub')
     commands.move_up()
+    assert reopened == []
+
+
+def test_drop_in_folder(commands: Commands, root: Path,
+                        reopened: list[Optional[Path]]) -> None:
+    """A note dropped in another folder is moved there and selected."""
+    commands.drop(root / NOTES[0], Drop(root / 'sub', 0))
+    assert (root / 'sub' / NOTES[0]).is_file()
+    assert order_of(root / 'sub') == [NOTES[0], 'deep.md.txt']
+    assert reopened == [root / 'sub' / NOTES[0]]
+
+
+def test_drop_reorders(commands: Commands, root: Path,
+                       reopened: list[Optional[Path]]) -> None:
+    """A note dropped in its own folder is put at the place it fell."""
+    commands.drop(root / NOTES[1], Drop(root, 0))
+    assert order_of(root) == [NOTES[1], NOTES[0]]
+    assert reopened == [root / NOTES[1]]
+
+
+def test_drop_a_folder(commands: Commands, root: Path,
+                       reopened: list[Optional[Path]]) -> None:
+    """A folder dropped in another folder is moved into it."""
+    write_notes(root / 'other', ['far.md.txt'])
+    commands.drop(root / 'sub', Drop(root / 'other', None))
+    assert (root / 'other' / 'sub' / 'deep.md.txt').is_file()
+    assert reopened == [root / 'other' / 'sub']
+
+
+def test_drop_refused(commands: Commands, root: Path, errors: list[str],
+                      reopened: list[Optional[Path]]) -> None:
+    """A drop that cannot be made is reported and changes nothing."""
+    write_notes(root / 'sub', [NOTES[0]])
+    commands.drop(root / NOTES[0], Drop(root / 'sub', 0))
+    assert len(errors) == 1
+    assert (root / NOTES[0]).is_file()
     assert reopened == []
 
 

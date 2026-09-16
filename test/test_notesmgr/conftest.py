@@ -12,6 +12,7 @@ from typing import Iterator
 import pytest
 from notesmgr import trash
 from notesmgr.config_files import CONFIG_VARIABLE
+from notesmgr.main_window import MainWindow
 
 
 @pytest.fixture(name='tk_root', scope='session')
@@ -35,6 +36,27 @@ def fixture_top_window(tk_root: tkinter.Tk) -> Iterator[tkinter.Toplevel]:
     yield window
     with suppress(tkinter.TclError):
         window.destroy()
+
+
+@pytest.fixture(name='main_window')
+def fixture_main_window(top_window: tkinter.Toplevel) -> MainWindow:
+    """Provide a main window built in a hidden toplevel window."""
+    return MainWindow(top_window)
+
+
+@pytest.fixture(name='shown_window')
+def fixture_shown_window(main_window: MainWindow) -> MainWindow:
+    """Provide a main window that is really shown on the display.
+
+    Only the focus-sensitive tests use this, so the normal test run
+    never puts a window on the screen.
+    """
+    window = main_window.window
+    window.deiconify()
+    window.lift()
+    window.focus_force()
+    window.update()
+    return main_window
 
 
 @pytest.fixture(name='home', autouse=True)

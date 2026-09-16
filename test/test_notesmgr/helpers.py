@@ -95,3 +95,22 @@ def build_project(root: Path, names: Sequence[str],
     write_notes(root, names)
     write_order(root, names)
     return root
+
+
+def build_folder_project(root: Path) -> Path:
+    """Write a project of two notes and two folders holding one each.
+
+    The folders hold no template of their own, so that opening the
+    project writes one, which is what the explorer shows above the
+    notes of a folder.
+
+    Args:
+        root: The folder to make into a project.
+
+    Returns:
+        The root folder of the project that was written.
+    """
+    build_project(root, ['second.md.txt', 'first.md.txt'])
+    write_notes(root / 'apple', ['a.md.txt'])
+    write_notes(root / 'zebra', ['z.md.txt'])
+    return root

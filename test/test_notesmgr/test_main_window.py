@@ -20,13 +20,13 @@ from notesmgr.clipboard_tool import RichText
 from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME
 from notesmgr.errors import NotesmgrError
+from notesmgr.explorer_drop import Drop
 from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
     EDIT_CONFIG_ENTRY, FILE_MENU, FOLDER_MENU, HELP_MENU, INITIAL_GEOMETRY, \
     MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, NORMAL_SIZE_ENTRY, \
-    NOTE_MENU, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, ZOOM_STEP, \
-    Shortcuts, held_shortcut, modifier, window_shortcuts, \
+    NOTE_MENU, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, \
     OPEN_PROJECT_ENTRY, QUIT_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, \
-    VERSION_TITLE, MainWindow, Shortcut, quit_shortcut, tk_window_system
+    VERSION_TITLE, MainWindow
 from notesmgr.order_file import read_order_text
 from notesmgr.project import config_path
 
@@ -51,12 +51,6 @@ class PanelCall(NamedTuple):
     config_file: Optional[Path]
 
 
-@pytest.fixture(name='main_window')
-def fixture_main_window(top_window: tkinter.Toplevel) -> MainWindow:
-    """Provide a main window built in a hidden toplevel window."""
-    return MainWindow(top_window)
-
-
 @pytest.fixture(name='project')
 def fixture_project(tmp_path: Path) -> Path:
     """Provide a project folder holding two notes and a subfolder."""
@@ -67,33 +61,6 @@ def fixture_project(tmp_path: Path) -> Path:
     write_notes(root / 'sub', ['deep.md.txt'])
     write_template(root / 'sub', NoteExtension.MD_TXT)
     return root
-
-
-@pytest.fixture(name='shortcut')
-def fixture_shortcut(top_window: tkinter.Toplevel) -> Shortcut:
-    """Provide the shortcut that quits on the windowing system in use."""
-    return quit_shortcut(tk_window_system(top_window))
-
-
-@pytest.fixture(name='keys')
-def fixture_keys(top_window: tkinter.Toplevel) -> Shortcuts:
-    """Provide every shortcut on the windowing system in use."""
-    return window_shortcuts(tk_window_system(top_window))
-
-
-@pytest.fixture(name='shown_window')
-def fixture_shown_window(main_window: MainWindow) -> MainWindow:
-    """Provide a main window that is really shown on the display.
-
-    Only the focus-sensitive tests use this, so the normal test run
-    never puts a window on the screen.
-    """
-    window = main_window.window
-    window.deiconify()
-    window.lift()
-    window.focus_force()
-    window.update()
-    return main_window
 
 
 @pytest.fixture(name='panels')
@@ -456,6 +423,33 @@ def test_move_from_menu(main_window: MainWindow, project: Path) -> None:
     assert main_window.explorer.selected_path() == project / NOTES[1]
 
 
+def test_dropped_note(main_window: MainWindow, project: Path) -> None:
+    """A note dropped in the tree is moved and is selected afterwards."""
+    main_window.load_project(project)
+    main_window.dropped(project / NOTES[1], Drop(project / 'sub', 0))
+    assert order_of(project / 'sub') == [NOTES[1], 'deep.md.txt']
+    assert main_window.explorer.selected_path() == project / 'sub' / NOTES[1]
+
+
+def test_dropped_folder(main_window: MainWindow, project: Path) -> None:
+    """A folder dropped in the tree is moved and is selected afterwards."""
+    main_window.load_project(project)
+    write_notes(project / 'other', ['far.md.txt'])
+    main_window.dropped(project / 'sub', Drop(project / 'other', None))
+    assert (project / 'other' / 'sub' / 'deep.md.txt').is_file()
+    assert main_window.explorer.selected_path() == project / 'other' / 'sub'
+
+
+def test_dropped_refused(main_window: MainWindow, project: Path,
+                         refused: list[str]) -> None:
+    """A drop that cannot be made is reported and moves nothing."""
+    main_window.load_project(project)
+    write_notes(project / 'sub', [NOTES[1]])
+    main_window.dropped(project / NOTES[1], Drop(project / 'sub', 0))
+    assert len(refused) == 1
+    assert (project / NOTES[1]).is_file()
+
+
 def test_new_folder_from_menu(main_window: MainWindow, project: Path,
                               typed: list[str]) -> None:
     """Choosing Folder > New folder makes a folder and shows it."""
@@ -528,119 +522,6 @@ def test_edit_config_offered(main_window: MainWindow) -> None:
     """Editing the configuration can be chosen with no project open."""
     menu = main_window.menu_bar.menus[CONFIG_MENU]
     assert menu.entrycget(EDIT_CONFIG_ENTRY, 'state') == 'normal'
-
-
-@pytest.mark.parametrize('window_system,expected', [
-    ('aqua', Shortcut(('<Command-w>',), 'Cmd+W')),
-    ('win32', Shortcut(('<Control-q>',), 'Ctrl+Q')),
-    ('x11', Shortcut(('<Control-q>',), 'Ctrl+Q')),
-    ('', Shortcut(('<Control-q>',), 'Ctrl+Q'))])
-def test_quit_shortcut(window_system: str, expected: Shortcut) -> None:
-    """The shortcut is Cmd+W on macOS and Ctrl+Q on other systems."""
-    assert quit_shortcut(window_system) == expected
-
-
-@pytest.mark.parametrize('window_system,expected', [
-    ('aqua', ('Command', 'Cmd')),
-    ('win32', ('Control', 'Ctrl')),
-    ('x11', ('Control', 'Ctrl')),
-    ('', ('Control', 'Ctrl'))])
-def test_modifier(window_system: str, expected: tuple[str, str]) \
-        -> None:
-    """The command key holds macOS, and the control key the rest."""
-    assert modifier(window_system) == expected
-
-
-def test_held_shortcut() -> None:
-    """A shortcut binds every key that stands for it and shows one."""
-    shortcut = held_shortcut('aqua', ('plus', 'KP_Add'), '+')
-    assert shortcut == Shortcut(('<Command-plus>', '<Command-KP_Add>'),
-                                'Cmd++')
-
-
-@pytest.mark.parametrize('window_system', ['aqua', 'win32', 'x11'])
-def test_zoom_shortcuts(window_system: str) -> None:
-    """Every way of asking for another size has keys of its own."""
-    keys = window_shortcuts(window_system)
-    zooming = (keys.larger, keys.smaller, keys.normal)
-    assert all(shortcut.sequences for shortcut in zooming)
-    assert len({shortcut.label for shortcut in zooming}) == 3
-    bound = [sequence for shortcut in zooming
-             for sequence in shortcut.sequences]
-    assert len(set(bound)) == len(bound)
-
-
-@pytest.mark.parametrize('entry', [ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY,
-                                   NORMAL_SIZE_ENTRY])
-def test_view_accelerators(main_window: MainWindow, keys: Shortcuts,
-                           entry: str) -> None:
-    """Every entry of the view menu shows the keys that stand for it."""
-    menu = main_window.menu_bar.menus[VIEW_MENU]
-    labels = {keys.larger.label, keys.smaller.label, keys.normal.label}
-    assert str(menu.entrycget(entry, 'accelerator')) in labels
-
-
-def test_view_entries_live(main_window: MainWindow) -> None:
-    """How large a note is drawn can be said whatever is selected."""
-    menu = main_window.menu_bar.menus[VIEW_MENU]
-    for entry in (ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, NORMAL_SIZE_ENTRY):
-        assert str(menu.entrycget(entry, 'state')) == 'normal'
-
-
-def note_size_of(main_window: MainWindow) -> int:
-    """Return the size that the note panel draws a note in."""
-    return main_window.note_panel.view.tags.fonts.size
-
-
-def test_zoom_menu_entries(main_window: MainWindow) -> None:
-    """The entries of the view menu draw the note larger and smaller."""
-    menu = main_window.menu_bar.menus[VIEW_MENU]
-    started = note_size_of(main_window)
-    menu.invoke(ZOOM_IN_ENTRY)
-    assert note_size_of(main_window) == started + ZOOM_STEP
-    menu.invoke(ZOOM_OUT_ENTRY)
-    assert note_size_of(main_window) == started
-    menu.invoke(ZOOM_IN_ENTRY)
-    menu.invoke(NORMAL_SIZE_ENTRY)
-    assert note_size_of(main_window) == started
-
-
-def test_zoom_keys_bound(main_window: MainWindow, keys: Shortcuts) \
-        -> None:
-    """The window listens for every key that asks for another size."""
-    for shortcut in (keys.larger, keys.smaller, keys.normal):
-        for sequence in shortcut.sequences:
-            assert main_window.window.bind(sequence)
-
-
-def test_window_system_known(top_window: tkinter.Toplevel) -> None:
-    """Tk reports one of the three windowing systems that it supports."""
-    assert tk_window_system(top_window) in ('aqua', 'win32', 'x11')
-
-
-def test_quit_accelerator(main_window: MainWindow, shortcut: Shortcut) -> None:
-    """The Quit entry shows the shortcut that the window listens for."""
-    menu = main_window.menu_bar.menus[FILE_MENU]
-    assert menu.entrycget(QUIT_ENTRY, 'accelerator') == shortcut.label
-
-
-def test_quit_key_bound(main_window: MainWindow, shortcut: Shortcut) -> None:
-    """The window itself listens for the shortcut, as Tk binds none."""
-    assert all(main_window.window.bind(sequence)
-               for sequence in shortcut.sequences)
-
-
-def test_quit_destroys(main_window: MainWindow) -> None:
-    """Quitting destroys the window."""
-    main_window.quit()
-    assert not main_window.window.winfo_exists()
-
-
-def test_quit_from_menu(main_window: MainWindow) -> None:
-    """Choosing File > Quit destroys the window."""
-    window = main_window.window
-    main_window.menu_bar.menus[FILE_MENU].invoke(QUIT_ENTRY)
-    assert not window.winfo_exists()
 
 
 def test_nothing_open_first(main_window: MainWindow) -> None:
@@ -954,11 +835,3 @@ def test_window_gets_focus(shown_window: MainWindow) -> None:
     focused = window.focus_get()
     assert focused is not None
     assert str(focused).startswith(str(window))
-
-
-@pytest.mark.focus_sensitive
-def test_shortcut_quits(shown_window: MainWindow, shortcut: Shortcut) -> None:
-    """Pressing the shortcut closes a main window that has the focus."""
-    window = shown_window.window
-    window.event_generate(shortcut.sequences[0], when='now')
-    assert not window.winfo_exists()
