@@ -8,12 +8,13 @@ import os
 import stat
 from pathlib import Path
 import pytest
-from test_notesmgr.helpers import write_config, write_file, write_notes, \
-    write_template
+from test_notesmgr.helpers import refuse_choice, write_config, write_file, \
+    write_notes, write_template
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
 from notesmgr.project import PROJECT_CONFIG, config_path, folder_content, \
-    is_project, is_shown_folder, read_config
+    folder_entries, folder_paths, is_project, is_shown_folder, read_config
+from notesmgr.project_ops import open_project
 
 
 @pytest.fixture(name='project')
@@ -139,3 +140,17 @@ def test_linked_folder_left(project: Path) -> None:
     (project / 'loop').symlink_to(project, target_is_directory=True)
     assert not is_shown_folder(project / 'loop')
     assert [path.name for path in folder_content(project).folders] == ['sub']
+
+
+def test_folder_entries(project: Path) -> None:
+    """Everything a folder holds is there, hidden files and all."""
+    names = [path.name for path in folder_entries(project)]
+    assert '.hidden.md' in names
+    assert 'notes.cfg' in names
+    assert names == sorted(names, key=str.casefold)
+
+
+def test_folder_paths(project: Path) -> None:
+    """A project names its root folder and every folder below it."""
+    tree = open_project(project, refuse_choice).project.tree
+    assert folder_paths(tree) == [project, project / 'sub']

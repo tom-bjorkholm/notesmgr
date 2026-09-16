@@ -9,17 +9,21 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable, NamedTuple, Optional, Sequence, Union
+from typing import AbstractSet, Callable, NamedTuple, Optional, Sequence, \
+    Union
 from edit_cfg_json import ConfigLoadError
 from edit_cfg_json_tk import TkEditorPanel
+from notesmgr.actions import DELETE_FOLDER, NEW_FOLDER, RENAME_FOLDER
+from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config_editor import open_config_editor
 from notesmgr.config_files import copy_to_user_wide
 from notesmgr.dialogs import ask_choice, ask_folder, ask_yes_no, \
     busy_cursor, show_error, show_info, show_text
 from notesmgr.errors import NotesmgrError
 from notesmgr.explorer_tree import ExplorerTree
-from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar, set_enabled
-from notesmgr.note_panel import COPY_RAW, EDIT, NotePanel, PanelHooks
+from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar, \
+    entry_labels, set_enabled
+from notesmgr.note_panel import NotePanel
 from notesmgr.project import is_project
 from notesmgr.project_ops import OpenReport, changed_message, \
     create_project, open_project
@@ -32,6 +36,7 @@ MINIMUM_WIDTH = 640
 MINIMUM_HEIGHT = 400
 FILE_MENU = 'File'
 NOTE_MENU = 'Note'
+FOLDER_MENU = 'Folder'
 CONFIG_MENU = 'Configuration'
 HELP_MENU = 'Help'
 NEW_PROJECT_ENTRY = 'New project…'
@@ -41,7 +46,6 @@ EDIT_CONFIG_ENTRY = 'Edit configuration…'
 USER_WIDE_ENTRY = 'Save configuration as user wide…'
 VERSION_ENTRY = 'Version information…'
 VERSION_TITLE = 'notesmgr versions'
-NOTE_TITLE = 'Note'
 CONFIG_TITLE = 'Configuration'
 PROJECT_TITLE = 'Project'
 TEMPLATE_TITLE = 'Templates'
@@ -91,8 +95,9 @@ class MainWindow:
         self.session = Session()
         self.panes = ttk.PanedWindow(window, orient=tkinter.HORIZONTAL)
         self.explorer = ExplorerTree(self.panes, self.show_selected)
-        hooks = PanelHooks(self.report_error, self.enable_note_entries)
-        self.note_panel = NotePanel(self.panes, self.session, hooks)
+        hooks = WindowHooks(self.reopen, self.offer_actions)
+        commands = Commands(window, self.session, hooks)
+        self.note_panel = NotePanel(self.panes, self.session, commands)
         self.config_panel: Optional[TkEditorPanel] = None
         shortcut = quit_shortcut(tk_window_system(window))
         self.menu_bar = build_menu_bar(window, self._menu_specs(shortcut))
@@ -103,24 +108,46 @@ class MainWindow:
     def _menu_specs(self, shortcut: Shortcut) -> list[MenuSpec]:
         """Return the menus of the main window and what they hold.
 
-        The entries that act on a note need a note to act on, and
-        copying the configuration to the user wide location asks for a
-        project configuration file to copy, so all of them are greyed
-        out until there is one.
+        The entries that act on a note need a note to act on, the
+        entries that act on a folder need a folder, and copying the
+        configuration to the user wide location asks for a project
+        configuration file to copy, so all of them are greyed out
+        until what they need is selected.
         """
         new_entry = MenuEntry(NEW_PROJECT_ENTRY, self.new_project_dialog)
         open_entry = MenuEntry(OPEN_PROJECT_ENTRY, self.open_project_dialog)
         quit_entry = MenuEntry(QUIT_ENTRY, self.quit, shortcut.label)
-        edit_note = MenuEntry(EDIT, self.note_panel.edit_note, enabled=False)
-        copy_raw = MenuEntry(COPY_RAW, self.note_panel.copy_raw, enabled=False)
         edit_entry = MenuEntry(EDIT_CONFIG_ENTRY, self.edit_configuration)
         user_wide = MenuEntry(USER_WIDE_ENTRY, self.save_user_wide,
                               enabled=False)
         versions = MenuEntry(VERSION_ENTRY, self.show_version)
         return [MenuSpec(FILE_MENU, [new_entry, open_entry, quit_entry]),
-                MenuSpec(NOTE_MENU, [edit_note, copy_raw]),
+                MenuSpec(NOTE_MENU, self._note_entries()),
+                MenuSpec(FOLDER_MENU, self._folder_entries()),
                 MenuSpec(CONFIG_MENU, [edit_entry, user_wide]),
                 MenuSpec(HELP_MENU, [versions])]
+
+    def _note_entries(self) -> list[MenuEntry]:
+        """Return one entry of the note menu for every working button.
+
+        The note menu and the button row do the same things, so they
+        are described in one place, which is the panel that holds the
+        buttons. A button whose operation belongs to a later step of
+        the plan has nothing to do yet, and is left out of the menu
+        until it has.
+        """
+        return [MenuEntry(spec.label, spec.command, enabled=False)
+                for spec in self.note_panel.actions()
+                if spec.command is not None]
+
+    def _folder_entries(self) -> list[MenuEntry]:
+        """Return the entries that act on a folder of the project."""
+        commands = self.note_panel.commands
+        return [MenuEntry(NEW_FOLDER, commands.new_folder, enabled=False),
+                MenuEntry(RENAME_FOLDER, commands.rename_folder,
+                          enabled=False),
+                MenuEntry(DELETE_FOLDER, commands.delete_folder,
+                          enabled=False)]
 
     def _bind_quit_shortcut(self, shortcut: Shortcut) -> None:
         """Let the shortcut shown on the Quit entry close the window.
@@ -151,23 +178,22 @@ class MainWindow:
         """Show what the explorer has selected in the note panel."""
         self.note_panel.show_path(path)
 
-    def enable_note_entries(self, enabled: bool) -> None:
-        """Offer the menu entries acting on a note while there is one.
+    def offer_actions(self, labels: AbstractSet[str]) -> None:
+        """Offer what can be done now, and grey out what cannot.
 
-        The panel says when that changes, which is when another item
-        is selected and when the note that is shown is taken away by
-        another program.
+        The buttons of the panel and the entries of the note and
+        folder menus do the same things, so they are offered and
+        taken back together, whenever another item is selected and
+        whenever the note that is shown is taken away.
 
         Args:
-            enabled: Whether there is a note to act on.
+            labels: What the actions that can be done now are called.
         """
-        menu = self.menu_bar.menus[NOTE_MENU]
-        for label in (EDIT, COPY_RAW):
-            set_enabled(menu, label, enabled)
-
-    def report_error(self, message: str) -> None:
-        """Tell the user what the note panel could not do."""
-        show_error(self.window, NOTE_TITLE, message)
+        self.note_panel.offer(labels)
+        for title in (NOTE_MENU, FOLDER_MENU):
+            menu = self.menu_bar.menus[title]
+            for label in entry_labels(menu):
+                set_enabled(menu, label, label in labels)
 
     def new_project_dialog(self) -> None:
         """Ask for a folder and make a notesmgr project of it.
@@ -192,22 +218,46 @@ class MainWindow:
         if folder is not None:
             self.load_project(folder)
 
-    def load_project(self, root: Path) -> None:
-        """Open an existing project and show what it holds."""
-        self.opened(partial(open_project, root, self.choose_template))
+    def load_project(self, root: Path,
+                     selected: Optional[Path] = None) -> None:
+        """Open an existing project and show what it holds.
+
+        Args:
+            root: The root folder of the project to open.
+            selected: What to select in it, None for nothing at all.
+        """
+        self.opened(partial(open_project, root, self.choose_template),
+                    selected)
 
     def make_project(self, root: Path) -> None:
         """Make a folder into a project, then open it and show it."""
         self.opened(partial(create_project, root, self.choose_template))
 
-    def opened(self, opening: Callable[[], OpenReport]) -> None:
+    def reopen(self, selected: Optional[Path]) -> None:
+        """Show the open project again, selecting one item of it.
+
+        Every command changes the files of the project, so the whole
+        project is read again rather than the tree being mended item
+        by item. That way the tree says what the folders really hold,
+        whatever another program did to them meanwhile.
+
+        Args:
+            selected: What to select once it is shown again, None to
+                select nothing at all.
+        """
+        project = self.session.project
+        if project is not None:
+            self.load_project(project.root, selected)
+
+    def opened(self, opening: Callable[[], OpenReport],
+               selected: Optional[Path] = None) -> None:
         """Show what an opening gave, or say why it gave nothing."""
         try:
             report = opening()
         except NotesmgrError as error:
             show_error(self.window, PROJECT_TITLE, str(error))
             return
-        self.show_opened(report)
+        self.show_opened(report, selected)
 
     def choose_template(self, folder: Path,
                         templates: Sequence[Path]) -> Optional[Path]:
@@ -225,14 +275,28 @@ class MainWindow:
         chosen = ask_choice(self.window, TEMPLATE_TITLE, question, names)
         return None if chosen is None else folder / chosen
 
-    def show_opened(self, report: OpenReport) -> None:
+    def show_opened(self, report: OpenReport,
+                    selected: Optional[Path]) -> None:
         """Show a project that was opened, and what opening it did."""
         self.session.opened(report.project)
         set_enabled(self.menu_bar.menus[CONFIG_MENU], USER_WIDE_ENTRY, True)
         self.show_project(report.project.root.name)
         self.explorer.show(report.project)
-        self.show_selected(None)
+        self.select(selected)
         self.tell_about_opening(report)
+
+    def select(self, path: Optional[Path]) -> None:
+        """Select one item of the tree, and show what is selected.
+
+        Tk tells of a selection it was given only once it comes to
+        handle its own events, which is too late for a command that
+        wants to see the project as it now stands, so the panel is
+        told here rather than waiting for the event.
+
+        Args:
+            path: What to select, None to select nothing at all.
+        """
+        self.show_selected(self.explorer.select(path))
 
     def tell_about_opening(self, report: OpenReport) -> None:
         """Tell what opening a project changed and what it could not do."""

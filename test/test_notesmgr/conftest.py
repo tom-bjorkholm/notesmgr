@@ -4,11 +4,13 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
+import shutil
 import tkinter
 from contextlib import suppress
 from pathlib import Path
 from typing import Iterator
 import pytest
+from notesmgr import trash
 from notesmgr.config_files import CONFIG_VARIABLE
 
 
@@ -48,3 +50,27 @@ def fixture_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(Path, 'home', lambda: home)
     monkeypatch.delenv(CONFIG_VARIABLE, raising=False)
     return home
+
+
+@pytest.fixture(name='trashed')
+def fixture_trashed(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
+    """Record what was trashed, and take it away without a real trash.
+
+    The tests may not fill the trash of whoever runs them, so what
+    notesmgr asks to have trashed is taken away here instead.
+    """
+    gone: list[Path] = []
+
+    def record(path: Path) -> None:
+        """Stand in for moving a file or a folder to the trash.
+
+        What is not there is not taken away either, so the error
+        that the real trash raises is raised here as well.
+        """
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+        gone.append(path)
+    monkeypatch.setattr(trash, 'send2trash', record)
+    return gone

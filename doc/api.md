@@ -8,15 +8,16 @@
     * [\_\_init\_\_](#notesmgr.main_window.MainWindow.__init__)
     * [show\_project](#notesmgr.main_window.MainWindow.show_project)
     * [show\_selected](#notesmgr.main_window.MainWindow.show_selected)
-    * [enable\_note\_entries](#notesmgr.main_window.MainWindow.enable_note_entries)
-    * [report\_error](#notesmgr.main_window.MainWindow.report_error)
+    * [offer\_actions](#notesmgr.main_window.MainWindow.offer_actions)
     * [new\_project\_dialog](#notesmgr.main_window.MainWindow.new_project_dialog)
     * [open\_project\_dialog](#notesmgr.main_window.MainWindow.open_project_dialog)
     * [load\_project](#notesmgr.main_window.MainWindow.load_project)
     * [make\_project](#notesmgr.main_window.MainWindow.make_project)
+    * [reopen](#notesmgr.main_window.MainWindow.reopen)
     * [opened](#notesmgr.main_window.MainWindow.opened)
     * [choose\_template](#notesmgr.main_window.MainWindow.choose_template)
     * [show\_opened](#notesmgr.main_window.MainWindow.show_opened)
+    * [select](#notesmgr.main_window.MainWindow.select)
     * [tell\_about\_opening](#notesmgr.main_window.MainWindow.tell_about_opening)
     * [edit\_configuration](#notesmgr.main_window.MainWindow.edit_configuration)
     * [save\_user\_wide](#notesmgr.main_window.MainWindow.save_user_wide)
@@ -41,6 +42,7 @@
   * [build\_menu](#notesmgr.menu_bar.build_menu)
   * [build\_menu\_bar](#notesmgr.menu_bar.build_menu_bar)
   * [set\_enabled](#notesmgr.menu_bar.set_enabled)
+  * [entry\_labels](#notesmgr.menu_bar.entry_labels)
 * [notesmgr.cmd\_line](#notesmgr.cmd_line)
   * [PROGRAM\_NAME](#notesmgr.cmd_line.PROGRAM_NAME)
   * [DESCRIPTION](#notesmgr.cmd_line.DESCRIPTION)
@@ -75,6 +77,20 @@
     * [parse\_converters](#notesmgr.config.NotesmgrConfig.parse_converters)
     * [get\_validation\_plan](#notesmgr.config.NotesmgrConfig.get_validation_plan)
     * [stripped\_editor](#notesmgr.config.NotesmgrConfig.stripped_editor)
+* [notesmgr.note\_ops](#notesmgr.note_ops)
+  * [NAME\_TAKEN](#notesmgr.note_ops.NAME_TAKEN)
+  * [NOT\_WRITTEN](#notesmgr.note_ops.NOT_WRITTEN)
+  * [NOT\_COPIED](#notesmgr.note_ops.NOT_COPIED)
+  * [NOT\_TRASHED](#notesmgr.note_ops.NOT_TRASHED)
+  * [resync\_order](#notesmgr.note_ops.resync_order)
+  * [free\_path](#notesmgr.note_ops.free_path)
+  * [new\_path](#notesmgr.note_ops.new_path)
+  * [template\_text](#notesmgr.note_ops.template_text)
+  * [new\_note](#notesmgr.note_ops.new_note)
+  * [duplicate\_note](#notesmgr.note_ops.duplicate_note)
+  * [delete\_note](#notesmgr.note_ops.delete_note)
+  * [moved\_order](#notesmgr.note_ops.moved_order)
+  * [move\_note](#notesmgr.note_ops.move_note)
 * [notesmgr.session](#notesmgr.session)
   * [start\_folder](#notesmgr.session.start_folder)
   * [Session](#notesmgr.session.Session)
@@ -83,6 +99,25 @@
     * [chooser\_folder](#notesmgr.session.Session.chooser_folder)
     * [config\_file](#notesmgr.session.Session.config_file)
     * [config](#notesmgr.session.Session.config)
+* [notesmgr.actions](#notesmgr.actions)
+  * [COPY\_RAW](#notesmgr.actions.COPY_RAW)
+  * [COPY\_FORMATTED](#notesmgr.actions.COPY_FORMATTED)
+  * [DUPLICATE](#notesmgr.actions.DUPLICATE)
+  * [EDIT](#notesmgr.actions.EDIT)
+  * [NEW](#notesmgr.actions.NEW)
+  * [DELETE](#notesmgr.actions.DELETE)
+  * [MOVE\_UP](#notesmgr.actions.MOVE_UP)
+  * [MOVE\_DOWN](#notesmgr.actions.MOVE_DOWN)
+  * [NEW\_FOLDER](#notesmgr.actions.NEW_FOLDER)
+  * [RENAME\_FOLDER](#notesmgr.actions.RENAME_FOLDER)
+  * [DELETE\_FOLDER](#notesmgr.actions.DELETE_FOLDER)
+  * [ON\_NOTE](#notesmgr.actions.ON_NOTE)
+  * [ON\_PLAIN](#notesmgr.actions.ON_PLAIN)
+  * [ON\_PROJECT](#notesmgr.actions.ON_PROJECT)
+  * [ON\_FOLDER](#notesmgr.actions.ON_FOLDER)
+  * [Selected](#notesmgr.actions.Selected)
+  * [NOTHING](#notesmgr.actions.NOTHING)
+  * [offered](#notesmgr.actions.offered)
 * [notesmgr.config\_files](#notesmgr.config_files)
   * [CONFIG\_VARIABLE](#notesmgr.config_files.CONFIG_VARIABLE)
   * [CONFIG\_NAME](#notesmgr.config_files.CONFIG_NAME)
@@ -112,6 +147,8 @@
   * [open\_config\_editor](#notesmgr.config_editor.open_config_editor)
 * [notesmgr.application](#notesmgr.application)
   * [main](#notesmgr.application.main)
+* [notesmgr.trash](#notesmgr.trash)
+  * [send\_to\_trash](#notesmgr.trash.send_to_trash)
 * [notesmgr.config\_defaults](#notesmgr.config_defaults)
   * [VISUAL\_CODE](#notesmgr.config_defaults.VISUAL_CODE)
   * [VISUAL\_CODE\_FLAG](#notesmgr.config_defaults.VISUAL_CODE_FLAG)
@@ -121,23 +158,15 @@
   * [default\_editor](#notesmgr.config_defaults.default_editor)
 * [notesmgr.note\_panel](#notesmgr.note_panel)
   * [PADDING](#notesmgr.note_panel.PADDING)
-  * [COPY\_RAW](#notesmgr.note_panel.COPY_RAW)
-  * [COPY\_FORMATTED](#notesmgr.note_panel.COPY_FORMATTED)
-  * [DUPLICATE](#notesmgr.note_panel.DUPLICATE)
-  * [EDIT](#notesmgr.note_panel.EDIT)
-  * [NEW](#notesmgr.note_panel.NEW)
-  * [DELETE](#notesmgr.note_panel.DELETE)
-  * [MOVE\_UP](#notesmgr.note_panel.MOVE_UP)
-  * [MOVE\_DOWN](#notesmgr.note_panel.MOVE_DOWN)
-  * [PanelHooks](#notesmgr.note_panel.PanelHooks)
   * [NotePanel](#notesmgr.note_panel.NotePanel)
     * [\_\_init\_\_](#notesmgr.note_panel.NotePanel.__init__)
+    * [actions](#notesmgr.note_panel.NotePanel.actions)
     * [note\_limit](#notesmgr.note_panel.NotePanel.note_limit)
     * [note\_path](#notesmgr.note_panel.NotePanel.note_path)
     * [has\_note](#notesmgr.note_panel.NotePanel.has_note)
     * [show\_path](#notesmgr.note_panel.NotePanel.show_path)
     * [reload](#notesmgr.note_panel.NotePanel.reload)
-    * [offer\_actions](#notesmgr.note_panel.NotePanel.offer_actions)
+    * [offer](#notesmgr.note_panel.NotePanel.offer)
     * [shown\_path](#notesmgr.note_panel.NotePanel.shown_path)
     * [edit\_note](#notesmgr.note_panel.NotePanel.edit_note)
     * [copy\_raw](#notesmgr.note_panel.NotePanel.copy_raw)
@@ -185,6 +214,7 @@
     * [\_\_init\_\_](#notesmgr.explorer_tree.ExplorerTree.__init__)
     * [selection\_changed](#notesmgr.explorer_tree.ExplorerTree.selection_changed)
     * [selected\_path](#notesmgr.explorer_tree.ExplorerTree.selected_path)
+    * [select](#notesmgr.explorer_tree.ExplorerTree.select)
     * [show](#notesmgr.explorer_tree.ExplorerTree.show)
     * [add\_folder](#notesmgr.explorer_tree.ExplorerTree.add_folder)
     * [shown\_files](#notesmgr.explorer_tree.ExplorerTree.shown_files)
@@ -199,6 +229,10 @@
   * [BUSY\_CURSOR](#notesmgr.dialogs.BUSY_CURSOR)
   * [CHOOSE\_LABEL](#notesmgr.dialogs.CHOOSE_LABEL)
   * [CANCEL\_LABEL](#notesmgr.dialogs.CANCEL_LABEL)
+  * [ACCEPT\_LABEL](#notesmgr.dialogs.ACCEPT_LABEL)
+  * [NAME\_LABEL](#notesmgr.dialogs.NAME_LABEL)
+  * [FOLDER\_LABEL](#notesmgr.dialogs.FOLDER_LABEL)
+  * [ENTRY\_WIDTH](#notesmgr.dialogs.ENTRY_WIDTH)
   * [text\_size](#notesmgr.dialogs.text_size)
   * [show\_text](#notesmgr.dialogs.show_text)
   * [show\_error](#notesmgr.dialogs.show_error)
@@ -206,12 +240,25 @@
   * [ask\_folder](#notesmgr.dialogs.ask_folder)
   * [ask\_yes\_no](#notesmgr.dialogs.ask_yes_no)
   * [show\_info](#notesmgr.dialogs.show_info)
+  * [AskingWindow](#notesmgr.dialogs.AskingWindow)
+    * [\_\_init\_\_](#notesmgr.dialogs.AskingWindow.__init__)
+    * [ask](#notesmgr.dialogs.AskingWindow.ask)
+    * [add\_buttons](#notesmgr.dialogs.AskingWindow.add_buttons)
+    * [accept](#notesmgr.dialogs.AskingWindow.accept)
+    * [cancel](#notesmgr.dialogs.AskingWindow.cancel)
+    * [answered](#notesmgr.dialogs.AskingWindow.answered)
   * [ChoiceDialog](#notesmgr.dialogs.ChoiceDialog)
     * [\_\_init\_\_](#notesmgr.dialogs.ChoiceDialog.__init__)
-    * [accept](#notesmgr.dialogs.ChoiceDialog.accept)
-    * [cancel](#notesmgr.dialogs.ChoiceDialog.cancel)
+    * [chosen](#notesmgr.dialogs.ChoiceDialog.chosen)
     * [choose](#notesmgr.dialogs.ChoiceDialog.choose)
   * [ask\_choice](#notesmgr.dialogs.ask_choice)
+  * [ask\_name](#notesmgr.dialogs.ask_name)
+  * [NameFolder](#notesmgr.dialogs.NameFolder)
+  * [NameFolderDialog](#notesmgr.dialogs.NameFolderDialog)
+    * [\_\_init\_\_](#notesmgr.dialogs.NameFolderDialog.__init__)
+    * [given](#notesmgr.dialogs.NameFolderDialog.given)
+    * [ask\_for](#notesmgr.dialogs.NameFolderDialog.ask_for)
+  * [ask\_name\_folder](#notesmgr.dialogs.ask_name_folder)
 * [notesmgr.note\_text](#notesmgr.note_text)
   * [NOT\_UTF8](#notesmgr.note_text.NOT_UTF8)
   * [NOT\_READ](#notesmgr.note_text.NOT_READ)
@@ -231,12 +278,46 @@
     * [tick](#notesmgr.file_watch.FileWatch.tick)
     * [schedule](#notesmgr.file_watch.FileWatch.schedule)
     * [cancel](#notesmgr.file_watch.FileWatch.cancel)
+* [notesmgr.commands](#notesmgr.commands)
+  * [NOTE\_TITLE](#notesmgr.commands.NOTE_TITLE)
+  * [FOLDER\_TITLE](#notesmgr.commands.FOLDER_TITLE)
+  * [DUPLICATE\_TITLE](#notesmgr.commands.DUPLICATE_TITLE)
+  * [ASK\_NEW\_NOTE](#notesmgr.commands.ASK_NEW_NOTE)
+  * [ASK\_DELETE\_NOTE](#notesmgr.commands.ASK_DELETE_NOTE)
+  * [ASK\_NEW\_FOLDER](#notesmgr.commands.ASK_NEW_FOLDER)
+  * [ASK\_RENAME\_FOLDER](#notesmgr.commands.ASK_RENAME_FOLDER)
+  * [ASK\_DELETE\_FOLDER](#notesmgr.commands.ASK_DELETE_FOLDER)
+  * [COPY\_SUFFIX](#notesmgr.commands.COPY_SUFFIX)
+  * [shown\_folder](#notesmgr.commands.shown_folder)
+  * [folder\_of](#notesmgr.commands.folder_of)
+  * [WindowHooks](#notesmgr.commands.WindowHooks)
+  * [Commands](#notesmgr.commands.Commands)
+    * [\_\_init\_\_](#notesmgr.commands.Commands.__init__)
+    * [select](#notesmgr.commands.Commands.select)
+    * [note\_shown](#notesmgr.commands.Commands.note_shown)
+    * [selected](#notesmgr.commands.Commands.selected)
+    * [report\_error](#notesmgr.commands.Commands.report_error)
+    * [chosen\_folder](#notesmgr.commands.Commands.chosen_folder)
+    * [note\_folder](#notesmgr.commands.Commands.note_folder)
+    * [plain\_note](#notesmgr.commands.Commands.plain_note)
+    * [done](#notesmgr.commands.Commands.done)
+    * [edit](#notesmgr.commands.Commands.edit)
+    * [new\_note](#notesmgr.commands.Commands.new_note)
+    * [duplicate\_note](#notesmgr.commands.Commands.duplicate_note)
+    * [delete\_note](#notesmgr.commands.Commands.delete_note)
+    * [move\_up](#notesmgr.commands.Commands.move_up)
+    * [move\_down](#notesmgr.commands.Commands.move_down)
+    * [move](#notesmgr.commands.Commands.move)
+    * [new\_folder](#notesmgr.commands.Commands.new_folder)
+    * [rename\_folder](#notesmgr.commands.Commands.rename_folder)
+    * [delete\_folder](#notesmgr.commands.Commands.delete_folder)
 * [notesmgr.note\_file](#notesmgr.note_file)
   * [TEMPLATE\_STEM](#notesmgr.note_file.TEMPLATE_STEM)
   * [NOTE\_EXTENSIONS](#notesmgr.note_file.NOTE_EXTENSIONS)
   * [SEPARATORS](#notesmgr.note_file.SEPARATORS)
+  * [NOT\_IN\_NAME](#notesmgr.note_file.NOT_IN_NAME)
   * [NO\_NAME](#notesmgr.note_file.NO_NAME)
-  * [IN\_FOLDER](#notesmgr.note_file.IN_FOLDER)
+  * [INVALID\_NAME](#notesmgr.note_file.INVALID_NAME)
   * [HIDDEN](#notesmgr.note_file.HIDDEN)
   * [WRONG\_EXTENSION](#notesmgr.note_file.WRONG_EXTENSION)
   * [RESERVED](#notesmgr.note_file.RESERVED)
@@ -249,6 +330,7 @@
   * [name\_key](#notesmgr.note_file.name_key)
   * [sorted\_names](#notesmgr.note_file.sorted_names)
   * [checked\_extension](#notesmgr.note_file.checked_extension)
+  * [checked\_name](#notesmgr.note_file.checked_name)
   * [note\_file\_name](#notesmgr.note_file.note_file_name)
 * [notesmgr.note\_view](#notesmgr.note_view)
   * [WARNING\_COLOUR](#notesmgr.note_view.WARNING_COLOUR)
@@ -277,7 +359,19 @@
   * [is\_project](#notesmgr.project.is_project)
   * [read\_config](#notesmgr.project.read_config)
   * [is\_shown\_folder](#notesmgr.project.is_shown_folder)
+  * [folder\_entries](#notesmgr.project.folder_entries)
   * [folder\_content](#notesmgr.project.folder_content)
+  * [folder\_paths](#notesmgr.project.folder_paths)
+* [notesmgr.folder\_ops](#notesmgr.folder_ops)
+  * [IS\_PROJECT](#notesmgr.folder_ops.IS_PROJECT)
+  * [NOT\_EMPTY](#notesmgr.folder_ops.NOT_EMPTY)
+  * [NOT\_MADE](#notesmgr.folder_ops.NOT_MADE)
+  * [NOT\_RENAMED](#notesmgr.folder_ops.NOT_RENAMED)
+  * [NOT\_TRASHED](#notesmgr.folder_ops.NOT_TRASHED)
+  * [new\_folder](#notesmgr.folder_ops.new_folder)
+  * [rename\_folder](#notesmgr.folder_ops.rename_folder)
+  * [is\_empty](#notesmgr.folder_ops.is_empty)
+  * [delete\_folder](#notesmgr.folder_ops.delete_folder)
 
 <a id="notesmgr.main_window"></a>
 
@@ -362,33 +456,24 @@ def show_selected(path: Optional[Path]) -> None
 
 Show what the explorer has selected in the note panel.
 
-<a id="notesmgr.main_window.MainWindow.enable_note_entries"></a>
+<a id="notesmgr.main_window.MainWindow.offer_actions"></a>
 
-#### enable\_note\_entries
+#### offer\_actions
 
 ```python
-def enable_note_entries(enabled: bool) -> None
+def offer_actions(labels: AbstractSet[str]) -> None
 ```
 
-Offer the menu entries acting on a note while there is one.
+Offer what can be done now, and grey out what cannot.
 
-The panel says when that changes, which is when another item
-is selected and when the note that is shown is taken away by
-another program.
+The buttons of the panel and the entries of the note and
+folder menus do the same things, so they are offered and
+taken back together, whenever another item is selected and
+whenever the note that is shown is taken away.
 
 **Arguments**:
 
-- `enabled` - Whether there is a note to act on.
-
-<a id="notesmgr.main_window.MainWindow.report_error"></a>
-
-#### report\_error
-
-```python
-def report_error(message: str) -> None
-```
-
-Tell the user what the note panel could not do.
+- `labels` - What the actions that can be done now are called.
 
 <a id="notesmgr.main_window.MainWindow.new_project_dialog"></a>
 
@@ -418,10 +503,15 @@ Ask for a project folder and open the project in it.
 #### load\_project
 
 ```python
-def load_project(root: Path) -> None
+def load_project(root: Path, selected: Optional[Path] = None) -> None
 ```
 
 Open an existing project and show what it holds.
+
+**Arguments**:
+
+- `root` - The root folder of the project to open.
+- `selected` - What to select in it, None for nothing at all.
 
 <a id="notesmgr.main_window.MainWindow.make_project"></a>
 
@@ -433,12 +523,33 @@ def make_project(root: Path) -> None
 
 Make a folder into a project, then open it and show it.
 
+<a id="notesmgr.main_window.MainWindow.reopen"></a>
+
+#### reopen
+
+```python
+def reopen(selected: Optional[Path]) -> None
+```
+
+Show the open project again, selecting one item of it.
+
+Every command changes the files of the project, so the whole
+project is read again rather than the tree being mended item
+by item. That way the tree says what the folders really hold,
+whatever another program did to them meanwhile.
+
+**Arguments**:
+
+- `selected` - What to select once it is shown again, None to
+  select nothing at all.
+
 <a id="notesmgr.main_window.MainWindow.opened"></a>
 
 #### opened
 
 ```python
-def opened(opening: Callable[[], OpenReport]) -> None
+def opened(opening: Callable[[], OpenReport],
+           selected: Optional[Path] = None) -> None
 ```
 
 Show what an opening gave, or say why it gave nothing.
@@ -468,10 +579,29 @@ Ask which of the templates of a folder is the one to keep.
 #### show\_opened
 
 ```python
-def show_opened(report: OpenReport) -> None
+def show_opened(report: OpenReport, selected: Optional[Path]) -> None
 ```
 
 Show a project that was opened, and what opening it did.
+
+<a id="notesmgr.main_window.MainWindow.select"></a>
+
+#### select
+
+```python
+def select(path: Optional[Path]) -> None
+```
+
+Select one item of the tree, and show what is selected.
+
+Tk tells of a selection it was given only once it comes to
+handle its own events, which is too late for a command that
+wants to see the project as it now stands, so the panel is
+told here rather than waiting for the event.
+
+**Arguments**:
+
+- `path` - What to select, None to select nothing at all.
 
 <a id="notesmgr.main_window.MainWindow.tell_about_opening"></a>
 
@@ -754,6 +884,26 @@ Let one entry of a menu be chosen, or grey it out.
 - `menu` - The menu that the entry is in.
 - `label` - Which entry of that menu it is.
 - `enabled` - Whether the entry can now be chosen.
+
+<a id="notesmgr.menu_bar.entry_labels"></a>
+
+#### entry\_labels
+
+```python
+def entry_labels(menu: tkinter.Menu) -> list[str]
+```
+
+Return what the entries of a menu say, in the order they are in.
+
+**Arguments**:
+
+- `menu` - The menu to look through.
+  
+
+**Returns**:
+
+  The label of every entry, and nothing at all for a menu that
+  holds no entries.
 
 <a id="notesmgr.cmd_line"></a>
 
@@ -1165,6 +1315,274 @@ Return the editor command without the blanks around it.
 
 - `InvalidConfiguration` - Nothing but blanks was given.
 
+<a id="notesmgr.note_ops"></a>
+
+# notesmgr.note\_ops
+
+Making, copying, moving and taking away the notes of a project.
+
+<a id="notesmgr.note_ops.NAME_TAKEN"></a>
+
+#### NAME\_TAKEN
+
+What is said about a name that is another file's name already.
+
+<a id="notesmgr.note_ops.NOT_WRITTEN"></a>
+
+#### NOT\_WRITTEN
+
+What is said about a note that the file system would not take.
+
+<a id="notesmgr.note_ops.NOT_COPIED"></a>
+
+#### NOT\_COPIED
+
+What is said about a note that could not be copied.
+
+<a id="notesmgr.note_ops.NOT_TRASHED"></a>
+
+#### NOT\_TRASHED
+
+What is said about a note that the trash would not take.
+
+<a id="notesmgr.note_ops.resync_order"></a>
+
+#### resync\_order
+
+```python
+def resync_order(folder: Path) -> list[str]
+```
+
+Return the notes of a folder, bringing its order file in line.
+
+The notes of a folder change under its order file whenever one is
+made, copied or taken away, and the repair that opening a project
+does is exactly what is wanted then, so it is done here as well.
+
+**Arguments**:
+
+- `folder` - The folder whose notes have changed.
+  
+
+**Returns**:
+
+  The notes of the folder, in the order they are shown in.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder or its order file cannot be read,
+  or the order file cannot be written.
+
+<a id="notesmgr.note_ops.free_path"></a>
+
+#### free\_path
+
+```python
+def free_path(folder: Path, name: str) -> Path
+```
+
+Return the file that a name asks for, refusing a taken name.
+
+Two names that differ only in case are one file on macOS and on
+Windows, so a name is taken when the folder holds any name equal
+to it but for its case, whatever this file system makes of it.
+
+**Arguments**:
+
+- `folder` - The folder that the file is to be in.
+- `name` - The name of the file, extension and all.
+  
+
+**Returns**:
+
+  The file to write, which is not there yet.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder holds a file of that name already,
+  or the folder cannot be read.
+
+<a id="notesmgr.note_ops.new_path"></a>
+
+#### new\_path
+
+```python
+def new_path(folder: Path, typed: str, extension: NoteExtension) -> Path
+```
+
+Return the note file that a typed name asks for in a folder.
+
+**Arguments**:
+
+- `folder` - The folder that the note is to be in.
+- `typed` - What the user typed as the name of the note.
+- `extension` - The extension that the notes of the project have.
+  
+
+**Returns**:
+
+  The note file to write, which is not there yet.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The name names no note of this project, or it
+  is the name of a file that is there already.
+
+<a id="notesmgr.note_ops.template_text"></a>
+
+#### template\_text
+
+```python
+def template_text(folder: Path, extension: NoteExtension) -> str
+```
+
+Return what a new note in a folder starts out holding.
+
+That is the template of the folder, and nothing at all when the
+folder holds no template that can be read, which is no reason to
+refuse to make the note.
+
+**Arguments**:
+
+- `folder` - The folder that the new note is made in.
+- `extension` - The extension that the notes of the project have.
+  
+
+**Returns**:
+
+  The text that the new note starts out holding.
+
+<a id="notesmgr.note_ops.new_note"></a>
+
+#### new\_note
+
+```python
+def new_note(folder: Path, typed: str, extension: NoteExtension) -> Path
+```
+
+Make a note in a folder, holding what its template holds.
+
+**Arguments**:
+
+- `folder` - The folder that the note is made in.
+- `typed` - What the user typed as the name of the note.
+- `extension` - The extension that the notes of the project have.
+  
+
+**Returns**:
+
+  The note that was made.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The name names no note that can be made here,
+  or the note or the note order cannot be written.
+
+<a id="notesmgr.note_ops.duplicate_note"></a>
+
+#### duplicate\_note
+
+```python
+def duplicate_note(note: Path, folder: Path, typed: str,
+                   extension: NoteExtension) -> Path
+```
+
+Copy a note into a folder of the project under another name.
+
+**Arguments**:
+
+- `note` - The note to copy.
+- `folder` - The folder that the copy is made in, which is any
+  folder of the project and not only the note's own.
+- `typed` - What the user typed as the name of the copy.
+- `extension` - The extension that the notes of the project have.
+  
+
+**Returns**:
+
+  The copy that was made.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The name names no note that can be made here,
+  or the copy or the note order cannot be written.
+
+<a id="notesmgr.note_ops.delete_note"></a>
+
+#### delete\_note
+
+```python
+def delete_note(note: Path) -> None
+```
+
+Move a note to the trash, and out of the order of its folder.
+
+**Arguments**:
+
+- `note` - The note to take away.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The trash would not take the note, or the note
+  order cannot be written.
+
+<a id="notesmgr.note_ops.moved_order"></a>
+
+#### moved\_order
+
+```python
+def moved_order(names: Sequence[str], name: str, offset: int) -> list[str]
+```
+
+Return an order with one of its notes moved so many places.
+
+A note at the first place cannot be moved further up and one at
+the last place cannot be moved further down, so it stays where it
+is rather than moving round the end of the folder.
+
+**Arguments**:
+
+- `names` - The notes of a folder, in the order they are shown in.
+- `name` - The note to move, which may be none of them.
+- `offset` - How many places to move it, up being negative.
+  
+
+**Returns**:
+
+  The order as it is after the move.
+
+<a id="notesmgr.note_ops.move_note"></a>
+
+#### move\_note
+
+```python
+def move_note(note: Path, offset: int) -> Path
+```
+
+Move a note so many places in the order of its folder.
+
+**Arguments**:
+
+- `note` - The note to move.
+- `offset` - How many places to move it, up being negative.
+  
+
+**Returns**:
+
+  The note, which is where it now stands in its folder.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder or its order file cannot be read,
+  or the order file cannot be written.
+
 <a id="notesmgr.session"></a>
 
 # notesmgr.session
@@ -1259,6 +1677,142 @@ Return the configuration in use, None while none is.
 It says what the notes of the project are named, how much of
 a note is shown and what editor a note is opened in, so it is
 what the parts of the window ask when they need any of that.
+
+<a id="notesmgr.actions"></a>
+
+# notesmgr.actions
+
+What can be done with what is selected, and when it can be done.
+
+<a id="notesmgr.actions.COPY_RAW"></a>
+
+#### COPY\_RAW
+
+What the action that copies the note as it is written is called.
+
+<a id="notesmgr.actions.COPY_FORMATTED"></a>
+
+#### COPY\_FORMATTED
+
+What the action that copies the note formatted is called.
+
+<a id="notesmgr.actions.DUPLICATE"></a>
+
+#### DUPLICATE
+
+What the action that copies the note into the project is called.
+
+<a id="notesmgr.actions.EDIT"></a>
+
+#### EDIT
+
+What the action that opens the note in an editor is called.
+
+<a id="notesmgr.actions.NEW"></a>
+
+#### NEW
+
+What the action that makes another note is called.
+
+<a id="notesmgr.actions.DELETE"></a>
+
+#### DELETE
+
+What the action that takes the note away is called.
+
+<a id="notesmgr.actions.MOVE_UP"></a>
+
+#### MOVE\_UP
+
+What the action that moves the note one place up is called.
+
+<a id="notesmgr.actions.MOVE_DOWN"></a>
+
+#### MOVE\_DOWN
+
+What the action that moves the note one place down is called.
+
+<a id="notesmgr.actions.NEW_FOLDER"></a>
+
+#### NEW\_FOLDER
+
+What the action that makes another folder is called.
+
+<a id="notesmgr.actions.RENAME_FOLDER"></a>
+
+#### RENAME\_FOLDER
+
+What the action that gives a folder another name is called.
+
+<a id="notesmgr.actions.DELETE_FOLDER"></a>
+
+#### DELETE\_FOLDER
+
+What the action that takes an empty folder away is called.
+
+<a id="notesmgr.actions.ON_NOTE"></a>
+
+#### ON\_NOTE
+
+What can be done with any note that is shown, template or not.
+
+<a id="notesmgr.actions.ON_PLAIN"></a>
+
+#### ON\_PLAIN
+
+What can be done with a note that is no template of a folder.
+
+<a id="notesmgr.actions.ON_PROJECT"></a>
+
+#### ON\_PROJECT
+
+What can be done as long as there is a project to do it in.
+
+<a id="notesmgr.actions.ON_FOLDER"></a>
+
+#### ON\_FOLDER
+
+What can be done with a folder that is no root of a project.
+
+<a id="notesmgr.actions.Selected"></a>
+
+## Selected Objects
+
+```python
+class Selected(NamedTuple)
+```
+
+What is selected, as far as it says what can be done with it.
+
+The panel knows whether there is a note to act on, because a note
+can be taken away by another program while it is shown, and the
+rest follows from the item that the explorer has selected.
+
+<a id="notesmgr.actions.NOTHING"></a>
+
+#### NOTHING
+
+What is selected while nothing at all is.
+
+<a id="notesmgr.actions.offered"></a>
+
+#### offered
+
+```python
+def offered(selected: Selected) -> frozenset[str]
+```
+
+Return what can be done with what is selected.
+
+**Arguments**:
+
+- `selected` - What the explorer has selected now.
+  
+
+**Returns**:
+
+  The actions that the buttons and the menu entries offer,
+  every other action of the application being greyed out.
 
 <a id="notesmgr.config_files"></a>
 
@@ -1593,10 +2147,18 @@ Put the buttons into a grid so many buttons wide.
 #### offer
 
 ```python
-def offer(enabled: bool) -> None
+def offer(labels: AbstractSet[str]) -> None
 ```
 
-Let the buttons that do something be used, or grey them out.
+Let the buttons that can be used now be pressed.
+
+A button whose operation belongs to a later step of the plan
+has nothing to do when pressed, and stays greyed out however
+much the selection would allow it.
+
+**Arguments**:
+
+- `labels` - What the buttons that can be used now say.
 
 <a id="notesmgr.config_editor"></a>
 
@@ -1691,6 +2253,37 @@ window of its own when the folder holds no project.
 - `argv` - Command line arguments, or None for the ones this
   program was started with.
 
+<a id="notesmgr.trash"></a>
+
+# notesmgr.trash
+
+Moving what notesmgr takes away to the trash of the system.
+
+<a id="notesmgr.trash.send_to_trash"></a>
+
+#### send\_to\_trash
+
+```python
+def send_to_trash(path: Path, message: str) -> None
+```
+
+Move a file or a folder to the trash of the operating system.
+
+Nothing that notesmgr takes away is deleted outright, so that
+anything taken away by mistake can be taken back out of the
+trash again.
+
+**Arguments**:
+
+- `path` - The file or folder that is to be moved to the trash.
+- `message` - What to tell the user when it cannot be, holding a
+  {path} and a {reason} to be filled in.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The trash did not take it.
+
 <a id="notesmgr.config_defaults"></a>
 
 # notesmgr.config\_defaults
@@ -1757,68 +2350,6 @@ The panel at the right of the main window, showing a note.
 
 Space in pixels left around what the panel shows.
 
-<a id="notesmgr.note_panel.COPY_RAW"></a>
-
-#### COPY\_RAW
-
-What the button that copies the note as it is written says.
-
-<a id="notesmgr.note_panel.COPY_FORMATTED"></a>
-
-#### COPY\_FORMATTED
-
-What the button that copies the note formatted says.
-
-<a id="notesmgr.note_panel.DUPLICATE"></a>
-
-#### DUPLICATE
-
-What the button that copies the note into the project says.
-
-<a id="notesmgr.note_panel.EDIT"></a>
-
-#### EDIT
-
-What the button that opens the note in an editor says.
-
-<a id="notesmgr.note_panel.NEW"></a>
-
-#### NEW
-
-What the button that makes another note says.
-
-<a id="notesmgr.note_panel.DELETE"></a>
-
-#### DELETE
-
-What the button that takes the note away says.
-
-<a id="notesmgr.note_panel.MOVE_UP"></a>
-
-#### MOVE\_UP
-
-What the button that moves the note one place up says.
-
-<a id="notesmgr.note_panel.MOVE_DOWN"></a>
-
-#### MOVE\_DOWN
-
-What the button that moves the note one place down says.
-
-<a id="notesmgr.note_panel.PanelHooks"></a>
-
-## PanelHooks Objects
-
-```python
-class PanelHooks(NamedTuple)
-```
-
-What the panel tells the window that holds it.
-
-The window owns the menu entries that do what the buttons do, and
-it owns the way that a problem is put to the user, so the panel
-is given both rather than reaching back into the window.
-
 <a id="notesmgr.note_panel.NotePanel"></a>
 
 ## NotePanel Objects
@@ -1840,7 +2371,7 @@ folder, and nothing when a folder or nothing at all is selected.
 
 ```python
 def __init__(parent: tkinter.Misc, session: Session,
-             hooks: PanelHooks) -> None
+             commands: Commands) -> None
 ```
 
 Build the panel in a frame of its own inside a parent widget.
@@ -1850,7 +2381,18 @@ Build the panel in a frame of its own inside a parent widget.
 - `parent` - The widget that the panel is placed in.
 - `session` - What the run knows, which is the open project and
   therefore the editor and the size that are configured.
-- `hooks` - What the panel tells the window that holds it.
+- `commands` - What the buttons of the panel do when pressed,
+  which is also what is told what is selected now.
+
+<a id="notesmgr.note_panel.NotePanel.actions"></a>
+
+#### actions
+
+```python
+def actions() -> Sequence[ButtonSpec]
+```
+
+Return what the buttons of the panel are and what they do.
 
 <a id="notesmgr.note_panel.NotePanel.note_limit"></a>
 
@@ -1916,23 +2458,19 @@ This is what the watch calls when the note has been edited,
 written or taken away by another program, so a note that is
 gone leaves the panel saying so and the buttons greyed out.
 
-<a id="notesmgr.note_panel.NotePanel.offer_actions"></a>
+<a id="notesmgr.note_panel.NotePanel.offer"></a>
 
-#### offer\_actions
+#### offer
 
 ```python
-def offer_actions(enabled: bool) -> None
+def offer(labels: AbstractSet[str]) -> None
 ```
 
-Offer what acts on a note, or grey it out.
-
-The buttons of the panel and the entries of the note menu are
-offered together, because they do the same things, so the
-window that holds the menu is told as well.
+Let the buttons that can be used now be pressed.
 
 **Arguments**:
 
-- `enabled` - Whether there is a note to act on.
+- `labels` - What the actions that can be done now are called.
 
 <a id="notesmgr.note_panel.NotePanel.shown_path"></a>
 
@@ -2576,6 +3114,28 @@ def selected_path() -> Optional[Path]
 
 Return what the user selected, None when nothing is.
 
+<a id="notesmgr.explorer_tree.ExplorerTree.select"></a>
+
+#### select
+
+```python
+def select(path: Optional[Path]) -> Optional[Path]
+```
+
+Select one item of the tree, or nothing at all.
+
+**Arguments**:
+
+- `path` - What is to be selected, None for nothing at all.
+  A path that the tree does not show selects nothing
+  either, which is what a note that was taken away or
+  renamed by another program leaves behind.
+  
+
+**Returns**:
+
+  What is selected now, None when nothing is.
+
 <a id="notesmgr.explorer_tree.ExplorerTree.show"></a>
 
 #### show
@@ -2689,6 +3249,30 @@ What the button that takes the chosen option says.
 #### CANCEL\_LABEL
 
 What the button that answers nothing at all says.
+
+<a id="notesmgr.dialogs.ACCEPT_LABEL"></a>
+
+#### ACCEPT\_LABEL
+
+What the button that takes what was filled in says.
+
+<a id="notesmgr.dialogs.NAME_LABEL"></a>
+
+#### NAME\_LABEL
+
+What the field holding a name is called.
+
+<a id="notesmgr.dialogs.FOLDER_LABEL"></a>
+
+#### FOLDER\_LABEL
+
+What the field holding a folder of the project is called.
+
+<a id="notesmgr.dialogs.ENTRY_WIDTH"></a>
+
+#### ENTRY\_WIDTH
+
+Width in characters of the field that a name is typed into.
 
 <a id="notesmgr.dialogs.text_size"></a>
 
@@ -2834,19 +3418,102 @@ Tell the user something that is no cause for worry.
 - `title` - What the message window is called.
 - `message` - What the user is told.
 
+<a id="notesmgr.dialogs.AskingWindow"></a>
+
+## AskingWindow Objects
+
+```python
+class AskingWindow()
+```
+
+A window that asks the user something and waits for an answer.
+
+The window is built by the constructor, and the answer is waited
+for by answered(), so that a test can look at the window and
+answer it by pressing its buttons without a main loop of its own.
+
+<a id="notesmgr.dialogs.AskingWindow.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str) -> None
+```
+
+Build the window, which is empty until it is filled in.
+
+**Arguments**:
+
+- `parent` - The window that the question is asked over.
+- `title` - What the window asking is called.
+
+<a id="notesmgr.dialogs.AskingWindow.ask"></a>
+
+#### ask
+
+```python
+def ask(question: str) -> None
+```
+
+Put what the user is asked at the top of the window.
+
+<a id="notesmgr.dialogs.AskingWindow.add_buttons"></a>
+
+#### add\_buttons
+
+```python
+def add_buttons(accept_label: str) -> None
+```
+
+Put the button that answers and the one that does not.
+
+**Arguments**:
+
+- `accept_label` - What the button taking the answer says.
+
+<a id="notesmgr.dialogs.AskingWindow.accept"></a>
+
+#### accept
+
+```python
+def accept() -> None
+```
+
+Take what the user filled in as the answer.
+
+<a id="notesmgr.dialogs.AskingWindow.cancel"></a>
+
+#### cancel
+
+```python
+def cancel() -> None
+```
+
+Answer nothing at all.
+
+<a id="notesmgr.dialogs.AskingWindow.answered"></a>
+
+#### answered
+
+```python
+def answered() -> bool
+```
+
+Wait for the answer, holding the rest of the application.
+
+**Returns**:
+
+  Whether the user answered rather than answering nothing.
+
 <a id="notesmgr.dialogs.ChoiceDialog"></a>
 
 ## ChoiceDialog Objects
 
 ```python
-class ChoiceDialog()
+class ChoiceDialog(AskingWindow)
 ```
 
 Asks the user to choose one of several named things.
-
-The window is built by the constructor, and the answer is waited
-for by choose(), so that a test can look at the window and answer
-it without a main loop of its own.
 
 <a id="notesmgr.dialogs.ChoiceDialog.__init__"></a>
 
@@ -2866,25 +3533,16 @@ Build the window that asks the question.
 - `question` - What the user is asked.
 - `options` - What the user chooses between.
 
-<a id="notesmgr.dialogs.ChoiceDialog.accept"></a>
+<a id="notesmgr.dialogs.ChoiceDialog.chosen"></a>
 
-#### accept
-
-```python
-def accept() -> None
-```
-
-Take the option the user marked as the answer.
-
-<a id="notesmgr.dialogs.ChoiceDialog.cancel"></a>
-
-#### cancel
+#### chosen
 
 ```python
-def cancel() -> None
+@property
+def chosen() -> Optional[str]
 ```
 
-Answer nothing at all.
+Return what was chosen, None while nothing was.
 
 <a id="notesmgr.dialogs.ChoiceDialog.choose"></a>
 
@@ -2922,6 +3580,126 @@ Ask the user to choose one of several named things.
 **Returns**:
 
   What the user chose, None when the user chose nothing.
+
+<a id="notesmgr.dialogs.ask_name"></a>
+
+#### ask\_name
+
+```python
+def ask_name(parent: Union[tkinter.Tk, tkinter.Toplevel],
+             title: str,
+             question: str,
+             given: str = '') -> Optional[str]
+```
+
+Ask the user for the name of a note or a folder.
+
+What the name may be is the model's to say, so anything at all
+can be typed here and is refused, if it is to be refused, where
+the file is made.
+
+**Arguments**:
+
+- `parent` - The window that the question is asked over.
+- `title` - What the window asking is called.
+- `question` - What the user is asked.
+- `given` - What the field holds before anything is typed.
+  
+
+**Returns**:
+
+  What the user typed, None when the user typed nothing at all.
+
+<a id="notesmgr.dialogs.NameFolder"></a>
+
+## NameFolder Objects
+
+```python
+class NameFolder(NamedTuple)
+```
+
+A name, and the folder of the project that it is to be in.
+
+<a id="notesmgr.dialogs.NameFolderDialog"></a>
+
+## NameFolderDialog Objects
+
+```python
+class NameFolderDialog(AskingWindow)
+```
+
+Asks the user for a name and for a folder of the project.
+
+The folders are offered to be chosen rather than to be typed, so
+that what is asked for is always a folder of the project, and
+the file chooser of the platform is not let anywhere near it.
+
+<a id="notesmgr.dialogs.NameFolderDialog.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+             given: NameFolder, folders: Sequence[str]) -> None
+```
+
+Build the window that asks for the name and the folder.
+
+**Arguments**:
+
+- `parent` - The window that the question is asked over.
+- `title` - What the window asking is called.
+- `given` - What the two fields hold to begin with.
+- `folders` - The folders of the project, as they are named.
+
+<a id="notesmgr.dialogs.NameFolderDialog.given"></a>
+
+#### given
+
+```python
+@property
+def given() -> Optional[NameFolder]
+```
+
+Return what was filled in, None while nothing was taken.
+
+<a id="notesmgr.dialogs.NameFolderDialog.ask_for"></a>
+
+#### ask\_for
+
+```python
+def ask_for() -> Optional[NameFolder]
+```
+
+Wait for the answer, holding the rest of the application.
+
+**Returns**:
+
+  The name and the folder, None when the user gave none.
+
+<a id="notesmgr.dialogs.ask_name_folder"></a>
+
+#### ask\_name\_folder
+
+```python
+def ask_name_folder(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+                    given: NameFolder,
+                    folders: Sequence[str]) -> Optional[NameFolder]
+```
+
+Ask the user for a name and for a folder of the project.
+
+**Arguments**:
+
+- `parent` - The window that the question is asked over.
+- `title` - What the window asking is called.
+- `given` - What the two fields hold to begin with.
+- `folders` - The folders of the project, as they are named.
+  
+
+**Returns**:
+
+  The name and the folder, None when the user gave none.
 
 <a id="notesmgr.note_text"></a>
 
@@ -3137,6 +3915,351 @@ def cancel() -> None
 
 Take back the look that was asked for, if there is one.
 
+<a id="notesmgr.commands"></a>
+
+# notesmgr.commands
+
+What the buttons and the menu entries do to the open project.
+
+<a id="notesmgr.commands.NOTE_TITLE"></a>
+
+#### NOTE\_TITLE
+
+What a window asking about or reporting about a note is called.
+
+<a id="notesmgr.commands.FOLDER_TITLE"></a>
+
+#### FOLDER\_TITLE
+
+What a window asking about a folder of the project is called.
+
+<a id="notesmgr.commands.DUPLICATE_TITLE"></a>
+
+#### DUPLICATE\_TITLE
+
+What the window asking where to copy a note is called.
+
+<a id="notesmgr.commands.ASK_NEW_NOTE"></a>
+
+#### ASK\_NEW\_NOTE
+
+What the user is asked when making a note.
+
+<a id="notesmgr.commands.ASK_DELETE_NOTE"></a>
+
+#### ASK\_DELETE\_NOTE
+
+What the user is asked before a note is taken away.
+
+<a id="notesmgr.commands.ASK_NEW_FOLDER"></a>
+
+#### ASK\_NEW\_FOLDER
+
+What the user is asked when making a folder.
+
+<a id="notesmgr.commands.ASK_RENAME_FOLDER"></a>
+
+#### ASK\_RENAME\_FOLDER
+
+What the user is asked when renaming a folder.
+
+<a id="notesmgr.commands.ASK_DELETE_FOLDER"></a>
+
+#### ASK\_DELETE\_FOLDER
+
+What the user is asked before a folder is taken away.
+
+<a id="notesmgr.commands.COPY_SUFFIX"></a>
+
+#### COPY\_SUFFIX
+
+What is put after the name of a note to name a copy of it.
+
+<a id="notesmgr.commands.shown_folder"></a>
+
+#### shown\_folder
+
+```python
+def shown_folder(root: Path, folder: Path) -> str
+```
+
+Return how a folder of a project is named to the user.
+
+The root folder is named by itself and every folder below it by
+the way down to it, so that two folders of the same name in
+different places are told apart.
+
+**Arguments**:
+
+- `root` - The root folder of the project.
+- `folder` - The folder of the project to name.
+  
+
+**Returns**:
+
+  The name to show, which names the folder again through
+  folder_of() when the user has chosen it.
+
+<a id="notesmgr.commands.folder_of"></a>
+
+#### folder\_of
+
+```python
+def folder_of(root: Path, shown: str) -> Path
+```
+
+Return the folder that a name shown to the user stands for.
+
+<a id="notesmgr.commands.WindowHooks"></a>
+
+## WindowHooks Objects
+
+```python
+class WindowHooks(NamedTuple)
+```
+
+What the commands ask the window that holds them to do.
+
+The window owns the tree and the menus, so it is what shows the
+project again once a command has changed it, and what offers the
+actions that can be used on what is selected now.
+
+<a id="notesmgr.commands.Commands"></a>
+
+## Commands Objects
+
+```python
+class Commands()
+```
+
+What the buttons and the menu entries do to the open project.
+
+Each command asks the user what it needs, has the model do it,
+and has the window show the project as it now stands with what
+was made or moved selected in it. What could not be done is put
+to the user in the words the model said it in, and the project
+is left exactly as it was.
+
+<a id="notesmgr.commands.Commands.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(window: Union[tkinter.Tk, tkinter.Toplevel], session: Session,
+             hooks: WindowHooks) -> None
+```
+
+Get ready to act upon a project, with nothing selected yet.
+
+**Arguments**:
+
+- `window` - The window that the questions are asked over.
+- `session` - What the run knows, which is the open project.
+- `hooks` - What the commands ask the window to do.
+
+<a id="notesmgr.commands.Commands.select"></a>
+
+#### select
+
+```python
+def select(path: Optional[Path]) -> None
+```
+
+Take what the explorer has selected as what to act upon.
+
+<a id="notesmgr.commands.Commands.note_shown"></a>
+
+#### note\_shown
+
+```python
+def note_shown(shown: bool) -> None
+```
+
+Offer afresh what can be done with what is selected.
+
+**Arguments**:
+
+- `shown` - Whether the panel has a note to act on, which a
+  program other than notesmgr can take away at any time.
+
+<a id="notesmgr.commands.Commands.selected"></a>
+
+#### selected
+
+```python
+def selected(shown: bool) -> Selected
+```
+
+Return what is selected, as far as it says what can be done.
+
+<a id="notesmgr.commands.Commands.report_error"></a>
+
+#### report\_error
+
+```python
+def report_error(message: str) -> None
+```
+
+Tell the user what could not be done, and why it could not.
+
+<a id="notesmgr.commands.Commands.chosen_folder"></a>
+
+#### chosen\_folder
+
+```python
+def chosen_folder() -> Optional[Path]
+```
+
+Return the folder that is selected, None when none is.
+
+The root folder of a project is the project itself rather
+than a folder in it to be renamed or taken away, so it
+counts as no folder here.
+
+<a id="notesmgr.commands.Commands.note_folder"></a>
+
+#### note\_folder
+
+```python
+def note_folder() -> Optional[Path]
+```
+
+Return the folder that a new note or folder goes into.
+
+That is the selected folder, the folder of the selected note,
+and the root folder of the project while nothing is selected.
+
+<a id="notesmgr.commands.Commands.plain_note"></a>
+
+#### plain\_note
+
+```python
+def plain_note() -> Optional[Path]
+```
+
+Return the selected note that is no template, None for none.
+
+<a id="notesmgr.commands.Commands.done"></a>
+
+#### done
+
+```python
+def done(doing: Callable[[], Optional[Path]]) -> Optional[Path]
+```
+
+Do what changes the project, and show it as it now stands.
+
+**Arguments**:
+
+- `doing` - What is to be done, giving what is to be selected
+  afterwards and None when it leaves nothing to select.
+  
+
+**Returns**:
+
+  What was made or moved, None when the operation could not
+  be done at all or left nothing to select.
+
+<a id="notesmgr.commands.Commands.edit"></a>
+
+#### edit
+
+```python
+def edit(note: Path) -> None
+```
+
+Open a note in the editor that the project is configured with.
+
+<a id="notesmgr.commands.Commands.new_note"></a>
+
+#### new\_note
+
+```python
+def new_note() -> None
+```
+
+Make a note from the template and open it in the editor.
+
+<a id="notesmgr.commands.Commands.duplicate_note"></a>
+
+#### duplicate\_note
+
+```python
+def duplicate_note() -> None
+```
+
+Copy the selected note into a folder of the project.
+
+<a id="notesmgr.commands.Commands.delete_note"></a>
+
+#### delete\_note
+
+```python
+def delete_note() -> None
+```
+
+Move the selected note to the trash, once the user is sure.
+
+<a id="notesmgr.commands.Commands.move_up"></a>
+
+#### move\_up
+
+```python
+def move_up() -> None
+```
+
+Move the selected note one place up in its folder.
+
+<a id="notesmgr.commands.Commands.move_down"></a>
+
+#### move\_down
+
+```python
+def move_down() -> None
+```
+
+Move the selected note one place down in its folder.
+
+<a id="notesmgr.commands.Commands.move"></a>
+
+#### move
+
+```python
+def move(offset: int) -> None
+```
+
+Move the selected note so many places in its folder.
+
+<a id="notesmgr.commands.Commands.new_folder"></a>
+
+#### new\_folder
+
+```python
+def new_folder() -> None
+```
+
+Make a folder in the folder that is selected.
+
+<a id="notesmgr.commands.Commands.rename_folder"></a>
+
+#### rename\_folder
+
+```python
+def rename_folder() -> None
+```
+
+Give the selected folder another name.
+
+<a id="notesmgr.commands.Commands.delete_folder"></a>
+
+#### delete\_folder
+
+```python
+def delete_folder() -> None
+```
+
+Move the selected folder to the trash, once the user is sure.
+
 <a id="notesmgr.note_file"></a>
 
 # notesmgr.note\_file
@@ -3167,17 +4290,23 @@ What a name cannot hold, because it would then name a folder too.
 Both are refused on every platform, so that a project written on one
 platform holds no name that another platform reads as a path.
 
+<a id="notesmgr.note_file.NOT_IN_NAME"></a>
+
+#### NOT\_IN\_NAME
+
+Characters that are not allowed in a note name.
+
 <a id="notesmgr.note_file.NO_NAME"></a>
 
 #### NO\_NAME
 
 What is said about a name that is empty or nothing but blanks.
 
-<a id="notesmgr.note_file.IN_FOLDER"></a>
+<a id="notesmgr.note_file.INVALID_NAME"></a>
 
-#### IN\_FOLDER
+#### INVALID\_NAME
 
-What is said about a name that holds a path separator.
+What is said about a name that holds invalid characters.
 
 <a id="notesmgr.note_file.HIDDEN"></a>
 
@@ -3330,6 +4459,31 @@ Return a note name carrying the extension of the project.
 
 - `NotesmgrError` - The name carries another note extension, or it
   is the name that the template of a folder has.
+
+<a id="notesmgr.note_file.checked_name"></a>
+
+#### checked\_name
+
+```python
+def checked_name(typed: str) -> str
+```
+
+Return the name of a file or a folder that a user typed.
+
+**Arguments**:
+
+- `typed` - What the user typed as a name.
+  
+
+**Returns**:
+
+  The name with the blanks around it taken off.
+  
+
+**Raises**:
+
+- `NotesmgrError` - What was typed names nothing that can be made
+  in a folder of a project.
 
 <a id="notesmgr.note_file.note_file_name"></a>
 
@@ -3618,6 +4772,32 @@ reached through a symbolic link is passed over, so that a link
 leading back into the project cannot make reading it go on
 for ever.
 
+<a id="notesmgr.project.folder_entries"></a>
+
+#### folder\_entries
+
+```python
+def folder_entries(folder: Path) -> list[Path]
+```
+
+Return everything a folder holds, in alphabetical order.
+
+**Arguments**:
+
+- `folder` - Folder of a project.
+  
+
+**Returns**:
+
+  Every file and folder in it, hidden ones and all, because
+  what is shown is one question and what a name would collide
+  with is another.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder cannot be read.
+
 <a id="notesmgr.project.folder_content"></a>
 
 #### folder\_content
@@ -3643,4 +4823,172 @@ Return what a folder holds, in the order it is shown in.
 **Raises**:
 
 - `NotesmgrError` - The folder cannot be read.
+
+<a id="notesmgr.project.folder_paths"></a>
+
+#### folder\_paths
+
+```python
+def folder_paths(folder: Folder) -> list[Path]
+```
+
+Return a folder of a project and every folder below it.
+
+**Arguments**:
+
+- `folder` - The folder to start from, which is the tree of the
+  project when every folder of it is wanted.
+  
+
+**Returns**:
+
+  The folders, each one before the folders below it, which is
+  the order that the explorer shows them in.
+
+<a id="notesmgr.folder_ops"></a>
+
+# notesmgr.folder\_ops
+
+Making, renaming and taking away the folders of a project.
+
+<a id="notesmgr.folder_ops.IS_PROJECT"></a>
+
+#### IS\_PROJECT
+
+What is said about the root folder, which is no folder to change.
+
+<a id="notesmgr.folder_ops.NOT_EMPTY"></a>
+
+#### NOT\_EMPTY
+
+What is said about a folder that is not to be taken away yet.
+
+<a id="notesmgr.folder_ops.NOT_MADE"></a>
+
+#### NOT\_MADE
+
+What is said about a folder that the file system would not take.
+
+<a id="notesmgr.folder_ops.NOT_RENAMED"></a>
+
+#### NOT\_RENAMED
+
+What is said about a folder that could not be given its new name.
+
+<a id="notesmgr.folder_ops.NOT_TRASHED"></a>
+
+#### NOT\_TRASHED
+
+What is said about a folder that the trash would not take.
+
+<a id="notesmgr.folder_ops.new_folder"></a>
+
+#### new\_folder
+
+```python
+def new_folder(parent: Path, typed: str, extension: NoteExtension) -> Path
+```
+
+Make a folder in a folder of the project.
+
+The new folder starts out as the folder above it: it is given a
+copy of that folder's template and a note order file of its own,
+so that opening the project again finds nothing to repair.
+
+**Arguments**:
+
+- `parent` - The folder that the new folder is made in.
+- `typed` - What the user typed as the name of the new folder.
+- `extension` - The extension that the notes of the project have.
+  
+
+**Returns**:
+
+  The folder that was made.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The name names no folder that can be made
+  here, or the folder cannot be made.
+
+<a id="notesmgr.folder_ops.rename_folder"></a>
+
+#### rename\_folder
+
+```python
+def rename_folder(folder: Path, typed: str) -> Path
+```
+
+Give a folder of the project another name.
+
+Nothing outside a folder names it, so a folder is renamed whether
+it holds anything or not. The root folder is the project itself
+rather than a folder in it, and is renamed from the outside.
+
+**Arguments**:
+
+- `folder` - The folder to rename.
+- `typed` - What the user typed as its new name.
+  
+
+**Returns**:
+
+  The folder under the name it now has.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder is the root folder of the project,
+  the name names no folder, the name is taken already, or
+  the folder cannot be renamed.
+
+<a id="notesmgr.folder_ops.is_empty"></a>
+
+#### is\_empty
+
+```python
+def is_empty(folder: Path) -> bool
+```
+
+Return whether a folder holds nothing but notesmgr's own files.
+
+The template of a folder and its note order file are notesmgr's
+doing rather than anything the user put there, so a folder that
+holds only those is empty to the user who is looking at it.
+
+**Arguments**:
+
+- `folder` - The folder to look into.
+  
+
+**Returns**:
+
+  Whether nothing of the user's would be taken away with it.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder cannot be read.
+
+<a id="notesmgr.folder_ops.delete_folder"></a>
+
+#### delete\_folder
+
+```python
+def delete_folder(folder: Path) -> None
+```
+
+Move a folder that holds nothing of the user's to the trash.
+
+**Arguments**:
+
+- `folder` - The folder to take away.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The folder is the root folder of the project,
+  it holds notes or folders of its own, or the trash would
+  not take it.
 

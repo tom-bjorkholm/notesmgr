@@ -96,3 +96,19 @@ def set_enabled(menu: tkinter.Menu, label: str, enabled: bool) -> None:
         enabled: Whether the entry can now be chosen.
     """
     menu.entryconfigure(label, state=entry_state(enabled))
+
+
+def entry_labels(menu: tkinter.Menu) -> list[str]:
+    """Return what the entries of a menu say, in the order they are in.
+
+    Args:
+        menu: The menu to look through.
+
+    Returns:
+        The label of every entry, and nothing at all for a menu that
+        holds no entries.
+    """
+    last = menu.index(tkinter.END)
+    if last is None:
+        return []
+    return [str(menu.entrycget(index, 'label')) for index in range(last + 1)]

@@ -25,13 +25,16 @@ Both are refused on every platform, so that a project written on one
 platform holds no name that another platform reads as a path.
 """
 
-NO_NAME = 'A note needs a name.'
+NOT_IN_NAME = (':', *SEPARATORS)
+"""Characters that are not allowed in a note name."""
+
+NO_NAME = 'A name is needed.'
 """What is said about a name that is empty or nothing but blanks."""
 
-IN_FOLDER = 'The name {name} names a folder as well as a note.'
-"""What is said about a name that holds a path separator."""
+INVALID_NAME = 'The name {name} contains an invalid character.'
+"""What is said about a name that holds invalid characters."""
 
-HIDDEN = 'The name {name} starts with a dot, which hides the note.'
+HIDDEN = 'The name {name} starts with a dot, which hides it.'
 """What is said about a name that would make a hidden file."""
 
 WRONG_EXTENSION = 'The notes of this project end with {wanted}, not {given}.'
@@ -137,6 +140,29 @@ def checked_extension(name: str, extension: NoteExtension) -> str:
     return full_name
 
 
+def checked_name(typed: str) -> str:
+    """Return the name of a file or a folder that a user typed.
+
+    Args:
+        typed: What the user typed as a name.
+
+    Returns:
+        The name with the blanks around it taken off.
+
+    Raises:
+        NotesmgrError: What was typed names nothing that can be made
+            in a folder of a project.
+    """
+    name = typed.strip()
+    if not name:
+        raise NotesmgrError(NO_NAME)
+    if any(nonamechar in name for nonamechar in NOT_IN_NAME):
+        raise NotesmgrError(INVALID_NAME.format(name=name))
+    if name.startswith('.'):
+        raise NotesmgrError(HIDDEN.format(name=name))
+    return name
+
+
 def note_file_name(typed: str, extension: NoteExtension) -> str:
     """Return the file name that a name typed by a user asks for.
 
@@ -150,11 +176,4 @@ def note_file_name(typed: str, extension: NoteExtension) -> str:
     Raises:
         NotesmgrError: What was typed names no note file.
     """
-    name = typed.strip()
-    if not name:
-        raise NotesmgrError(NO_NAME)
-    if any(separator in name for separator in SEPARATORS):
-        raise NotesmgrError(IN_FOLDER.format(name=name))
-    if name.startswith('.'):
-        raise NotesmgrError(HIDDEN.format(name=name))
-    return checked_extension(name, extension)
+    return checked_extension(checked_name(typed), extension)

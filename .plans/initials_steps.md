@@ -412,7 +412,67 @@ and watch the panel follow; press `Copy raw` and paste.
 
 ### Step 5 — Note and folder operations
 
-Status: **Not implemented yet.**
+Status: **Implemented, committed.**
+
+Decisions taken while implementing it, which later steps build on:
+
+- Every note operation ends by bringing the note order file of the
+  folder back in line with what the folder now holds, which is the
+  repair that opening a project already does. One `resync_order()`
+  therefore covers making, copying and taking away a note, and only
+  `move_note()` writes an order of its own.
+- After an operation the whole project is read again and the tree
+  built afresh, with what was made or moved selected in it. That is
+  `MainWindow.reopen()`, and it also takes up whatever another
+  program did to the folders meanwhile. Tk reports a selection it was
+  given only when it comes to handle its own events, which is too
+  late for the command that asked for it, so the panel is told at
+  once rather than through the event.
+- Which actions can be used now is a question with a right answer, so
+  it is a model one: `actions.py` names the actions and says which of
+  them a selection allows, and both the button row and the menus are
+  set from that one answer. `ButtonRow.offer()` therefore takes the
+  names of the actions that can be used rather than one flag.
+- Three modules beyond the inventory: `note_ops.py` and
+  `folder_ops.py`, because `project_ops.py` is about opening a
+  project and was long enough already, and `trash.py`, which is the
+  one place that asks `send2trash` to take something away.
+- `commands.py` beyond the inventory holds what the buttons and the
+  menu entries do: ask the user, have the model do it, report what
+  could not be done, and have the window show the project again. It
+  is what keeps `MainWindow` and `NotePanel` inside the seven
+  attributes and twenty public methods that pylint allows, and it
+  took over `PanelHooks`, which is gone.
+- The note menu holds the same actions as the button row, under the
+  same names, and is built from the same description, so that the two
+  cannot drift apart. `Copy formatted` has nothing to do until step
+  8, so it is a button of the row but no entry of the menu yet.
+- A folder is renamed whatever it holds, because nothing outside a
+  folder names it, and is taken away only when it holds no notes and
+  no folders of its own. Its template and its note order file are
+  notesmgr's own doing and do not count as holding anything. The root
+  folder is the project itself, and is renamed and taken away from
+  outside notesmgr.
+- A new folder is given a copy of the template above it and a note
+  order file at once, so that opening the project again reports
+  nothing.
+- A name is taken when the folder holds any name equal to it but for
+  its case, whatever this file system makes of it, so that a project
+  written on Linux holds no two names that macOS or Windows would
+  read as one file.
+- `Up` and `Down` at the first and the last place do nothing and stay
+  offered, rather than being greyed out at the ends.
+- `dialogs.py` grew an `AskingWindow` that `ChoiceDialog` and the new
+  `NameFolderDialog` are both built on, a name question that is
+  `tkinter.simpledialog.askstring`, and the name and folder question
+  that `Duplicate` asks. The folders of the project are offered in a
+  pull-down, named by the way down to them, so that what is asked for
+  is always a folder of the project.
+- `note_file.checked_name()` holds what a name may be, and
+  `note_file_name()` is that with the extension of the project put
+  on, so that a note and a folder are named by the same rules.
+- `README_pypi.md` change 6 is applied: the menu list, the trash, and
+  the folder operations.
 
 **Goal:** every button and menu item that changes the tree.
 

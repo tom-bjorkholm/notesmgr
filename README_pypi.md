@@ -77,6 +77,15 @@ A project in `notesmgr` is a folder tree with a few files with special meaning.
   line, and it determines the order in which the notes are shown in the
   "explorer" part of the notesmgr Graphical User Interface.
 
+Folders of the project are made, renamed and deleted from the menu. A new
+folder is given a copy of the template of the folder above it, and a
+`.notes_order.txt` of its own, so that it starts out as its parent does.
+A folder is renamed whatever it holds, and is deleted only when it holds
+no notes and no folders of its own, its template and its
+`.notes_order.txt` not counting. Deleting it moves it to the trash of the
+operating system. The root folder of a project is the project itself, and
+is renamed and deleted from outside `notesmgr`.
+
 All files in the project are normal files that can be edited using a normal
 text editor like Microsoft Visual Code, TextEdit on mac, or Notepad on Windows,
 although using the `notesmgr` Graphical User Interface is recommended.
@@ -110,14 +119,23 @@ The menu bar has menus with actions for:
 - Creating a new project
 - Opening a project
 - Creating a note (file) in a folder in the project
+- Duplicating the selected note
 - Editing the selected notes file
 - Copying the raw text of a selected notes file to clipboard
 - Copying the formatted text of a selected note to clipboard
 - Deleting the selected note
+- Moving the selected note one position up or down
 - Creating a new folder in the project
+- Renaming a folder of the project
+- Deleting a folder of the project that holds nothing
 - Editing the configuration
 - Saving the configuration as the user wide configuration
 - Reporting version information and information of available updates
+
+Every menu entry that acts on a note does what the button of the same
+name in the main window does, and is greyed out until there is a note
+for it to act on. The entries that act on a folder are greyed out until
+a folder is selected in the same way.
 
 The configuration editor writes the configuration itself when you save in
 it, so there is no separate menu item for saving the configuration of the
@@ -161,9 +179,19 @@ so that none of them is cut off however small the window is made. They are:
 - `Edit` start an editor to edit the notes file.
 - `New` create a new note. The user is asked for note file name,
   and it is opened in editor with the content of the template file.
-- `Delete` the note will be deleted (after confirmation)
+- `Delete` the note is moved to the trash of the operating system (after
+  confirmation), so that a note deleted by mistake can be taken back
 - `Up` the note is moved one position up in the list in the explorer
 - `Down` the note is moved one position down in the list in the explorer
+
+The template of a folder is shown, edited and copied like any other note,
+but `Duplicate`, `Delete`, `Up` and `Down` are greyed out for it: every
+folder has exactly one template, and it is not one of the notes that the
+`.notes_order.txt` of the folder orders.
+
+A new note and a new folder are made in the folder that is selected, in
+the folder of the note that is selected, and in the root folder of the
+project while nothing is selected.
 
 #### Configuration
 
@@ -233,7 +261,7 @@ Source code and tests are available at [https://github.com/tom-bjorkholm/notesmg
 
 ## Test summary
 
-- Test result: 698 passed, 7 deselected in 5s
+- Test result: 860 passed, 7 deselected in 6s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

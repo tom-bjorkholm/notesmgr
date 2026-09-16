@@ -15,6 +15,9 @@ from notesmgr.project import config_path
 TEST_EDITOR = 'vi'
 """Editor that the projects of these tests are configured with."""
 
+TEMPLATE_TEXT = 'Written from the template\n'
+"""What the template of a project built here holds."""
+
 
 def write_config(root: Path, extension: NoteExtension = NoteExtension.MD_TXT,
                  size: Optional[int] = None) -> Path:
@@ -73,3 +76,22 @@ def refuse_choice(_folder: Path, _templates: Sequence[Path]) -> Optional[Path]:
 def first_choice(_folder: Path, templates: Sequence[Path]) -> Optional[Path]:
     """Stand in for a user who keeps the first template offered."""
     return templates[0]
+
+
+def build_project(root: Path, names: Sequence[str],
+                  extension: NoteExtension = NoteExtension.MD_TXT) -> Path:
+    """Write a project holding the given notes in its root folder.
+
+    Args:
+        root: The folder to make into a project.
+        names: The notes of the root folder, in the order they get.
+        extension: The extension that its notes are to carry.
+
+    Returns:
+        The root folder of the project that was written.
+    """
+    write_config(root, extension)
+    write_template(root, extension, TEMPLATE_TEXT)
+    write_notes(root, names)
+    write_order(root, names)
+    return root

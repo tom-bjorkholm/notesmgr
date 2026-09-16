@@ -139,23 +139,36 @@ def test_all_start_dead(row: ButtonRow) -> None:
 
 def test_only_working_offered(row: ButtonRow) -> None:
     """A button with nothing to do is never offered to be pressed."""
-    row.offer(True)
+    row.offer(set(LABELS))
     assert [label for label in LABELS
             if states_of(row)[LABELS.index(label)] == 'normal'] == WORKING
 
 
+def test_offering_one(row: ButtonRow) -> None:
+    """Only the buttons that are named are offered to be pressed."""
+    row.offer({WORKING[1]})
+    assert [label for label in LABELS
+            if states_of(row)[LABELS.index(label)] == 'normal'] == \
+        [WORKING[1]]
+
+
 def test_offering_taken_back(row: ButtonRow) -> None:
     """The buttons are greyed out again when there is nothing to act on."""
-    row.offer(True)
-    row.offer(False)
+    row.offer(set(LABELS))
+    row.offer(set())
     assert states_of(row) == ['disabled'] * len(LABELS)
 
 
 def test_pressing_a_button(row: ButtonRow, pressed: list[str]) -> None:
     """A button that is offered does what it was described to do."""
-    row.offer(True)
+    row.offer(set(LABELS))
     row.working[WORKING[0]].invoke()
     assert pressed == [WORKING[0]]
+
+
+def test_specs_are_kept(row: ButtonRow) -> None:
+    """The row remembers what its buttons are and what they do."""
+    assert [spec.label for spec in row.specs] == LABELS
 
 
 def test_starts_as_one_row(row: ButtonRow) -> None:

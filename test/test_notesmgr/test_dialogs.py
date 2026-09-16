@@ -7,16 +7,22 @@
 import tkinter
 from contextlib import suppress
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Iterator, Optional
 import pytest
-from notesmgr.dialogs import BUSY_CURSOR, CANCEL_LABEL, CHOOSE_LABEL, \
-    MAX_TEXT_HEIGHT, MAX_TEXT_WIDTH, MIN_TEXT_WIDTH, ChoiceDialog, \
-    ask_folder, ask_yes_no, busy_cursor, show_error, show_info, show_text, \
-    text_size
+from notesmgr.dialogs import ACCEPT_LABEL, BUSY_CURSOR, CANCEL_LABEL, \
+    CHOOSE_LABEL, MAX_TEXT_HEIGHT, MAX_TEXT_WIDTH, MIN_TEXT_WIDTH, \
+    ChoiceDialog, NameFolder, NameFolderDialog, ask_folder, ask_name, \
+    ask_yes_no, busy_cursor, show_error, show_info, show_text, text_size
 
 TEMPLATES = ['template.md', 'template.txt']
 """Options of the kind that the choosing window is made to offer."""
+
+FOLDERS = ['notes', 'notes/sub']
+"""Folders of the kind that the copying window is made to offer."""
+
+GIVEN = NameFolder('first copy', 'notes')
+"""What the copying window of these tests holds to begin with."""
 
 REPORT = 'notesmgr 0.0.1\npackaging 25.0\n'
 """A text of the kind that these windows are made to show."""
@@ -206,3 +212,73 @@ def test_choice_of_none(top_window: tkinter.Toplevel) -> None:
     dialog.window.withdraw()
     dialog.cancel()
     assert dialog.chosen is None
+
+
+@pytest.fixture(name='copying')
+def fixture_copying(
+        top_window: tkinter.Toplevel) -> Iterator[NameFolderDialog]:
+    """Provide a window asking for a name and a folder, answered by hand."""
+    dialog = NameFolderDialog(top_window, 'Duplicate note', GIVEN, FOLDERS)
+    dialog.window.withdraw()
+    yield dialog
+    with suppress(tkinter.TclError):
+        dialog.window.destroy()
+
+
+@pytest.mark.parametrize('answered', ['ideas', '', None])
+def test_ask_name(top_window: tkinter.Toplevel, answered: Optional[str],
+                  monkeypatch: pytest.MonkeyPatch) -> None:
+    """What the user typed is what is answered, whatever it was."""
+    monkeypatch.setattr(simpledialog, 'askstring', lambda *_a, **_k: answered)
+    assert ask_name(top_window, 'Note', 'Called what?') == answered
+
+
+def test_ask_name_asks(top_window: tkinter.Toplevel,
+                       monkeypatch: pytest.MonkeyPatch) -> None:
+    """It is asked over the window it came from, with the name given."""
+    asked: list[tuple[tuple[str, ...], dict[str, object]]] = []
+
+    def record(*args: str, **kwargs: object) -> None:
+        """Stand in for the string question of Tk."""
+        asked.append((args, kwargs))
+    monkeypatch.setattr(simpledialog, 'askstring', record)
+    ask_name(top_window, 'Folder', 'Called what?', 'sub')
+    assert asked == [(('Folder', 'Called what?'),
+                      {'parent': top_window, 'initialvalue': 'sub'})]
+
+
+def test_copy_fields_filled(copying: NameFolderDialog) -> None:
+    """The two fields hold what the caller put in them."""
+    assert copying.typed.get() == GIVEN.name
+    assert copying.picked.get() == GIVEN.folder
+
+
+def test_copy_offers_folders(copying: NameFolderDialog) -> None:
+    """Every folder of the project is offered to be chosen."""
+    boxes = [child for child in copying.window.winfo_children()
+             if isinstance(child, ttk.Combobox)]
+    assert len(boxes) == 1
+    assert list(boxes[0].cget('values')) == FOLDERS
+    assert str(boxes[0].cget('state')) == 'readonly'
+
+
+def test_copy_taken(copying: NameFolderDialog) -> None:
+    """What was filled in is the answer when it is taken."""
+    copying.typed.set('another')
+    copying.picked.set(FOLDERS[1])
+    buttons_of(copying.window)[ACCEPT_LABEL].invoke()
+    assert copying.given == NameFolder('another', FOLDERS[1])
+    assert not copying.window.winfo_exists()
+
+
+def test_copy_cancelled(copying: NameFolderDialog) -> None:
+    """Cancelling answers nothing at all, whatever was filled in."""
+    copying.typed.set('another')
+    buttons_of(copying.window)[CANCEL_LABEL].invoke()
+    assert copying.given is None
+
+
+def test_copy_closed(copying: NameFolderDialog) -> None:
+    """Closing the window answers nothing at all."""
+    copying.cancel()
+    assert copying.given is None

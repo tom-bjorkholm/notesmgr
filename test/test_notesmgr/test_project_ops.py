@@ -11,9 +11,9 @@ from typing import Sequence
 import pytest
 from test_notesmgr.helpers import first_choice, refuse_choice, write_config, \
     write_file, write_notes, write_order, write_template
-from notesmgr import project_ops
 from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME
+from notesmgr import trash
 from notesmgr.errors import NotesmgrError
 from notesmgr.order_file import ORDER_NAME, order_text, read_order_text
 from notesmgr.project import Folder, config_path, read_config
@@ -23,23 +23,6 @@ from notesmgr.project_ops import CREATED_HEAD, RENAMED_HEAD, changed_message, \
 USER_CONFIG = '{"editor": "nano", "file_extension": "MD", ' + \
     '"max_note_size": 25000}'
 """A user wide configuration that a new project is to start out as."""
-
-
-@pytest.fixture(name='trashed')
-def fixture_trashed(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
-    """Record what was trashed, and remove it without a real trash.
-
-    The tests may not fill the trash of whoever runs them, so what
-    notesmgr asks to have trashed is taken away here instead.
-    """
-    gone: list[Path] = []
-
-    def record(path: Path) -> None:
-        """Stand in for moving a file to the trash of the platform."""
-        gone.append(path)
-        path.unlink()
-    monkeypatch.setattr(project_ops, 'send2trash', record)
-    return gone
 
 
 @pytest.fixture(name='root')
@@ -219,7 +202,7 @@ def test_trash_refused(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     def refuse(path: Path) -> None:
         """Stand in for a trash that will not take the file."""
         raise OSError(f'no trash for {path}')
-    monkeypatch.setattr(project_ops, 'send2trash', refuse)
+    monkeypatch.setattr(trash, 'send2trash', refuse)
     write_template(project, NoteExtension.MD)
     write_template(project, NoteExtension.TXT)
     report = open_project(project, first_choice)

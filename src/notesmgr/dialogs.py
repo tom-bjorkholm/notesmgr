@@ -7,8 +7,8 @@
 import tkinter
 from contextlib import contextmanager
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
-from typing import Iterator, Optional, Sequence, Union
+from tkinter import filedialog, messagebox, simpledialog, ttk
+from typing import Iterator, NamedTuple, Optional, Sequence, Union
 
 MIN_TEXT_WIDTH = 40
 """Narrowest that a window showing a text is made, in characters."""
@@ -33,6 +33,18 @@ CHOOSE_LABEL = 'Keep'
 
 CANCEL_LABEL = 'Cancel'
 """What the button that answers nothing at all says."""
+
+ACCEPT_LABEL = 'OK'
+"""What the button that takes what was filled in says."""
+
+NAME_LABEL = 'Name'
+"""What the field holding a name is called."""
+
+FOLDER_LABEL = 'Folder'
+"""What the field holding a folder of the project is called."""
+
+ENTRY_WIDTH = 40
+"""Width in characters of the field that a name is typed into."""
 
 
 def text_size(text: str) -> tuple[int, int]:
@@ -163,13 +175,70 @@ def show_info(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
     messagebox.showinfo(title=title, message=message, parent=parent)
 
 
-class ChoiceDialog:
-    """Asks the user to choose one of several named things.
+class AskingWindow:
+    """A window that asks the user something and waits for an answer.
 
     The window is built by the constructor, and the answer is waited
-    for by choose(), so that a test can look at the window and answer
-    it without a main loop of its own.
+    for by answered(), so that a test can look at the window and
+    answer it by pressing its buttons without a main loop of its own.
     """
+
+    def __init__(self, parent: Union[tkinter.Tk, tkinter.Toplevel],
+                 title: str) -> None:
+        """Build the window, which is empty until it is filled in.
+
+        Args:
+            parent: The window that the question is asked over.
+            title: What the window asking is called.
+        """
+        self.taken = False
+        self.window = tkinter.Toplevel(parent)
+        self.window.title(title)
+        self.window.transient(parent)
+        self.window.protocol('WM_DELETE_WINDOW', self.cancel)
+
+    def ask(self, question: str) -> None:
+        """Put what the user is asked at the top of the window."""
+        asked = ttk.Label(self.window, text=question, justify=tkinter.LEFT)
+        asked.pack(side=tkinter.TOP, anchor=tkinter.W, padx=PADDING,
+                   pady=PADDING)
+
+    def add_buttons(self, accept_label: str) -> None:
+        """Put the button that answers and the one that does not.
+
+        Args:
+            accept_label: What the button taking the answer says.
+        """
+        cancel = ttk.Button(self.window, text=CANCEL_LABEL,
+                            command=self.cancel)
+        accept = ttk.Button(self.window, text=accept_label,
+                            command=self.accept)
+        cancel.pack(side=tkinter.RIGHT, padx=PADDING, pady=PADDING)
+        accept.pack(side=tkinter.RIGHT, pady=PADDING)
+
+    def accept(self) -> None:
+        """Take what the user filled in as the answer."""
+        self.taken = True
+        self.window.destroy()
+
+    def cancel(self) -> None:
+        """Answer nothing at all."""
+        self.taken = False
+        self.window.destroy()
+
+    def answered(self) -> bool:
+        """Wait for the answer, holding the rest of the application.
+
+        Returns:
+            Whether the user answered rather than answering nothing.
+        """
+        self.window.grab_set()
+        self.window.wait_window()
+        return self.taken
+
+
+class ChoiceDialog(AskingWindow):
+    """Asks the user to choose one of several named things."""
 
     def __init__(self, parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
                  question: str, options: Sequence[str]) -> None:
@@ -181,41 +250,20 @@ class ChoiceDialog:
             question: What the user is asked.
             options: What the user chooses between.
         """
-        self.chosen: Optional[str] = None
-        self.window = tkinter.Toplevel(parent)
-        self.window.title(title)
-        self.window.transient(parent)
+        super().__init__(parent, title)
         self.picked = tkinter.StringVar(self.window,
                                         value=options[0] if options else '')
-        self._fill_with_options(question, options)
-        self.window.protocol('WM_DELETE_WINDOW', self.cancel)
-
-    def _fill_with_options(self, question: str,
-                           options: Sequence[str]) -> None:
-        """Fill the window with the question, the options and buttons."""
-        asked = ttk.Label(self.window, text=question, justify=tkinter.LEFT)
-        asked.pack(side=tkinter.TOP, anchor=tkinter.W, padx=PADDING,
-                   pady=PADDING)
+        self.ask(question)
         for option in options:
             offered = ttk.Radiobutton(self.window, text=option, value=option,
                                       variable=self.picked)
             offered.pack(side=tkinter.TOP, anchor=tkinter.W, padx=PADDING)
-        self.keep_button = ttk.Button(self.window, text=CHOOSE_LABEL,
-                                      command=self.accept)
-        self.cancel_button = ttk.Button(self.window, text=CANCEL_LABEL,
-                                        command=self.cancel)
-        self.cancel_button.pack(side=tkinter.RIGHT, padx=PADDING, pady=PADDING)
-        self.keep_button.pack(side=tkinter.RIGHT, pady=PADDING)
+        self.add_buttons(CHOOSE_LABEL)
 
-    def accept(self) -> None:
-        """Take the option the user marked as the answer."""
-        self.chosen = self.picked.get()
-        self.window.destroy()
-
-    def cancel(self) -> None:
-        """Answer nothing at all."""
-        self.chosen = None
-        self.window.destroy()
+    @property
+    def chosen(self) -> Optional[str]:
+        """Return what was chosen, None while nothing was."""
+        return self.picked.get() if self.taken else None
 
     def choose(self) -> Optional[str]:
         """Wait for the answer, holding the rest of the application.
@@ -223,8 +271,7 @@ class ChoiceDialog:
         Returns:
             What the user chose, None when the user chose nothing.
         """
-        self.window.grab_set()
-        self.window.wait_window()
+        self.answered()
         return self.chosen
 
 
@@ -242,3 +289,101 @@ def ask_choice(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
         What the user chose, None when the user chose nothing.
     """
     return ChoiceDialog(parent, title, question, options).choose()
+
+
+def ask_name(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+             question: str, given: str = '') -> Optional[str]:
+    """Ask the user for the name of a note or a folder.
+
+    What the name may be is the model's to say, so anything at all
+    can be typed here and is refused, if it is to be refused, where
+    the file is made.
+
+    Args:
+        parent: The window that the question is asked over.
+        title: What the window asking is called.
+        question: What the user is asked.
+        given: What the field holds before anything is typed.
+
+    Returns:
+        What the user typed, None when the user typed nothing at all.
+    """
+    return simpledialog.askstring(title, question, parent=parent,
+                                  initialvalue=given)
+
+
+class NameFolder(NamedTuple):
+    """A name, and the folder of the project that it is to be in."""
+
+    name: str
+    folder: str
+
+
+class NameFolderDialog(AskingWindow):
+    """Asks the user for a name and for a folder of the project.
+
+    The folders are offered to be chosen rather than to be typed, so
+    that what is asked for is always a folder of the project, and
+    the file chooser of the platform is not let anywhere near it.
+    """
+
+    def __init__(self, parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+                 given: NameFolder, folders: Sequence[str]) -> None:
+        """Build the window that asks for the name and the folder.
+
+        Args:
+            parent: The window that the question is asked over.
+            title: What the window asking is called.
+            given: What the two fields hold to begin with.
+            folders: The folders of the project, as they are named.
+        """
+        super().__init__(parent, title)
+        self.typed = tkinter.StringVar(self.window, value=given.name)
+        self.picked = tkinter.StringVar(self.window, value=given.folder)
+        self._fill_in(folders)
+        self.add_buttons(ACCEPT_LABEL)
+
+    def _fill_in(self, folders: Sequence[str]) -> None:
+        """Put the field for the name above the one for the folder."""
+        self.ask(NAME_LABEL)
+        entry = ttk.Entry(self.window, textvariable=self.typed,
+                          width=ENTRY_WIDTH)
+        entry.pack(side=tkinter.TOP, fill=tkinter.X, padx=PADDING)
+        self.ask(FOLDER_LABEL)
+        chooser = ttk.Combobox(self.window, textvariable=self.picked,
+                               values=list(folders), state='readonly')
+        chooser.pack(side=tkinter.TOP, fill=tkinter.X, padx=PADDING)
+        entry.focus_set()
+
+    @property
+    def given(self) -> Optional[NameFolder]:
+        """Return what was filled in, None while nothing was taken."""
+        if not self.taken:
+            return None
+        return NameFolder(name=self.typed.get(), folder=self.picked.get())
+
+    def ask_for(self) -> Optional[NameFolder]:
+        """Wait for the answer, holding the rest of the application.
+
+        Returns:
+            The name and the folder, None when the user gave none.
+        """
+        self.answered()
+        return self.given
+
+
+def ask_name_folder(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+                    given: NameFolder,
+                    folders: Sequence[str]) -> Optional[NameFolder]:
+    """Ask the user for a name and for a folder of the project.
+
+    Args:
+        parent: The window that the question is asked over.
+        title: What the window asking is called.
+        given: What the two fields hold to begin with.
+        folders: The folders of the project, as they are named.
+
+    Returns:
+        The name and the folder, None when the user gave none.
+    """
+    return NameFolderDialog(parent, title, given, folders).ask_for()

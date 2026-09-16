@@ -10,16 +10,20 @@ from typing import Callable, NamedTuple, Optional, Sequence, TextIO
 import pytest
 from edit_cfg_json import ConfigLoadError
 from test_notesmgr.helpers import write_config, write_notes, write_template
+from notesmgr import commands as commands_module
 from notesmgr import main_window as window_module
+from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, \
+    DELETE_FOLDER, DUPLICATE, EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, \
+    RENAME_FOLDER
 from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME
-from notesmgr import note_panel as panel_module
+from notesmgr.errors import NotesmgrError
 from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
-    EDIT_CONFIG_ENTRY, FILE_MENU, HELP_MENU, INITIAL_GEOMETRY, \
+    EDIT_CONFIG_ENTRY, FILE_MENU, FOLDER_MENU, HELP_MENU, INITIAL_GEOMETRY, \
     MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, NOTE_MENU, \
     OPEN_PROJECT_ENTRY, QUIT_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, \
     VERSION_TITLE, MainWindow, Shortcut, quit_shortcut, tk_window_system
-from notesmgr.note_panel import COPY_RAW, EDIT
+from notesmgr.order_file import read_order_text
 from notesmgr.project import config_path
 
 REPORT = 'notesmgr 0.0.1\n'
@@ -51,11 +55,13 @@ def fixture_main_window(top_window: tkinter.Toplevel) -> MainWindow:
 
 @pytest.fixture(name='project')
 def fixture_project(tmp_path: Path) -> Path:
-    """Provide a project folder holding two notes and a template."""
+    """Provide a project folder holding two notes and a subfolder."""
     root = tmp_path / 'notes'
     write_config(root, NoteExtension.MD_TXT)
     write_template(root, NoteExtension.MD_TXT)
     write_notes(root, NOTES)
+    write_notes(root / 'sub', ['deep.md.txt'])
+    write_template(root / 'sub', NoteExtension.MD_TXT)
     return root
 
 
@@ -105,18 +111,38 @@ def fixture_no_dialogs(monkeypatch: pytest.MonkeyPatch) -> None:
     _ = answer_folder(monkeypatch, None)
     answer_yes_no(monkeypatch, False)
     answer_choice(monkeypatch, None)
+    answer_copy(monkeypatch)
 
 
 @pytest.fixture(name='refused', autouse=True)
 def fixture_refused(monkeypatch: pytest.MonkeyPatch) -> list[str]:
-    """Record what the main window reported to the user as an error."""
+    """Record what the window and its commands reported as an error."""
     told: list[str] = []
 
     def record(_parent: object, _title: str, message: str) -> None:
         """Stand in for reporting an error to the user."""
         told.append(message)
     monkeypatch.setattr(window_module, 'show_error', record)
+    monkeypatch.setattr(commands_module, 'show_error', record)
     return told
+
+
+@pytest.fixture(name='typed', autouse=True)
+def fixture_typed(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Let no test of this module ask a real name of a real user.
+
+    Returns:
+        The names that a test may put there to be typed next, which
+        are taken one by one as the commands ask for them.
+    """
+    answers: list[str] = []
+
+    def asked(_parent: object, _title: str, _question: str,
+              _given: str = '') -> Optional[str]:
+        """Stand in for asking the user for a name."""
+        return answers.pop(0) if answers else None
+    monkeypatch.setattr(commands_module, 'ask_name', asked)
+    return answers
 
 
 @pytest.fixture(name='informed', autouse=True)
@@ -167,11 +193,25 @@ def answer_folder(monkeypatch: pytest.MonkeyPatch,
 
 
 def answer_yes_no(monkeypatch: pytest.MonkeyPatch, answer: bool) -> None:
-    """Make the yes or no question be answered in the given way."""
+    """Make the yes or no question be answered in the given way.
+
+    The window asks it of its own, and so do the commands that its
+    buttons and menu entries run, so both are answered here.
+    """
     def answered(_parent: object, _title: str, _question: str) -> bool:
         """Stand in for asking the user a question of yes or no."""
         return answer
     monkeypatch.setattr(window_module, 'ask_yes_no', answered)
+    monkeypatch.setattr(commands_module, 'ask_yes_no', answered)
+
+
+def answer_copy(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make the question of where to copy a note be answered with none."""
+    def asked(_parent: object, _title: str, _given: object,
+              _folders: Sequence[str]) -> None:
+        """Stand in for asking the user for a name and a folder."""
+        return None
+    monkeypatch.setattr(commands_module, 'ask_name_folder', asked)
 
 
 def answer_choice(monkeypatch: pytest.MonkeyPatch,
@@ -234,9 +274,10 @@ def test_menu_bar_installed(main_window: MainWindow) -> None:
 
 
 def test_menus_of_the_bar(main_window: MainWindow) -> None:
-    """The menu bar holds a File, a Note, a Configuration and a Help menu."""
+    """The menu bar holds one menu for each kind of thing it does."""
     assert set(main_window.menu_bar.menus) == {FILE_MENU, NOTE_MENU,
-                                               CONFIG_MENU, HELP_MENU}
+                                               FOLDER_MENU, CONFIG_MENU,
+                                               HELP_MENU}
 
 
 @pytest.mark.parametrize('menu,label', [
@@ -245,12 +286,26 @@ def test_menus_of_the_bar(main_window: MainWindow) -> None:
     (FILE_MENU, QUIT_ENTRY),
     (NOTE_MENU, EDIT),
     (NOTE_MENU, COPY_RAW),
+    (NOTE_MENU, DUPLICATE),
+    (NOTE_MENU, NEW),
+    (NOTE_MENU, DELETE),
+    (NOTE_MENU, MOVE_UP),
+    (NOTE_MENU, MOVE_DOWN),
+    (FOLDER_MENU, NEW_FOLDER),
+    (FOLDER_MENU, RENAME_FOLDER),
+    (FOLDER_MENU, DELETE_FOLDER),
     (CONFIG_MENU, EDIT_CONFIG_ENTRY),
     (CONFIG_MENU, USER_WIDE_ENTRY),
     (HELP_MENU, VERSION_ENTRY)])
 def test_menu_entries(main_window: MainWindow, menu: str, label: str) -> None:
     """Every menu holds the entries that this step has given it."""
     assert main_window.menu_bar.menus[menu].index(label) is not None
+
+
+def test_copy_formatted_later(main_window: MainWindow) -> None:
+    """What cannot be done yet is no entry of the note menu yet."""
+    with pytest.raises(tkinter.TclError):
+        main_window.menu_bar.menus[NOTE_MENU].index(COPY_FORMATTED)
 
 
 def test_user_wide_disabled(main_window: MainWindow) -> None:
@@ -263,6 +318,18 @@ def note_entry_state(main_window: MainWindow, label: str) -> str:
     """Return whether one entry of the note menu can be chosen."""
     menu = main_window.menu_bar.menus[NOTE_MENU]
     return str(menu.entrycget(label, 'state'))
+
+
+def folder_entry_state(main_window: MainWindow, label: str) -> str:
+    """Return whether one entry of the folder menu can be chosen."""
+    menu = main_window.menu_bar.menus[FOLDER_MENU]
+    return str(menu.entrycget(label, 'state'))
+
+
+def order_of(folder: Path) -> list[str]:
+    """Return the notes that the order file of a folder lists."""
+    text = read_order_text(folder)
+    return [] if text is None else text.splitlines()
 
 
 @pytest.mark.parametrize('label', [EDIT, COPY_RAW])
@@ -295,11 +362,114 @@ def test_opening_selects_none(main_window: MainWindow, project: Path) -> None:
     assert note_entry_state(main_window, COPY_RAW) == 'disabled'
 
 
-def test_panel_errors_told(main_window: MainWindow,
-                           refused: list[str]) -> None:
-    """What the note panel could not do is put to the user."""
-    main_window.report_error('nothing worked')
-    assert refused == ['nothing worked']
+def test_folder_entries_dead(main_window: MainWindow) -> None:
+    """With no project open there is no folder for an entry to act on."""
+    for label in (NEW_FOLDER, RENAME_FOLDER, DELETE_FOLDER):
+        assert folder_entry_state(main_window, label) == 'disabled'
+
+
+def test_new_folder_offered(main_window: MainWindow, project: Path) -> None:
+    """A project that is open is a project to make a folder in."""
+    main_window.load_project(project)
+    assert folder_entry_state(main_window, NEW_FOLDER) == 'normal'
+    assert folder_entry_state(main_window, RENAME_FOLDER) == 'disabled'
+
+
+def test_folder_entries_on(main_window: MainWindow, project: Path) -> None:
+    """Selecting a folder of the project offers what acts on one."""
+    main_window.load_project(project)
+    main_window.show_selected(project / 'sub')
+    assert folder_entry_state(main_window, RENAME_FOLDER) == 'normal'
+    assert folder_entry_state(main_window, DELETE_FOLDER) == 'normal'
+
+
+def test_root_is_no_folder(main_window: MainWindow, project: Path) -> None:
+    """The root folder is the project, and is not renamed or removed."""
+    main_window.load_project(project)
+    main_window.show_selected(project)
+    assert folder_entry_state(main_window, RENAME_FOLDER) == 'disabled'
+
+
+def test_panel_errors_told(main_window: MainWindow, project: Path,
+                           refused: list[str],
+                           monkeypatch: pytest.MonkeyPatch) -> None:
+    """What a command could not do is put to the user."""
+    monkeypatch.setattr(commands_module, 'launch_editor', no_editor)
+    main_window.load_project(project)
+    main_window.show_selected(project / NOTES[0])
+    main_window.menu_bar.menus[NOTE_MENU].invoke(EDIT)
+    assert refused == ['no editor here']
+
+
+def no_editor(_command: str, _path: Path) -> None:
+    """Stand in for an editor that the system does not start."""
+    raise NotesmgrError('no editor here')
+
+
+def test_new_note_from_menu(main_window: MainWindow, project: Path,
+                            typed: list[str],
+                            monkeypatch: pytest.MonkeyPatch) -> None:
+    """Choosing Note > New makes a note and selects it in the tree."""
+    started: list[Path] = []
+
+    def record(_command: str, path: Path) -> None:
+        """Stand in for starting the editor of the project."""
+        started.append(path)
+    monkeypatch.setattr(commands_module, 'launch_editor', record)
+    main_window.load_project(project)
+    typed.append('third')
+    main_window.menu_bar.menus[NOTE_MENU].invoke(NEW)
+    made = project / 'third.md.txt'
+    assert made.is_file()
+    assert started == [made]
+    assert main_window.explorer.selected_path() == made
+    assert main_window.note_panel.note_path() == made
+
+
+def test_delete_from_menu(main_window: MainWindow, project: Path,
+                          trashed: list[Path],
+                          monkeypatch: pytest.MonkeyPatch) -> None:
+    """Choosing Note > Delete takes the note away and shows the rest."""
+    answer_yes_no(monkeypatch, True)
+    main_window.load_project(project)
+    main_window.show_selected(project / NOTES[0])
+    main_window.menu_bar.menus[NOTE_MENU].invoke(DELETE)
+    assert trashed == [project / NOTES[0]]
+    assert tree_names(main_window) == ['sub', 'template.md.txt', NOTES[1]]
+    assert main_window.note_panel.shown_path() == ''
+
+
+def test_move_from_menu(main_window: MainWindow, project: Path) -> None:
+    """Choosing Note > Up moves the note and leaves it selected."""
+    main_window.load_project(project)
+    main_window.show_selected(project / NOTES[1])
+    main_window.menu_bar.menus[NOTE_MENU].invoke(MOVE_UP)
+    assert order_of(project) == [NOTES[1], NOTES[0]]
+    assert main_window.explorer.selected_path() == project / NOTES[1]
+
+
+def test_new_folder_from_menu(main_window: MainWindow, project: Path,
+                              typed: list[str]) -> None:
+    """Choosing Folder > New folder makes a folder and shows it."""
+    main_window.load_project(project)
+    typed.append('ideas')
+    main_window.menu_bar.menus[FOLDER_MENU].invoke(NEW_FOLDER)
+    assert (project / 'ideas' / 'template.md.txt').is_file()
+    assert main_window.explorer.selected_path() == project / 'ideas'
+
+
+def test_reopen_no_project(main_window: MainWindow) -> None:
+    """With no project open there is nothing to show again."""
+    main_window.reopen(None)
+    assert main_window.session.project is None
+
+
+def test_select_what_is_gone(main_window: MainWindow, project: Path) -> None:
+    """Selecting what the tree does not show selects nothing at all."""
+    main_window.load_project(project)
+    main_window.select(project / 'no_such.md.txt')
+    assert main_window.explorer.selected_path() is None
+    assert main_window.note_panel.shown_path() == ''
 
 
 def test_copy_raw_from_menu(main_window: MainWindow, project: Path) -> None:
@@ -320,7 +490,7 @@ def test_edit_from_menu(main_window: MainWindow, project: Path,
     def record(_command: str, path: Path) -> None:
         """Stand in for starting the editor of the project."""
         started.append(path)
-    monkeypatch.setattr(panel_module, 'launch_editor', record)
+    monkeypatch.setattr(commands_module, 'launch_editor', record)
     note = project / NOTES[0]
     main_window.load_project(project)
     main_window.show_selected(note)
@@ -385,7 +555,7 @@ def test_project_is_shown(main_window: MainWindow, project: Path,
     """An opened project is named in the title and shown in the tree."""
     main_window.load_project(project)
     assert main_window.window.title() == f'{APPLICATION_NAME} — notes'
-    assert tree_names(main_window) == ['template.md.txt', 'a.md.txt',
+    assert tree_names(main_window) == ['sub', 'template.md.txt', 'a.md.txt',
                                        'b.md.txt']
     assert not informed
 
@@ -578,7 +748,8 @@ def test_project_read_again(main_window: MainWindow, project: Path,
     main_window.edit_configuration()
     write_config(project, NoteExtension.MD)
     panels[0].on_close()
-    assert tree_names(main_window) == ['template.md', 'a.md.txt', 'b.md.txt']
+    assert tree_names(main_window) == ['sub', 'template.md', 'a.md.txt',
+                                       'b.md.txt']
 
 
 def test_editor_refused(main_window: MainWindow, refused: list[str],

@@ -7,11 +7,12 @@
 import tkinter
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable, NamedTuple, Optional
+from typing import AbstractSet, Optional, Sequence
+from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
+    EDIT, MOVE_DOWN, MOVE_UP, NEW
 from notesmgr.button_row import ButtonRow, ButtonSpec
+from notesmgr.commands import Commands
 from notesmgr.config import DEFAULT_NOTE_SIZE
-from notesmgr.editor_command import launch_editor
-from notesmgr.errors import NotesmgrError
 from notesmgr.file_watch import FileWatch
 from notesmgr.note_file import is_note
 from notesmgr.note_text import EMPTY_NOTE, read_note_text
@@ -20,42 +21,6 @@ from notesmgr.session import Session
 
 PADDING = 8
 """Space in pixels left around what the panel shows."""
-
-COPY_RAW = 'Copy raw'
-"""What the button that copies the note as it is written says."""
-
-COPY_FORMATTED = 'Copy formatted'
-"""What the button that copies the note formatted says."""
-
-DUPLICATE = 'Duplicate'
-"""What the button that copies the note into the project says."""
-
-EDIT = 'Edit'
-"""What the button that opens the note in an editor says."""
-
-NEW = 'New'
-"""What the button that makes another note says."""
-
-DELETE = 'Delete'
-"""What the button that takes the note away says."""
-
-MOVE_UP = 'Up'
-"""What the button that moves the note one place up says."""
-
-MOVE_DOWN = 'Down'
-"""What the button that moves the note one place down says."""
-
-
-class PanelHooks(NamedTuple):
-    """What the panel tells the window that holds it.
-
-    The window owns the menu entries that do what the buttons do, and
-    it owns the way that a problem is put to the user, so the panel
-    is given both rather than reaching back into the window.
-    """
-
-    report_error: Callable[[str], None]
-    note_shown: Callable[[bool], None]
 
 
 class NotePanel:
@@ -68,17 +33,18 @@ class NotePanel:
     """
 
     def __init__(self, parent: tkinter.Misc, session: Session,
-                 hooks: PanelHooks) -> None:
+                 commands: Commands) -> None:
         """Build the panel in a frame of its own inside a parent widget.
 
         Args:
             parent: The widget that the panel is placed in.
             session: What the run knows, which is the open project and
                 therefore the editor and the size that are configured.
-            hooks: What the panel tells the window that holds it.
+            commands: What the buttons of the panel do when pressed,
+                which is also what is told what is selected now.
         """
         self.session = session
-        self.hooks = hooks
+        self.commands = commands
         self.frame = ttk.Frame(parent)
         self.row = ButtonRow(self.frame, self._button_specs())
         self.row.frame.pack(side=tkinter.TOP, fill=tkinter.X, padx=PADDING,
@@ -92,11 +58,19 @@ class NotePanel:
 
     def _button_specs(self) -> list[ButtonSpec]:
         """Return the buttons of the row in the order they are shown."""
+        commands = self.commands
         return [ButtonSpec(COPY_RAW, self.copy_raw),
-                ButtonSpec(COPY_FORMATTED), ButtonSpec(DUPLICATE),
-                ButtonSpec(EDIT, self.edit_note), ButtonSpec(NEW),
-                ButtonSpec(DELETE), ButtonSpec(MOVE_UP),
-                ButtonSpec(MOVE_DOWN)]
+                ButtonSpec(COPY_FORMATTED),
+                ButtonSpec(DUPLICATE, commands.duplicate_note),
+                ButtonSpec(EDIT, self.edit_note),
+                ButtonSpec(NEW, commands.new_note),
+                ButtonSpec(DELETE, commands.delete_note),
+                ButtonSpec(MOVE_UP, commands.move_up),
+                ButtonSpec(MOVE_DOWN, commands.move_down)]
+
+    def actions(self) -> Sequence[ButtonSpec]:
+        """Return what the buttons of the panel are and what they do."""
+        return self.row.specs
 
     def note_limit(self) -> int:
         """Return how much of a note the open project shows.
@@ -124,6 +98,7 @@ class NotePanel:
                 A folder is shown by its path alone, and a note and
                 the template of a folder are also read and shown.
         """
+        self.commands.select(path)
         self.path_label.configure(text='' if path is None else str(path))
         shown = path if path is not None and is_note(path.name) else None
         self.watch.watch(shown)
@@ -139,20 +114,15 @@ class NotePanel:
         note = self.watch.path
         self.view.show(EMPTY_NOTE if note is None
                        else read_note_text(note, self.note_limit()))
-        self.offer_actions(self.has_note())
+        self.commands.note_shown(self.has_note())
 
-    def offer_actions(self, enabled: bool) -> None:
-        """Offer what acts on a note, or grey it out.
-
-        The buttons of the panel and the entries of the note menu are
-        offered together, because they do the same things, so the
-        window that holds the menu is told as well.
+    def offer(self, labels: AbstractSet[str]) -> None:
+        """Let the buttons that can be used now be pressed.
 
         Args:
-            enabled: Whether there is a note to act on.
+            labels: What the actions that can be done now are called.
         """
-        self.row.offer(enabled)
-        self.hooks.note_shown(enabled)
+        self.row.offer(labels)
 
     def shown_path(self) -> str:
         """Return the path the panel is showing, empty for none."""
@@ -161,13 +131,8 @@ class NotePanel:
     def edit_note(self) -> None:
         """Open the note that is shown in the editor of the project."""
         note = self.watch.path
-        config = self.session.config()
-        if note is None or config is None:
-            return
-        try:
-            launch_editor(config.editor, note)
-        except NotesmgrError as error:
-            self.hooks.report_error(str(error))
+        if note is not None:
+            self.commands.edit(note)
 
     def copy_raw(self) -> None:
         """Put the text of the note that is shown on the clipboard.
@@ -182,7 +147,7 @@ class NotePanel:
             return
         note = self.view.shown_note()
         if not note.text and note.warning:
-            self.hooks.report_error(note.warning)
+            self.commands.report_error(note.warning)
             return
         self.frame.clipboard_clear()
         self.frame.clipboard_append(note.text)

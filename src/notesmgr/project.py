@@ -87,6 +87,27 @@ def is_shown_folder(path: Path) -> bool:
     return path.is_dir()
 
 
+def folder_entries(folder: Path) -> list[Path]:
+    """Return everything a folder holds, in alphabetical order.
+
+    Args:
+        folder: Folder of a project.
+
+    Returns:
+        Every file and folder in it, hidden ones and all, because
+        what is shown is one question and what a name would collide
+        with is another.
+
+    Raises:
+        NotesmgrError: The folder cannot be read.
+    """
+    try:
+        return sorted(folder.iterdir(), key=lambda path: name_key(path.name))
+    except OSError as error:
+        raise NotesmgrError(NOT_LISTED.format(folder=folder,
+                                              reason=error)) from error
+
+
 def folder_content(folder: Path) -> FolderContent:
     """Return what a folder holds, in the order it is shown in.
 
@@ -101,16 +122,26 @@ def folder_content(folder: Path) -> FolderContent:
     Raises:
         NotesmgrError: The folder cannot be read.
     """
-    def sort_key(path: Path) -> tuple[str, str]:
-        """Return what orders one entry of the folder among the rest."""
-        return name_key(path.name)
-    try:
-        entries = sorted(folder.iterdir(), key=sort_key)
-    except OSError as error:
-        raise NotesmgrError(NOT_LISTED.format(folder=folder,
-                                              reason=error)) from error
+    entries = folder_entries(folder)
     names = [entry.name for entry in entries if entry.is_file()]
     return FolderContent(
         folders=[entry for entry in entries if is_shown_folder(entry)],
         templates=[folder / name for name in names if is_template(name)],
         notes=[name for name in names if is_plain_note(name)])
+
+
+def folder_paths(folder: Folder) -> list[Path]:
+    """Return a folder of a project and every folder below it.
+
+    Args:
+        folder: The folder to start from, which is the tree of the
+            project when every folder of it is wanted.
+
+    Returns:
+        The folders, each one before the folders below it, which is
+        the order that the explorer shows them in.
+    """
+    paths = [folder.path]
+    for below in folder.folders:
+        paths.extend(folder_paths(below))
+    return paths

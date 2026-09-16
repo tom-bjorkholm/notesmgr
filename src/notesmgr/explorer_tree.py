@@ -54,6 +54,25 @@ class ExplorerTree:
         selection = self.tree.selection()
         return Path(selection[0]) if selection else None
 
+    def select(self, path: Optional[Path]) -> Optional[Path]:
+        """Select one item of the tree, or nothing at all.
+
+        Args:
+            path: What is to be selected, None for nothing at all.
+                A path that the tree does not show selects nothing
+                either, which is what a note that was taken away or
+                renamed by another program leaves behind.
+
+        Returns:
+            What is selected now, None when nothing is.
+        """
+        if path is None or not self.tree.exists(str(path)):
+            self.tree.selection_set(())
+            return None
+        self.tree.selection_set(str(path))
+        self.tree.see(str(path))
+        return path
+
     def show(self, project: Optional[Project]) -> None:
         """Show a project, or nothing at all when there is none."""
         self.tree.delete(*self.tree.get_children())

@@ -13,12 +13,14 @@ from typing import Optional
 import pytest
 from test_notesmgr.helpers import refuse_choice, write_config, write_file, \
     write_notes, write_template
-from notesmgr import note_panel as panel_module
+from notesmgr import commands as commands_module
+from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
+    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER
+from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config import DEFAULT_NOTE_SIZE, MIN_NOTE_SIZE, NoteExtension
 from notesmgr.errors import NotesmgrError
 from notesmgr.note_file import template_name
-from notesmgr.note_panel import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
-    EDIT, MOVE_DOWN, MOVE_UP, NEW, NotePanel, PanelHooks
+from notesmgr.note_panel import NotePanel
 from notesmgr.note_text import NOT_UTF8
 from notesmgr.project_ops import open_project
 from notesmgr.session import Session
@@ -35,6 +37,9 @@ TEMPLATE_TEXT = 'Template of the folder\n'
 ROW = [COPY_RAW, COPY_FORMATTED, DUPLICATE, EDIT, NEW, DELETE, MOVE_UP,
        MOVE_DOWN]
 """The buttons of the panel, in the order the README gives them."""
+
+NO_NOTE = [label for label in ROW if label != NEW]
+"""The buttons that are greyed out while no note is shown."""
 
 LATER = 100.0
 """Seconds to put between two writes, so that the times differ."""
@@ -73,24 +78,45 @@ def fixture_session(project: Path) -> Session:
     return session
 
 
-@pytest.fixture(name='errors')
-def fixture_errors() -> list[str]:
-    """Provide the list that the panel reports its problems into."""
-    return []
+@pytest.fixture(name='errors', autouse=True)
+def fixture_errors(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Record what the panel reported to the user as a problem."""
+    told: list[str] = []
+
+    def record(_parent: object, _title: str, message: str) -> None:
+        """Stand in for reporting an error to the user."""
+        told.append(message)
+    monkeypatch.setattr(commands_module, 'show_error', record)
+    return told
 
 
-@pytest.fixture(name='told')
-def fixture_told() -> list[bool]:
-    """Provide the list that the panel tells about a note into."""
+@pytest.fixture(name='offers')
+def fixture_offers() -> list[frozenset[str]]:
+    """Provide the list that the panel offers its actions into."""
     return []
 
 
 @pytest.fixture(name='panel')
 def fixture_panel(top_window: tkinter.Toplevel, session: Session,
-                  errors: list[str], told: list[bool]) -> NotePanel:
-    """Provide a note panel in a hidden window, showing nothing yet."""
-    return NotePanel(top_window, session, PanelHooks(errors.append,
-                                                     told.append))
+                  offers: list[frozenset[str]]) -> NotePanel:
+    """Provide a note panel wired up as the main window wires it.
+
+    What the commands offer reaches the buttons of the panel, which
+    is what the main window does with it, so that the buttons of
+    these tests are offered and greyed out as they really are.
+    """
+    made: list[NotePanel] = []
+
+    def offer(labels: frozenset[str]) -> None:
+        """Stand in for the main window offering what can be done."""
+        offers.append(labels)
+        made[0].offer(labels)
+
+    def reopen(_selected: Optional[Path]) -> None:
+        """Stand in for the main window showing the project again."""
+    commands = Commands(top_window, session, WindowHooks(reopen, offer))
+    made.append(NotePanel(top_window, session, commands))
+    return made[0]
 
 
 @pytest.fixture(name='launched')
@@ -102,7 +128,7 @@ def fixture_launched(
     def record(command: str, path: Path) -> None:
         """Stand in for starting the editor of the project."""
         started.append((command, path))
-    monkeypatch.setattr(panel_module, 'launch_editor', record)
+    monkeypatch.setattr(commands_module, 'launch_editor', record)
     return started
 
 
@@ -151,18 +177,24 @@ def test_the_whole_button_row(panel: NotePanel) -> None:
     assert [str(button.cget('text')) for button in row_buttons(panel)] == ROW
 
 
+def test_actions_are_the_row(panel: NotePanel) -> None:
+    """What the panel says its actions are is what its buttons are."""
+    assert [spec.label for spec in panel.actions()] == ROW
+
+
 def test_buttons_start_dead(panel: NotePanel) -> None:
-    """With nothing selected there is nothing for a button to act on."""
+    """Before anything is selected there is nothing for a button to do."""
     assert unusable(panel) == ROW
 
 
-def test_note_is_shown(panel: NotePanel, note: Path, told: list[bool]) -> None:
+def test_note_is_shown(panel: NotePanel, note: Path,
+                       offers: list[frozenset[str]]) -> None:
     """A selected note is named and its text is shown."""
     panel.show_path(note)
     assert panel.shown_path() == str(note)
     assert panel.view.area_text() == NOTE_TEXT
     assert panel.note_path() == note
-    assert told == [True]
+    assert EDIT in offers[-1]
 
 
 def test_template_is_shown(panel: NotePanel, project: Path) -> None:
@@ -173,28 +205,28 @@ def test_template_is_shown(panel: NotePanel, project: Path) -> None:
     assert panel.has_note()
 
 
-def test_live_buttons_offered(panel: NotePanel, note: Path) -> None:
-    """A note to act on is what the two working buttons need."""
-    panel.show_path(note)
-    assert button_state(panel, COPY_RAW) == 'normal'
+def test_template_not_moved(panel: NotePanel, project: Path) -> None:
+    """The template of a folder is not duplicated, moved or deleted."""
+    panel.show_path(project / template_name(NoteExtension.MD_TXT))
     assert button_state(panel, EDIT) == 'normal'
+    assert unusable(panel) == [COPY_FORMATTED, DUPLICATE, DELETE, MOVE_UP,
+                               MOVE_DOWN]
 
 
-def test_later_buttons_dead(panel: NotePanel, note: Path) -> None:
-    """The buttons of the steps to come stay greyed out for now."""
+def test_note_buttons_live(panel: NotePanel, note: Path) -> None:
+    """A note to act on is what every button but one is waiting for."""
     panel.show_path(note)
-    assert unusable(panel) == [COPY_FORMATTED, DUPLICATE, NEW, DELETE,
-                               MOVE_UP, MOVE_DOWN]
+    assert unusable(panel) == [COPY_FORMATTED]
 
 
 def test_folder_is_no_note(panel: NotePanel, project: Path,
-                           told: list[bool]) -> None:
+                           offers: list[frozenset[str]]) -> None:
     """A selected folder is named, and holds no text to show."""
     panel.show_path(project)
     assert panel.shown_path() == str(project)
     assert panel.view.area_text() == ''
     assert panel.note_path() is None
-    assert told == [False]
+    assert offers[-1] == {NEW, NEW_FOLDER}
 
 
 def test_nothing_selected(panel: NotePanel, note: Path) -> None:
@@ -203,7 +235,7 @@ def test_nothing_selected(panel: NotePanel, note: Path) -> None:
     panel.show_path(None)
     assert panel.shown_path() == ''
     assert panel.view.area_text() == ''
-    assert unusable(panel) == ROW
+    assert unusable(panel) == NO_NOTE
 
 
 def test_empty_note_is_shown(panel: NotePanel, project: Path) -> None:
@@ -244,8 +276,14 @@ def test_limit_from_project(panel: NotePanel, project: Path,
 def test_limit_no_project(top_window: tkinter.Toplevel,
                           tmp_path: Path) -> None:
     """With no project open the built-in default stands in."""
-    hooks = PanelHooks(lambda _message: None, lambda _shown: None)
-    panel = NotePanel(top_window, Session(tmp_path), hooks)
+    def offer(_labels: frozenset[str]) -> None:
+        """Stand in for the main window offering what can be done."""
+
+    def reopen(_selected: Optional[Path]) -> None:
+        """Stand in for the main window showing the project again."""
+    session = Session(tmp_path)
+    commands = Commands(top_window, session, WindowHooks(reopen, offer))
+    panel = NotePanel(top_window, session, commands)
     assert panel.note_limit() == DEFAULT_NOTE_SIZE
 
 
@@ -308,7 +346,7 @@ def test_edit_failure_told(panel: NotePanel, note: Path, errors: list[str],
     def refuse(_command: str, _path: Path) -> None:
         """Stand in for an editor that the system does not start."""
         raise NotesmgrError('no editor here')
-    monkeypatch.setattr(panel_module, 'launch_editor', refuse)
+    monkeypatch.setattr(commands_module, 'launch_editor', refuse)
     panel.show_path(note)
     panel.edit_note()
     assert errors == ['no editor here']
@@ -324,15 +362,15 @@ def test_edited_note_followed(panel: NotePanel, note: Path) -> None:
 
 
 def test_gone_note_told(panel: NotePanel, note: Path,
-                        told: list[bool]) -> None:
+                        offers: list[frozenset[str]]) -> None:
     """A note taken away by another program leaves nothing to act on."""
     panel.show_path(note)
     note.unlink()
     panel.watch.poll()
     assert panel.view.warning_shown()
     assert not panel.has_note()
-    assert told == [True, False]
-    assert unusable(panel) == ROW
+    assert offers[-1] == {NEW, NEW_FOLDER}
+    assert unusable(panel) == NO_NOTE
 
 
 @pytest.mark.focus_sensitive

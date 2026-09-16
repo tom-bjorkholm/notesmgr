@@ -6,7 +6,7 @@
 
 import tkinter
 from tkinter import ttk
-from typing import Callable, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Callable, NamedTuple, Optional, Sequence
 from notesmgr.menu_bar import entry_state
 
 GAP = 4
@@ -89,6 +89,7 @@ class ButtonRow:
             specs: The buttons, in the order they are shown.
         """
         self.frame = ttk.Frame(parent)
+        self.specs = list(specs)
         self.buttons = [self._built(spec) for spec in specs]
         self.working = {spec.label: button
                         for spec, button in zip(specs, self.buttons)
@@ -134,7 +135,15 @@ class ButtonRow:
             button.grid(row=index // columns, column=index % columns,
                         padx=GAP // 2, pady=GAP // 2, sticky=tkinter.W)
 
-    def offer(self, enabled: bool) -> None:
-        """Let the buttons that do something be used, or grey them out."""
-        for button in self.working.values():
-            button.configure(state=entry_state(enabled))
+    def offer(self, labels: AbstractSet[str]) -> None:
+        """Let the buttons that can be used now be pressed.
+
+        A button whose operation belongs to a later step of the plan
+        has nothing to do when pressed, and stays greyed out however
+        much the selection would allow it.
+
+        Args:
+            labels: What the buttons that can be used now say.
+        """
+        for label, button in self.working.items():
+            button.configure(state=entry_state(label in labels))

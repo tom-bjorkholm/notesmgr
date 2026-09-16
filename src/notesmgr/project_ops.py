@@ -7,7 +7,6 @@
 import shutil
 from pathlib import Path
 from typing import Callable, NamedTuple, Optional, Sequence
-from send2trash import send2trash
 from notesmgr.config import NotesmgrConfig
 from notesmgr.config_files import user_wide_config, write_config_file
 from notesmgr.errors import NotesmgrError
@@ -15,6 +14,7 @@ from notesmgr.note_file import sorted_names, template_name
 from notesmgr.order_file import repair_order_file
 from notesmgr.project import Folder, FolderContent, Project, config_path, \
     folder_content, is_project, read_config
+from notesmgr.trash import send_to_trash
 
 ALREADY_PROJECT = 'The folder {folder} is a notesmgr project already.'
 """What is said about a folder that is not to be made a project twice."""
@@ -179,9 +179,9 @@ class ProjectOpener:
     def trash_template(self, path: Path) -> None:
         """Move a template that is one too many to the trash."""
         try:
-            send2trash(path)
-        except OSError as error:
-            self.problems.append(NOT_TRASHED.format(path=path, reason=error))
+            send_to_trash(path, NOT_TRASHED)
+        except NotesmgrError as error:
+            self.problems.append(str(error))
 
     def rightly_named(self, kept: Path) -> Path:
         """Return the template, named with the extension of the project.

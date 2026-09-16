@@ -115,3 +115,34 @@ def test_one_at_a_time(explorer: ExplorerTree, project: Project) -> None:
     """The explorer lets one item at a time be selected."""
     explorer.show(project)
     assert str(explorer.tree.cget('selectmode')) == 'browse'
+
+
+def test_select_an_item(explorer: ExplorerTree, project: Project) -> None:
+    """An item that the tree shows is selected when it is asked for."""
+    explorer.show(project)
+    note = project.root / 'first.md.txt'
+    assert explorer.select(note) == note
+    assert explorer.selected_path() == note
+
+
+def test_select_nothing(explorer: ExplorerTree, project: Project) -> None:
+    """Selecting nothing at all leaves nothing selected."""
+    explorer.show(project)
+    explorer.select(project.root / 'first.md.txt')
+    assert explorer.select(None) is None
+    assert explorer.selected_path() is None
+
+
+def test_select_what_is_gone(explorer: ExplorerTree, project: Project) \
+        -> None:
+    """A path the tree does not show selects nothing, and does not raise."""
+    explorer.show(project)
+    assert explorer.select(project.root / 'no_such.md.txt') is None
+    assert explorer.selected_path() is None
+
+
+def test_select_a_folder(explorer: ExplorerTree, project: Project) -> None:
+    """A folder of the project is selected like any other item."""
+    explorer.show(project)
+    folder = project.root / 'apple'
+    assert explorer.select(folder) == folder

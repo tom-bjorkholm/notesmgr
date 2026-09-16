@@ -8,9 +8,9 @@ from typing import Optional
 import pytest
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
-from notesmgr.note_file import NOTE_EXTENSIONS, checked_extension, is_note, \
-    is_plain_note, is_template, note_extension, note_file_name, note_stem, \
-    sorted_names, template_name
+from notesmgr.note_file import NOTE_EXTENSIONS, checked_extension, \
+    checked_name, is_note, is_plain_note, is_template, note_extension, \
+    note_file_name, note_stem, sorted_names, template_name
 
 
 def test_longest_first() -> None:
@@ -126,3 +126,21 @@ def test_checked_extension(extension: NoteExtension, typed: str,
             checked_extension(typed, extension)
     else:
         assert checked_extension(typed, extension) == expected
+
+
+@pytest.mark.parametrize('typed,expected', [
+    ('ideas', 'ideas'),
+    ('  ideas  ', 'ideas'),
+    ('my ideas', 'my ideas'),
+    ('notes.md', 'notes.md')])
+def test_checked_name(typed: str, expected: str) -> None:
+    """A name is what was typed, with the blanks around it taken off."""
+    assert checked_name(typed) == expected
+
+
+@pytest.mark.parametrize('typed', [
+    '', '   ', '\t\n', 'a/b', 'a\\b', '/', '.', '..', '.hidden'])
+def test_refused_plain_names(typed: str) -> None:
+    """A name that names nothing that can be made in a folder is refused."""
+    with pytest.raises(NotesmgrError):
+        checked_name(typed)
