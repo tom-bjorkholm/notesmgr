@@ -13,14 +13,19 @@ from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
 from notesmgr.button_row import ButtonRow, ButtonSpec
 from notesmgr.commands import Commands
 from notesmgr.config import DEFAULT_NOTE_SIZE
+from notesmgr.errors import NotesmgrError
 from notesmgr.file_watch import FileWatch
 from notesmgr.note_file import is_markdown, is_note
-from notesmgr.note_text import EMPTY_NOTE, read_note_text
+from notesmgr.note_text import EMPTY_NOTE, NoteText, read_note_text
 from notesmgr.note_view import NoteView
+from notesmgr.rich_clipboard import copy_rich, note_rich_text
 from notesmgr.session import Session
 
 PADDING = 8
 """Space in pixels left around what the panel shows."""
+
+PLAIN_INSTEAD = '{reason}\nThe note was copied as plain text instead.'
+"""What is said when the formatting could not be carried along."""
 
 
 class NotePanel:
@@ -60,7 +65,7 @@ class NotePanel:
         """Return the buttons of the row in the order they are shown."""
         commands = self.commands
         return [ButtonSpec(COPY_RAW, self.copy_raw),
-                ButtonSpec(COPY_FORMATTED),
+                ButtonSpec(COPY_FORMATTED, self.copy_formatted),
                 ButtonSpec(DUPLICATE, commands.duplicate_note),
                 ButtonSpec(EDIT, self.edit_note),
                 ButtonSpec(NEW, commands.new_note),
@@ -145,8 +150,8 @@ class NotePanel:
         if note is not None:
             self.commands.edit(note)
 
-    def copy_raw(self) -> None:
-        """Put the text of the note that is shown on the clipboard.
+    def copied_note(self) -> Optional[NoteText]:
+        """Return the note that a copy is taken of, None for none.
 
         A note that could not be read at all holds no text to copy,
         so what is wrong with it is reported rather than the
@@ -155,10 +160,40 @@ class NotePanel:
         it says.
         """
         if self.watch.path is None:
-            return
+            return None
         note = self.view.shown_note()
         if not note.text and note.warning:
             self.commands.report_error(note.warning)
-            return
+            return None
+        return note
+
+    def put_on_clipboard(self, text: str) -> None:
+        """Put a text on the clipboard, in place of what was on it."""
         self.frame.clipboard_clear()
-        self.frame.clipboard_append(note.text)
+        self.frame.clipboard_append(text)
+
+    def copy_raw(self) -> None:
+        """Put the text of the note that is shown on the clipboard."""
+        note = self.copied_note()
+        if note is not None:
+            self.put_on_clipboard(note.text)
+
+    def copy_formatted(self) -> None:
+        """Put the note that is shown on the clipboard formatted.
+
+        Each platform carries formatted text in a way of its own, and
+        one that has not got what it needs for it can still carry the
+        plain text. That is put on the clipboard instead, so that a
+        copy is never lost, and the user is told why it is plain.
+        """
+        note = self.copied_note()
+        path = self.watch.path
+        if note is None or path is None:
+            return
+        payload = note_rich_text(note.text, is_markdown(path.name),
+                                 path.parent)
+        try:
+            copy_rich(payload)
+        except NotesmgrError as error:
+            self.put_on_clipboard(payload.text)
+            self.commands.report_notice(PLAIN_INSTEAD.format(reason=error))

@@ -213,6 +213,16 @@ so that none of them is cut off however small the window is made. They are:
 - `Up` the note is moved one position up in the list in the explorer
 - `Down` the note is moved one position down in the list in the explorer
 
+`Copy formatted` puts the note on the clipboard as rich text, so that
+pasting it into Mail, Word or Slack keeps the formatting, and pasting it
+into a plain text field gives the note as it is written. A note that is
+not markdown is copied as preformatted text, so that a table lined up by
+hand stays lined up. What carries the formatting is what the operating
+system has already: `textutil` and `osascript` on mac, the clipboard of
+Windows itself, and `xclip` or `wl-copy` on Linux. Where the program
+that is needed is not installed, the note is copied as plain text and a
+window says why.
+
 The template of a folder is shown, edited and copied like any other note,
 but `Duplicate`, `Delete`, `Up` and `Down` are greyed out for it: every
 folder has exactly one template, and it is not one of the notes that the
@@ -292,7 +302,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1165 passed, 7 deselected in 7s
+- Test result: 1260 passed, 8 deselected in 7s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

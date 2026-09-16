@@ -16,9 +16,9 @@ GAP = 4
 class ButtonSpec(NamedTuple):
     """One button of the row, and what pressing it does.
 
-    A button whose operation belongs to a later step of the plan has
-    no command, and is greyed out whatever is selected, so that the
-    row is the whole row from the start.
+    A button that is described with no command has nothing to do,
+    and is greyed out whatever is selected, so that a row can be
+    the whole row before every one of its buttons is wired up.
     """
 
     label: str
@@ -138,9 +138,9 @@ class ButtonRow:
     def offer(self, labels: AbstractSet[str]) -> None:
         """Let the buttons that can be used now be pressed.
 
-        A button whose operation belongs to a later step of the plan
-        has nothing to do when pressed, and stays greyed out however
-        much the selection would allow it.
+        A button that was described with no command has nothing to do
+        when pressed, and stays greyed out however much the selection
+        would allow it.
 
         Args:
             labels: What the buttons that can be used now say.

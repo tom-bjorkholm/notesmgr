@@ -129,6 +129,41 @@
   * [delete\_note](#notesmgr.note_ops.delete_note)
   * [moved\_order](#notesmgr.note_ops.moved_order)
   * [move\_note](#notesmgr.note_ops.move_note)
+* [notesmgr.clipboard\_linux](#notesmgr.clipboard_linux)
+  * [XCLIP](#notesmgr.clipboard_linux.XCLIP)
+  * [WL\_COPY](#notesmgr.clipboard_linux.WL_COPY)
+  * [TOOLS](#notesmgr.clipboard_linux.TOOLS)
+  * [NO\_TOOL](#notesmgr.clipboard_linux.NO_TOOL)
+  * [CHARSET](#notesmgr.clipboard_linux.CHARSET)
+  * [html\_tool](#notesmgr.clipboard_linux.html_tool)
+  * [copy\_to\_clipboard](#notesmgr.clipboard_linux.copy_to_clipboard)
+* [notesmgr.clipboard\_windows](#notesmgr.clipboard_windows)
+  * [HEADER](#notesmgr.clipboard_windows.HEADER)
+  * [OPENING](#notesmgr.clipboard_windows.OPENING)
+  * [CLOSING](#notesmgr.clipboard_windows.CLOSING)
+  * [HTML\_FORMAT](#notesmgr.clipboard_windows.HTML_FORMAT)
+  * [UNICODE\_TEXT](#notesmgr.clipboard_windows.UNICODE_TEXT)
+  * [MOVEABLE](#notesmgr.clipboard_windows.MOVEABLE)
+  * [NOT\_WINDOWS](#notesmgr.clipboard_windows.NOT_WINDOWS)
+  * [NOT\_OPENED](#notesmgr.clipboard_windows.NOT_OPENED)
+  * [NO\_MEMORY](#notesmgr.clipboard_windows.NO_MEMORY)
+  * [byte\_length](#notesmgr.clipboard_windows.byte_length)
+  * [cf\_html](#notesmgr.clipboard_windows.cf_html)
+  * [html\_bytes](#notesmgr.clipboard_windows.html_bytes)
+  * [text\_bytes](#notesmgr.clipboard_windows.text_bytes)
+  * [moveable\_memory](#notesmgr.clipboard_windows.moveable_memory)
+  * [write\_clipboard](#notesmgr.clipboard_windows.write_clipboard)
+  * [copy\_to\_clipboard](#notesmgr.clipboard_windows.copy_to_clipboard)
+* [notesmgr.rich\_clipboard](#notesmgr.rich_clipboard)
+  * [PLAIN](#notesmgr.rich_clipboard.PLAIN)
+  * [IMAGE\_SOURCE](#notesmgr.rich_clipboard.IMAGE_SOURCE)
+  * [BACKENDS](#notesmgr.rich_clipboard.BACKENDS)
+  * [absolute\_source](#notesmgr.rich_clipboard.absolute_source)
+  * [local\_images](#notesmgr.rich_clipboard.local_images)
+  * [note\_fragment](#notesmgr.rich_clipboard.note_fragment)
+  * [note\_rich\_text](#notesmgr.rich_clipboard.note_rich_text)
+  * [backend](#notesmgr.rich_clipboard.backend)
+  * [copy\_rich](#notesmgr.rich_clipboard.copy_rich)
 * [notesmgr.session](#notesmgr.session)
   * [start\_folder](#notesmgr.session.start_folder)
   * [Session](#notesmgr.session.Session)
@@ -263,6 +298,7 @@
     * [indent\_step](#notesmgr.note_fonts.NoteFonts.indent_step)
 * [notesmgr.note\_panel](#notesmgr.note_panel)
   * [PADDING](#notesmgr.note_panel.PADDING)
+  * [PLAIN\_INSTEAD](#notesmgr.note_panel.PLAIN_INSTEAD)
   * [NotePanel](#notesmgr.note_panel.NotePanel)
     * [\_\_init\_\_](#notesmgr.note_panel.NotePanel.__init__)
     * [actions](#notesmgr.note_panel.NotePanel.actions)
@@ -276,7 +312,10 @@
     * [offer](#notesmgr.note_panel.NotePanel.offer)
     * [shown\_path](#notesmgr.note_panel.NotePanel.shown_path)
     * [edit\_note](#notesmgr.note_panel.NotePanel.edit_note)
+    * [copied\_note](#notesmgr.note_panel.NotePanel.copied_note)
+    * [put\_on\_clipboard](#notesmgr.note_panel.NotePanel.put_on_clipboard)
     * [copy\_raw](#notesmgr.note_panel.NotePanel.copy_raw)
+    * [copy\_formatted](#notesmgr.note_panel.NotePanel.copy_formatted)
 * [notesmgr.markdown\_render](#notesmgr.markdown_render)
   * [EXTENSIONS](#notesmgr.markdown_render.EXTENSIONS)
   * [STRIKE\_PATTERN](#notesmgr.markdown_render.STRIKE_PATTERN)
@@ -341,6 +380,14 @@
     * [shown\_files](#notesmgr.explorer_tree.ExplorerTree.shown_files)
 * [notesmgr.errors](#notesmgr.errors)
   * [NotesmgrError](#notesmgr.errors.NotesmgrError)
+* [notesmgr.clipboard\_macos](#notesmgr.clipboard_macos)
+  * [TEXTUTIL](#notesmgr.clipboard_macos.TEXTUTIL)
+  * [SCRIPT](#notesmgr.clipboard_macos.SCRIPT)
+  * [OSASCRIPT](#notesmgr.clipboard_macos.OSASCRIPT)
+  * [RTF\_NAME](#notesmgr.clipboard_macos.RTF_NAME)
+  * [TEXT\_NAME](#notesmgr.clipboard_macos.TEXT_NAME)
+  * [written](#notesmgr.clipboard_macos.written)
+  * [copy\_to\_clipboard](#notesmgr.clipboard_macos.copy_to_clipboard)
 * [notesmgr.dialogs](#notesmgr.dialogs)
   * [MIN\_TEXT\_WIDTH](#notesmgr.dialogs.MIN_TEXT_WIDTH)
   * [MAX\_TEXT\_WIDTH](#notesmgr.dialogs.MAX_TEXT_WIDTH)
@@ -387,6 +434,12 @@
   * [NoteText](#notesmgr.note_text.NoteText)
   * [EMPTY\_NOTE](#notesmgr.note_text.EMPTY_NOTE)
   * [read\_note\_text](#notesmgr.note_text.read_note_text)
+* [notesmgr.clipboard\_tool](#notesmgr.clipboard_tool)
+  * [NOT\_INSTALLED](#notesmgr.clipboard_tool.NOT_INSTALLED)
+  * [REFUSED](#notesmgr.clipboard_tool.REFUSED)
+  * [RichText](#notesmgr.clipboard_tool.RichText)
+  * [said\_by](#notesmgr.clipboard_tool.said_by)
+  * [run\_tool](#notesmgr.clipboard_tool.run_tool)
 * [notesmgr.file\_watch](#notesmgr.file_watch)
   * [POLL\_INTERVAL](#notesmgr.file_watch.POLL_INTERVAL)
   * [FileState](#notesmgr.file_watch.FileState)
@@ -418,6 +471,7 @@
     * [note\_shown](#notesmgr.commands.Commands.note_shown)
     * [selected](#notesmgr.commands.Commands.selected)
     * [report\_error](#notesmgr.commands.Commands.report_error)
+    * [report\_notice](#notesmgr.commands.Commands.report_notice)
     * [chosen\_folder](#notesmgr.commands.Commands.chosen_folder)
     * [note\_folder](#notesmgr.commands.Commands.note_folder)
     * [plain\_note](#notesmgr.commands.Commands.plain_note)
@@ -2144,6 +2198,410 @@ Move a note so many places in the order of its folder.
 - `NotesmgrError` - The folder or its order file cannot be read,
   or the order file cannot be written.
 
+<a id="notesmgr.clipboard_linux"></a>
+
+# notesmgr.clipboard\_linux
+
+Putting a formatted copy of a note on the clipboard of a desktop.
+
+<a id="notesmgr.clipboard_linux.XCLIP"></a>
+
+#### XCLIP
+
+What puts HTML on the clipboard of an X11 desktop.
+
+<a id="notesmgr.clipboard_linux.WL_COPY"></a>
+
+#### WL\_COPY
+
+What puts HTML on the clipboard of a Wayland desktop.
+
+<a id="notesmgr.clipboard_linux.TOOLS"></a>
+
+#### TOOLS
+
+The programs that can take a formatted copy, the first one first.
+
+A Wayland desktop usually answers for X11 programs as well, so the
+one that works on both is the one that is tried first.
+
+<a id="notesmgr.clipboard_linux.NO_TOOL"></a>
+
+#### NO\_TOOL
+
+What is said when the desktop has neither of the two programs.
+
+<a id="notesmgr.clipboard_linux.CHARSET"></a>
+
+#### CHARSET
+
+What says that the HTML of a copy is written as UTF-8.
+
+<a id="notesmgr.clipboard_linux.html_tool"></a>
+
+#### html\_tool
+
+```python
+def html_tool() -> Optional[Sequence[str]]
+```
+
+Return the program that takes a formatted copy, None for none.
+
+<a id="notesmgr.clipboard_linux.copy_to_clipboard"></a>
+
+#### copy\_to\_clipboard
+
+```python
+def copy_to_clipboard(payload: RichText) -> None
+```
+
+Put a formatted copy of a note on the clipboard of a desktop.
+
+The clipboard of X11 and of Wayland is owned by a program rather
+than held by the system, and the program that owns it offers the
+one shape it was given, so the formatted shape is what is put
+there. That program goes on running to answer for the clipboard,
+and is therefore not waited for.
+
+**Arguments**:
+
+- `payload` - The copy to put there.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The desktop has no program that takes a
+  formatted copy, or the one it has refused this copy.
+
+<a id="notesmgr.clipboard_windows"></a>
+
+# notesmgr.clipboard\_windows
+
+Putting a formatted copy of a note on the clipboard of Windows.
+
+<a id="notesmgr.clipboard_windows.HEADER"></a>
+
+#### HEADER
+
+What says where the pieces of an HTML Format payload begin and end.
+
+Every number is a count of bytes from the very start of the payload,
+written with as many digits as it can ever need, so that filling the
+numbers in does not move what they point at.
+
+<a id="notesmgr.clipboard_windows.OPENING"></a>
+
+#### OPENING
+
+What stands before the piece of the payload that is pasted.
+
+<a id="notesmgr.clipboard_windows.CLOSING"></a>
+
+#### CLOSING
+
+What stands after the piece of the payload that is pasted.
+
+<a id="notesmgr.clipboard_windows.HTML_FORMAT"></a>
+
+#### HTML\_FORMAT
+
+What the clipboard of Windows calls the shape that keeps markup.
+
+<a id="notesmgr.clipboard_windows.UNICODE_TEXT"></a>
+
+#### UNICODE\_TEXT
+
+What the clipboard of Windows calls plain text, as CF_UNICODETEXT.
+
+<a id="notesmgr.clipboard_windows.MOVEABLE"></a>
+
+#### MOVEABLE
+
+How memory that is handed over to the clipboard is allocated.
+
+<a id="notesmgr.clipboard_windows.NOT_WINDOWS"></a>
+
+#### NOT\_WINDOWS
+
+What is said when the clipboard of Windows is asked for elsewhere.
+
+<a id="notesmgr.clipboard_windows.NOT_OPENED"></a>
+
+#### NOT\_OPENED
+
+What is said when the clipboard could not be opened at all.
+
+<a id="notesmgr.clipboard_windows.NO_MEMORY"></a>
+
+#### NO\_MEMORY
+
+What is said when the memory for a copy could not be had.
+
+<a id="notesmgr.clipboard_windows.byte_length"></a>
+
+#### byte\_length
+
+```python
+def byte_length(text: str) -> int
+```
+
+Return how many bytes a text is when it is written as UTF-8.
+
+<a id="notesmgr.clipboard_windows.cf_html"></a>
+
+#### cf\_html
+
+```python
+def cf_html(fragment: str) -> str
+```
+
+Return the HTML Format payload that Windows takes a copy in.
+
+The header says where the document begins and ends and where the
+piece of it that is pasted begins and ends. All four are counted
+in bytes rather than in characters, so a note holding anything
+but plain ASCII is counted as the UTF-8 that it is written as.
+
+**Arguments**:
+
+- `fragment` - The HTML of the note, as it goes inside a body.
+  
+
+**Returns**:
+
+  The payload, header and document together.
+
+<a id="notesmgr.clipboard_windows.html_bytes"></a>
+
+#### html\_bytes
+
+```python
+def html_bytes(fragment: str) -> bytes
+```
+
+Return the formatted shape of a copy as Windows holds it.
+
+<a id="notesmgr.clipboard_windows.text_bytes"></a>
+
+#### text\_bytes
+
+```python
+def text_bytes(text: str) -> bytes
+```
+
+Return the plain shape of a copy as Windows holds it.
+
+<a id="notesmgr.clipboard_windows.moveable_memory"></a>
+
+#### moveable\_memory
+
+```python
+def moveable_memory(kernel32: ctypes.CDLL, data: bytes) -> int
+```
+
+Return a handle to memory holding the given bytes.
+
+The clipboard takes over the memory it is given, so what is
+allocated here is moveable, as the clipboard asks, and is not
+freed again by notesmgr.
+
+**Arguments**:
+
+- `kernel32` - The library of Windows that hands out memory.
+- `data` - What the memory is to hold.
+  
+
+**Returns**:
+
+  The handle to give to the clipboard.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The memory could not be had.
+
+<a id="notesmgr.clipboard_windows.write_clipboard"></a>
+
+#### write\_clipboard
+
+```python
+def write_clipboard(user32: ctypes.CDLL, kernel32: ctypes.CDLL,
+                    shapes: Sequence[tuple[int, bytes]]) -> None
+```
+
+Put every shape of one copy on the clipboard in one session.
+
+The clipboard is emptied once and then filled with every shape,
+because opening it a second time would take away what the first
+session put there.
+
+**Arguments**:
+
+- `user32` - The library of Windows that owns the clipboard.
+- `kernel32` - The library of Windows that hands out memory.
+- `shapes` - What each shape of the copy is called and holds.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The clipboard could not be opened, or the
+  memory for a shape could not be had.
+
+<a id="notesmgr.clipboard_windows.copy_to_clipboard"></a>
+
+#### copy\_to\_clipboard
+
+```python
+def copy_to_clipboard(payload: RichText) -> None
+```
+
+Put a formatted copy of a note on the clipboard of Windows.
+
+**Arguments**:
+
+- `payload` - The copy to put there.
+  
+
+**Raises**:
+
+- `NotesmgrError` - This is no Windows, or Windows did not take
+  the copy.
+
+<a id="notesmgr.rich_clipboard"></a>
+
+# notesmgr.rich\_clipboard
+
+The formatted copy of a note, and where each platform puts it.
+
+<a id="notesmgr.rich_clipboard.PLAIN"></a>
+
+#### PLAIN
+
+How a note that is no markdown is written for a formatted copy.
+
+Such a note is shown in the fixed width font and exactly as it is
+written, so the copy of it keeps its own line breaks and the columns
+of a table that was lined up by hand.
+
+<a id="notesmgr.rich_clipboard.IMAGE_SOURCE"></a>
+
+#### IMAGE\_SOURCE
+
+What names the file of an image in the HTML of a note.
+
+<a id="notesmgr.rich_clipboard.BACKENDS"></a>
+
+#### BACKENDS
+
+What puts a formatted copy on the clipboard of each platform.
+
+Every other platform is taken to be a desktop of X11 or of Wayland,
+which is what Linux and the BSDs have.
+
+<a id="notesmgr.rich_clipboard.absolute_source"></a>
+
+#### absolute\_source
+
+```python
+def absolute_source(folder: Optional[Path], match: re.Match[str]) -> str
+```
+
+Return one image of a note naming its file wherever it is read.
+
+A copy is pasted somewhere else than into the folder of the note,
+so an image that the note names beside itself is named by its
+whole path instead. An image that is on the network, or that
+names no file that can be found from where the note stands, is
+left exactly as the note wrote it.
+
+**Arguments**:
+
+- `folder` - The folder that holds the note, None when the note
+  is copied from nowhere in particular.
+- `match` - The image of the HTML that is being named again.
+  
+
+**Returns**:
+
+  The image as the copy of the note is to hold it.
+
+<a id="notesmgr.rich_clipboard.local_images"></a>
+
+#### local\_images
+
+```python
+def local_images(html: str, folder: Optional[Path]) -> str
+```
+
+Return HTML in which every image beside the note names its file.
+
+<a id="notesmgr.rich_clipboard.note_fragment"></a>
+
+#### note\_fragment
+
+```python
+def note_fragment(text: str,
+                  markdown: bool,
+                  folder: Optional[Path] = None) -> str
+```
+
+Return the HTML that a formatted copy of a note is made of.
+
+**Arguments**:
+
+- `text` - The note, as much of it as is shown.
+- `markdown` - Whether the note is written in markdown, and is
+  therefore formatted rather than kept as it is written.
+- `folder` - The folder that holds the note, which is what an
+  image that the note shows is named from.
+  
+
+**Returns**:
+
+  The HTML of the note, as it goes inside a body.
+
+<a id="notesmgr.rich_clipboard.note_rich_text"></a>
+
+#### note\_rich\_text
+
+```python
+def note_rich_text(text: str,
+                   markdown: bool,
+                   folder: Optional[Path] = None) -> RichText
+```
+
+Return a copy of a note in the shapes a clipboard takes it in.
+
+<a id="notesmgr.rich_clipboard.backend"></a>
+
+#### backend
+
+```python
+def backend() -> Callable[[RichText], None]
+```
+
+Return what puts a formatted copy on the clipboard here.
+
+<a id="notesmgr.rich_clipboard.copy_rich"></a>
+
+#### copy\_rich
+
+```python
+def copy_rich(payload: RichText) -> None
+```
+
+Put a formatted copy of a note on the clipboard of the system.
+
+**Arguments**:
+
+- `payload` - The copy to put there.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The system has no way of taking a formatted
+  copy, or the way it has did not take this one.
+
 <a id="notesmgr.session"></a>
 
 # notesmgr.session
@@ -2578,9 +3036,9 @@ class ButtonSpec(NamedTuple)
 
 One button of the row, and what pressing it does.
 
-A button whose operation belongs to a later step of the plan has
-no command, and is greyed out whatever is selected, so that the
-row is the whole row from the start.
+A button that is described with no command has nothing to do,
+and is greyed out whatever is selected, so that a row can be
+the whole row before every one of its buttons is wired up.
 
 <a id="notesmgr.button_row.grid_width"></a>
 
@@ -2713,9 +3171,9 @@ def offer(labels: AbstractSet[str]) -> None
 
 Let the buttons that can be used now be pressed.
 
-A button whose operation belongs to a later step of the plan
-has nothing to do when pressed, and stays greyed out however
-much the selection would allow it.
+A button that was described with no command has nothing to do
+when pressed, and stays greyed out however much the selection
+would allow it.
 
 **Arguments**:
 
@@ -3642,6 +4100,12 @@ The panel at the right of the main window, showing a note.
 
 Space in pixels left around what the panel shows.
 
+<a id="notesmgr.note_panel.PLAIN_INSTEAD"></a>
+
+#### PLAIN\_INSTEAD
+
+What is said when the formatting could not be carried along.
+
 <a id="notesmgr.note_panel.NotePanel"></a>
 
 ## NotePanel Objects
@@ -3804,6 +4268,32 @@ def edit_note() -> None
 
 Open the note that is shown in the editor of the project.
 
+<a id="notesmgr.note_panel.NotePanel.copied_note"></a>
+
+#### copied\_note
+
+```python
+def copied_note() -> Optional[NoteText]
+```
+
+Return the note that a copy is taken of, None for none.
+
+A note that could not be read at all holds no text to copy,
+so what is wrong with it is reported rather than the
+clipboard being emptied. A note that is shown only in part is
+copied as far as it is shown, which is what the warning above
+it says.
+
+<a id="notesmgr.note_panel.NotePanel.put_on_clipboard"></a>
+
+#### put\_on\_clipboard
+
+```python
+def put_on_clipboard(text: str) -> None
+```
+
+Put a text on the clipboard, in place of what was on it.
+
 <a id="notesmgr.note_panel.NotePanel.copy_raw"></a>
 
 #### copy\_raw
@@ -3814,11 +4304,20 @@ def copy_raw() -> None
 
 Put the text of the note that is shown on the clipboard.
 
-A note that could not be read at all holds no text to copy,
-so what is wrong with it is reported rather than the
-clipboard being emptied. A note that is shown only in part is
-copied as far as it is shown, which is what the warning above
-it says.
+<a id="notesmgr.note_panel.NotePanel.copy_formatted"></a>
+
+#### copy\_formatted
+
+```python
+def copy_formatted() -> None
+```
+
+Put the note that is shown on the clipboard formatted.
+
+Each platform carries formatted text in a way of its own, and
+one that has not got what it needs for it can still carry the
+plain text. That is put on the clipboard instead, so that a
+copy is never lost, and the user is told why it is plain.
 
 <a id="notesmgr.markdown_render"></a>
 
@@ -4691,6 +5190,94 @@ The message is shown in a window as it stands, so it names the
 file or the folder it is about and says what is wrong with it,
 rather than saying what the code was doing at the time.
 
+<a id="notesmgr.clipboard_macos"></a>
+
+# notesmgr.clipboard\_macos
+
+Putting a formatted copy of a note on the pasteboard of macOS.
+
+<a id="notesmgr.clipboard_macos.TEXTUTIL"></a>
+
+#### TEXTUTIL
+
+What turns the HTML of a note into the rich text that macOS pastes.
+
+It is part of macOS itself, so a formatted copy costs notesmgr no
+dependency of its own.
+
+<a id="notesmgr.clipboard_macos.SCRIPT"></a>
+
+#### SCRIPT
+
+What puts both shapes of a copy on the pasteboard in one write.
+
+A second write would replace the first, so the rich text and the
+plain text are given to the pasteboard together. They are read from
+files rather than written into the script itself, because a note is
+longer than a command line may be.
+
+The names here are of two words each because AppleScript knows a
+great many words of one: a variable called plain, for one, is a
+term of the language already, and setting it is refused.
+
+<a id="notesmgr.clipboard_macos.OSASCRIPT"></a>
+
+#### OSASCRIPT
+
+What runs that script, with the two files as its arguments.
+
+<a id="notesmgr.clipboard_macos.RTF_NAME"></a>
+
+#### RTF\_NAME
+
+What the file holding the rich text of a copy is called.
+
+<a id="notesmgr.clipboard_macos.TEXT_NAME"></a>
+
+#### TEXT\_NAME
+
+What the file holding the plain text of a copy is called.
+
+<a id="notesmgr.clipboard_macos.written"></a>
+
+#### written
+
+```python
+def written(folder: Path, name: str, data: bytes) -> str
+```
+
+Write one shape of a copy into a folder, and name the file.
+
+**Arguments**:
+
+- `folder` - The folder that the file is written into.
+- `name` - What the file is to be called.
+- `data` - What the file is to hold.
+  
+
+**Returns**:
+
+  The file, named as the script that reads it names it.
+
+<a id="notesmgr.clipboard_macos.copy_to_clipboard"></a>
+
+#### copy\_to\_clipboard
+
+```python
+def copy_to_clipboard(payload: RichText) -> None
+```
+
+Put a formatted copy of a note on the pasteboard of macOS.
+
+**Arguments**:
+
+- `payload` - The copy to put there.
+  
+
+**Raises**:
+
+- `NotesmgrError` - macOS did not take the copy.
+
 <a id="notesmgr.dialogs"></a>
 
 # notesmgr.dialogs
@@ -5265,6 +5852,95 @@ bytes is also what keeps the cut from falling inside a character.
 
   The text to show and the warning to show above it.
 
+<a id="notesmgr.clipboard_tool"></a>
+
+# notesmgr.clipboard\_tool
+
+What a formatted copy of a note is, and running what takes it.
+
+The clipboard of Tk carries plain text and nothing else, so a copy
+that keeps its formatting is handed to a program of the system
+instead. Running such a program and saying what it could not do is
+the same on every platform, and is therefore done here.
+
+<a id="notesmgr.clipboard_tool.NOT_INSTALLED"></a>
+
+#### NOT\_INSTALLED
+
+What is said when the system has not got the program it needs.
+
+<a id="notesmgr.clipboard_tool.REFUSED"></a>
+
+#### REFUSED
+
+What is said when the program was there but did not do it.
+
+<a id="notesmgr.clipboard_tool.RichText"></a>
+
+## RichText Objects
+
+```python
+class RichText(NamedTuple)
+```
+
+A copy of a note in the shapes that a clipboard takes it in.
+
+The HTML is what goes inside the body of a document rather than
+a whole document, so that each platform can wrap it the way its
+own clipboard asks for. The text is the note as it is written,
+which is what a plain text field is pasted with.
+
+<a id="notesmgr.clipboard_tool.said_by"></a>
+
+#### said\_by
+
+```python
+def said_by(output: Optional[bytes]) -> str
+```
+
+Return what a program wrote about itself, as text.
+
+**Arguments**:
+
+- `output` - What the program wrote on its error output, None
+  when nothing was read from it.
+  
+
+**Returns**:
+
+  What it said, and nothing at all when it said nothing.
+
+<a id="notesmgr.clipboard_tool.run_tool"></a>
+
+#### run\_tool
+
+```python
+def run_tool(argv: Sequence[str], data: bytes, capture: bool = True) -> bytes
+```
+
+Run a program of the system, and return what it wrote.
+
+**Arguments**:
+
+- `argv` - The program to run and the arguments to give it.
+- `data` - What is written to the program on its input.
+- `capture` - Whether to read what the program writes. A program
+  that goes on running to own the clipboard, as the ones
+  of the X11 and the Wayland desktops do, never closes its
+  output, and waiting for that output to end would be
+  waiting for the program to end.
+  
+
+**Returns**:
+
+  What the program wrote, and nothing when it is not read.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The program is not installed, could not be
+  started, or refused to do it.
+
 <a id="notesmgr.file_watch"></a>
 
 # notesmgr.file\_watch
@@ -5596,6 +6272,16 @@ def report_error(message: str) -> None
 ```
 
 Tell the user what could not be done, and why it could not.
+
+<a id="notesmgr.commands.Commands.report_notice"></a>
+
+#### report\_notice
+
+```python
+def report_notice(message: str) -> None
+```
+
+Tell the user of something that was done in another way.
 
 <a id="notesmgr.commands.Commands.chosen_folder"></a>
 

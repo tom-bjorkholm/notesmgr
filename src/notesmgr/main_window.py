@@ -198,9 +198,8 @@ class MainWindow:
 
         The note menu and the button row do the same things, so they
         are described in one place, which is the panel that holds the
-        buttons. A button whose operation belongs to a later step of
-        the plan has nothing to do yet, and is left out of the menu
-        until it has.
+        buttons. A button that was described with no command has
+        nothing to do, and is left out of the menu until it has.
         """
         return [MenuEntry(spec.label, spec.command, enabled=False)
                 for spec in self.note_panel.actions()

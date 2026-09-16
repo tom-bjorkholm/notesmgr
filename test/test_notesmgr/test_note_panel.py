@@ -14,14 +14,16 @@ import pytest
 from test_notesmgr.helpers import refuse_choice, write_config, write_file, \
     write_notes, write_template
 from notesmgr import commands as commands_module
+from notesmgr import note_panel as panel_module
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
     EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER
+from notesmgr.clipboard_tool import RichText
 from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config import DEFAULT_NOTE_SIZE, MIN_NOTE_SIZE, NoteExtension
 from notesmgr.errors import NotesmgrError
 from notesmgr.note_blocks import BlockKind
 from notesmgr.note_file import template_name
-from notesmgr.note_panel import NotePanel
+from notesmgr.note_panel import PLAIN_INSTEAD, NotePanel
 from notesmgr.note_text import NOT_UTF8
 from notesmgr.project_ops import open_project
 from notesmgr.session import Session
@@ -95,6 +97,31 @@ def fixture_errors(monkeypatch: pytest.MonkeyPatch) -> list[str]:
         told.append(message)
     monkeypatch.setattr(commands_module, 'show_error', record)
     return told
+
+
+@pytest.fixture(name='notices')
+def fixture_notices(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Record what the panel told the user that is no failure."""
+    told: list[str] = []
+
+    def record(_parent: object, _title: str, message: str) -> None:
+        """Stand in for telling the user of something that was done."""
+        told.append(message)
+    monkeypatch.setattr(commands_module, 'show_info', record)
+    return told
+
+
+@pytest.fixture(name='copies', autouse=True)
+def fixture_copies(monkeypatch: pytest.MonkeyPatch) -> list[RichText]:
+    """Record the formatted copies, filling no real clipboard.
+
+    The clipboard of whoever runs the tests may not be filled with
+    what a test copies, so what the panel hands to the system is
+    taken here instead of being handed on.
+    """
+    taken: list[RichText] = []
+    monkeypatch.setattr(panel_module, 'copy_rich', taken.append)
+    return taken
 
 
 @pytest.fixture(name='offers')
@@ -216,14 +243,13 @@ def test_template_not_moved(panel: NotePanel, project: Path) -> None:
     """The template of a folder is not duplicated, moved or deleted."""
     panel.show_path(project / template_name(NoteExtension.MD_TXT))
     assert button_state(panel, EDIT) == 'normal'
-    assert unusable(panel) == [COPY_FORMATTED, DUPLICATE, DELETE, MOVE_UP,
-                               MOVE_DOWN]
+    assert unusable(panel) == [DUPLICATE, DELETE, MOVE_UP, MOVE_DOWN]
 
 
 def test_note_buttons_live(panel: NotePanel, note: Path) -> None:
-    """A note to act on is what every button but one is waiting for."""
+    """A note to act on is what every button of the row waits for."""
     panel.show_path(note)
-    assert unusable(panel) == [COPY_FORMATTED]
+    assert unusable(panel) == []
 
 
 def test_folder_is_no_note(panel: NotePanel, project: Path,
@@ -378,6 +404,63 @@ def test_copy_what_is_shown(panel: NotePanel, project: Path,
     panel.show_path(long_note)
     panel.copy_raw()
     assert on_clipboard(panel) == 'a' * MIN_NOTE_SIZE
+
+
+def test_copy_formatted(panel: NotePanel, note: Path,
+                        copies: list[RichText]) -> None:
+    """A markdown note is copied as the markup that it means."""
+    panel.show_path(note)
+    panel.copy_formatted()
+    assert copies == [RichText(f'<p>{NOTE_TEXT.strip()}</p>', NOTE_TEXT)]
+
+
+def test_formatted_plain_note(panel: NotePanel, project: Path,
+                              copies: list[RichText]) -> None:
+    """A note that is no markdown is copied exactly as it is written."""
+    plain = write_file(project / 'plain.txt', 'col\tcol\n')
+    panel.show_path(plain)
+    panel.copy_formatted()
+    assert copies == [RichText('<pre>col\tcol\n</pre>', 'col\tcol\n')]
+
+
+def test_formatted_no_note(panel: NotePanel, copies: list[RichText]) -> None:
+    """With no note selected there is nothing to copy formatted."""
+    panel.copy_formatted()
+    assert copies == []
+
+
+def test_formatted_unread(panel: NotePanel, project: Path,
+                          copies: list[RichText], errors: list[str]) -> None:
+    """A note that could not be read is reported instead of copied."""
+    odd = write_file(project / 'odd.md.txt')
+    odd.write_bytes(b'not \xff\xfe text\n')
+    panel.show_path(odd)
+    panel.copy_formatted()
+    assert errors == [NOT_UTF8]
+    assert copies == []
+
+
+def test_formatted_as_shown(panel: NotePanel, project: Path, session: Session,
+                            copies: list[RichText]) -> None:
+    """A note shown in part is copied formatted as far as it is shown."""
+    show_little(project, session, MIN_NOTE_SIZE)
+    long_note = write_file(project / 'long.md.txt', 'a' * (MIN_NOTE_SIZE + 1))
+    panel.show_path(long_note)
+    panel.copy_formatted()
+    assert copies[0].text == 'a' * MIN_NOTE_SIZE
+
+
+def test_formatted_fallback(panel: NotePanel, note: Path, notices: list[str],
+                            monkeypatch: pytest.MonkeyPatch) -> None:
+    """A system that cannot carry the formatting still carries the note."""
+    def refuse(_payload: RichText) -> None:
+        """Stand in for a system that takes no formatted copy."""
+        raise NotesmgrError('no xclip here')
+    monkeypatch.setattr(panel_module, 'copy_rich', refuse)
+    panel.show_path(note)
+    panel.copy_formatted()
+    assert on_clipboard(panel) == NOTE_TEXT
+    assert notices == [PLAIN_INSTEAD.format(reason='no xclip here')]
 
 
 def test_edit_starts_editor(panel: NotePanel, note: Path,

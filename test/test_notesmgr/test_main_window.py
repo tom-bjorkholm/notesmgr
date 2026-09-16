@@ -12,9 +12,11 @@ from edit_cfg_json import ConfigLoadError
 from test_notesmgr.helpers import write_config, write_notes, write_template
 from notesmgr import commands as commands_module
 from notesmgr import main_window as window_module
+from notesmgr import note_panel as panel_module
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, \
     DELETE_FOLDER, DUPLICATE, EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, \
     RENAME_FOLDER
+from notesmgr.clipboard_tool import RichText
 from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME
 from notesmgr.errors import NotesmgrError
@@ -294,6 +296,7 @@ def test_menus_of_the_bar(main_window: MainWindow) -> None:
     (FILE_MENU, QUIT_ENTRY),
     (NOTE_MENU, EDIT),
     (NOTE_MENU, COPY_RAW),
+    (NOTE_MENU, COPY_FORMATTED),
     (NOTE_MENU, DUPLICATE),
     (NOTE_MENU, NEW),
     (NOTE_MENU, DELETE),
@@ -311,12 +314,6 @@ def test_menus_of_the_bar(main_window: MainWindow) -> None:
 def test_menu_entries(main_window: MainWindow, menu: str, label: str) -> None:
     """Every menu holds the entries that this step has given it."""
     assert main_window.menu_bar.menus[menu].index(label) is not None
-
-
-def test_copy_formatted_later(main_window: MainWindow) -> None:
-    """What cannot be done yet is no entry of the note menu yet."""
-    with pytest.raises(tkinter.TclError):
-        main_window.menu_bar.menus[NOTE_MENU].index(COPY_FORMATTED)
 
 
 def test_user_wide_disabled(main_window: MainWindow) -> None:
@@ -491,6 +488,24 @@ def test_copy_raw_from_menu(main_window: MainWindow, project: Path) -> None:
     main_window.menu_bar.menus[NOTE_MENU].invoke(COPY_RAW)
     assert main_window.window.clipboard_get() == \
         note.read_text(encoding='utf-8')
+
+
+def test_formatted_from_menu(main_window: MainWindow, project: Path,
+                             monkeypatch: pytest.MonkeyPatch) -> None:
+    """Choosing Note > Copy formatted copies the note that is selected.
+
+    What the system is handed is taken here instead of being handed
+    on, so that the clipboard of whoever runs the tests is left as
+    it was.
+    """
+    taken: list[RichText] = []
+    monkeypatch.setattr(panel_module, 'copy_rich', taken.append)
+    note = project / NOTES[0]
+    main_window.load_project(project)
+    main_window.show_selected(note)
+    main_window.menu_bar.menus[NOTE_MENU].invoke(COPY_FORMATTED)
+    assert [copy.text for copy in taken] == \
+        [note.read_text(encoding='utf-8')]
 
 
 def test_edit_from_menu(main_window: MainWindow, project: Path,

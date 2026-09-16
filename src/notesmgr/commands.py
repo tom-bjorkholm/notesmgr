@@ -12,7 +12,7 @@ from notesmgr import folder_ops, note_ops
 from notesmgr.actions import Selected, offered
 from notesmgr.config import NoteExtension
 from notesmgr.dialogs import NameFolder, ask_name, ask_name_folder, \
-    ask_yes_no, show_error
+    ask_yes_no, show_error, show_info
 from notesmgr.editor_command import launch_editor
 from notesmgr.errors import NotesmgrError
 from notesmgr.note_file import is_plain_note, note_stem
@@ -130,6 +130,10 @@ class Commands:
     def report_error(self, message: str) -> None:
         """Tell the user what could not be done, and why it could not."""
         show_error(self.window, NOTE_TITLE, message)
+
+    def report_notice(self, message: str) -> None:
+        """Tell the user of something that was done in another way."""
+        show_info(self.window, NOTE_TITLE, message)
 
     def chosen_folder(self) -> Optional[Path]:
         """Return the folder that is selected, None when none is.

@@ -621,7 +621,50 @@ is missing); widget population smoke tests with the Tk root fixture.
 
 ### Step 8 — `Copy formatted`
 
-Status: **Not implemented yet.**
+Status: **Implemented, committed.**
+
+What was built, and the decisions taken while building it:
+
+- `clipboard_tool.py` was not foreseen by the plan. It holds `RichText`
+  and `run_tool`, which every backend needs, and keeps the backends
+  leaves of the import graph: `rich_clipboard` imports them, and none
+  of them imports it back.
+- `RichText.html` is the body of a note and no whole document, so that
+  each platform wraps it the way its own clipboard asks for. macOS
+  hands it to `textutil` with `-inputencoding UTF-8`, Linux puts a
+  `<meta charset>` in front of it, and Windows wraps it in the
+  `<html><body>` that the HTML Format asks for.
+- A note that is no markdown is copied as `<pre>` of the escaped text,
+  which is what the panel shows it as: fixed width and exactly as
+  written, so a table lined up by hand stays lined up.
+- An image of a note is named by its whole path in the copy, because a
+  copy is pasted somewhere else than into the folder of the note. On
+  macOS it is dropped all the same: `textutil` embeds no image when it
+  converts HTML to RTF, whether the image is named relatively or by a
+  `file://` URL of its own.
+- Two traps that cost an hour each and are worth remembering:
+  - `osascript -` reading its script from standard input is refused
+    permission (`-10003`) where the same script passed with `-e` is
+    allowed, so the script is passed with `-e`.
+  - AppleScript has a term `plain`, so `set plain to …` is a refused
+    assignment to a read-only thing, reported as `-10003` as well.
+    Every variable of the script is therefore of two words.
+- `run_tool` does not read the output of the program on Linux. `xclip`
+  and `wl-copy` go on running to own the clipboard and never close
+  their output, so reading it would be waiting for them to end.
+- The Windows backend is the one part that this machine cannot run.
+  `cf_html`, its offsets, and both shapes of the payload are pure and
+  tested; `write_clipboard` and `moveable_memory` take their library
+  as an argument typed `ctypes.CDLL`, so mypy checks them here even
+  though they are only run on Windows. `ctypes.windll` is reached in
+  one place, behind `sys.platform != 'win32'`, which both pylint and
+  mypy accept on a mac.
+- The fallback is the panel's: what the model raises is caught there,
+  the plain text is put on the Tk clipboard so that no copy is lost,
+  and `Commands.report_notice` says why it is plain.
+- The tests never touch the real clipboard. `test_note_panel` patches
+  `copy_rich` in an autouse fixture, and the one real round trip is
+  `focus_sensitive` and skipped off macOS.
 
 **Goal:** paste into Word, Mail or Slack and get formatted text.
 
@@ -690,6 +733,7 @@ Status: **Not implemented yet.**
   - understand how to use `notesmgr`
   This means that details not interesting for end user are left out
   from `README_pypi.md`
+- test run of copy to clipboard on real Linux and real Microsoft Windows.
 - Step up version number to 0.1.0 from 0.0.1
 - Clean builds on 3.12, 3.13 and 3.14, the focus-sensitive suite run by
   hand.
