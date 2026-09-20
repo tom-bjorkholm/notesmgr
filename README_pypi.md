@@ -310,7 +310,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1362 passed, 9 deselected in 8s
+- Test result: 1362 passed, 9 deselected in 7s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

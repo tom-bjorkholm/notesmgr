@@ -20,8 +20,8 @@ setup(
   },
   install_requires=[
     'argcomplete >= 3.7.2',
-    'edit-cfg-json-tk >= 0.3.0',
-    'edit-cfg-json >= 0.3.0',
+    'edit-cfg-json-tk >= 0.4.0',
+    'edit-cfg-json >= 0.4.0',
     'config-as-json >= 1.7',
     'markdown >= 3.10.3',
     'types-Markdown >= 3.10.2.20260712',
