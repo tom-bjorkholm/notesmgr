@@ -258,5 +258,5 @@ Source code and tests are available at
 - No mypy errors found.
 - No pylint warnings.
 - No python layout warnings.
-- Built version(s): 0.1.0
+- Built version(s): 0.1.1
 - Build and test using Python 3.14.7

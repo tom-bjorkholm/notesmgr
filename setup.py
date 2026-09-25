@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
   name='notesmgr',
-  version='0.1.0',
+  version='0.1.1',
   description='Manager for small notes and AI prompts.',
   author='Tom Björkholm',
   author_email='klausuler_linnet0q@icloud.com',
