@@ -11,10 +11,13 @@ from typing import NamedTuple, TextIO
 import pytest
 from test_notesmgr.helpers import write_config, write_notes, write_template
 from notesmgr import application as application_module
+from notesmgr import console as console_module
+from notesmgr import failure_report as report_module
 from notesmgr import main_window as window_module
-from notesmgr.application import main
+from notesmgr.application import NO_WINDOW, main, new_root
 from notesmgr.config import NoteExtension
-from notesmgr.main_window import APPLICATION_NAME
+from notesmgr.errors import NotesmgrError
+from notesmgr.main_window import APPLICATION_NAME, MainWindow
 
 REPORT = 'notesmgr 0.0.1\n'
 """What the version report says in these tests."""
@@ -150,3 +153,79 @@ def test_named_no_project(shown: list[WindowState], tmp_path: Path,
     main([str(tmp_path)])
     assert len(no_dialogs) == 1
     assert shown[0].title == APPLICATION_NAME
+
+
+def test_version_unreachable(shown: list[WindowState],
+                             monkeypatch: pytest.MonkeyPatch,
+                             capsys: pytest.CaptureFixture[str]) -> None:
+    """A report that cannot be made is said in words, and leaves failed."""
+    def unreachable(_out_file: TextIO) -> None:
+        """Stand in for a report on a computer with no network."""
+        raise NotesmgrError('PyPI.org cannot be reached')
+    monkeypatch.setattr(application_module, 'version_report', unreachable)
+    with pytest.raises(SystemExit) as leaving:
+        main(['--version'])
+    assert leaving.value.code == 1
+    assert capsys.readouterr().err == 'PyPI.org cannot be reached\n'
+    assert not shown
+
+
+def test_refused_in_window(shown: list[WindowState],
+                           monkeypatch: pytest.MonkeyPatch) -> None:
+    """With no console, a command line that is refused says so in a window.
+
+    That is how Windows starts a program installed as a graphical one.
+    """
+    said: list[tuple[str, bool]] = []
+
+    def record(text: str, failed: bool) -> None:
+        """Stand in for showing in a window what was said."""
+        said.append((text, failed))
+    monkeypatch.setattr(console_module, 'show_said', record)
+    monkeypatch.setattr(sys, 'stderr', None)
+    with pytest.raises(SystemExit) as leaving:
+        main(['--no-such-option'])
+    assert leaving.value.code == 2
+    assert len(said) == 1
+    assert 'usage:' in said[0][0]
+    assert said[0][1]
+    assert not shown
+
+
+def test_no_display(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With no display to show a window on, that is said in one line."""
+    def no_display() -> tkinter.Tk:
+        """Stand in for a Tk that finds no display."""
+        raise tkinter.TclError('no display name')
+    monkeypatch.setattr(tkinter, 'Tk', no_display)
+    with pytest.raises(SystemExit) as leaving:
+        new_root()
+    assert leaving.value.code == NO_WINDOW.format(error='no display name')
+
+
+def test_start_failure_told(shown: list[WindowState], project: Path,
+                            monkeypatch: pytest.MonkeyPatch) -> None:
+    """A failure while opening the named project is told of in a window.
+
+    The main window is shown all the same, so that another project
+    can be opened from it.
+    """
+    told: list[str] = []
+
+    def failing(_self: MainWindow, _root: Path) -> None:
+        """Stand in for opening a project, failing unexpectedly."""
+        raise RuntimeError('not made for this')
+
+    def record(parent: tkinter.Tk, _title: str, text: str) \
+            -> tkinter.Toplevel:
+        """Stand in for showing a text in a window of its own."""
+        told.append(text)
+        window = tkinter.Toplevel(parent)
+        window.withdraw()
+        return window
+    monkeypatch.setattr(MainWindow, 'load_project', failing)
+    monkeypatch.setattr(report_module, 'show_text', record)
+    main([str(project)])
+    assert len(told) == 1
+    assert 'RuntimeError: not made for this' in told[0]
+    assert len(shown) == 1

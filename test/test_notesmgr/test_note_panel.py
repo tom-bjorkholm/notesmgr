@@ -27,6 +27,7 @@ from notesmgr.note_panel import PLAIN_INSTEAD, NotePanel
 from notesmgr.note_text import NOT_UTF8
 from notesmgr.project_ops import open_project
 from notesmgr.session import Session
+from notesmgr.shortcuts import ACTION_KEYS
 
 NOTE_NAME = 'first.md.txt'
 """Name of the note that these tests show in the panel."""
@@ -372,6 +373,31 @@ def test_copy_raw(panel: NotePanel, note: Path) -> None:
     """Copying the note puts its text on the clipboard as it is."""
     panel.show_path(note)
     panel.copy_raw()
+    assert on_clipboard(panel) == NOTE_TEXT
+
+
+def test_every_action_keyed(panel: NotePanel) -> None:
+    """Every action that has keys is given a command to run."""
+    assert set(panel.key_commands()) == set(ACTION_KEYS)
+
+
+def test_copy_key_copies_part(panel: NotePanel) -> None:
+    """The copy key copies what is selected, where Copy raw copies all."""
+    assert panel.key_commands()[COPY_RAW] == panel.copy_selection
+
+
+def test_copy_selection(panel: NotePanel, note: Path) -> None:
+    """The copy key copies what is selected of the note, and no more."""
+    panel.show_path(note)
+    panel.view.area.tag_add(tkinter.SEL, '1.0', '1.4')
+    panel.copy_selection()
+    assert on_clipboard(panel) == panel.view.area_text()[:4]
+
+
+def test_copy_all_unselected(panel: NotePanel, note: Path) -> None:
+    """With nothing selected the copy key copies the note as written."""
+    panel.show_path(note)
+    panel.copy_selection()
     assert on_clipboard(panel) == NOTE_TEXT
 
 

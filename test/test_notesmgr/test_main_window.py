@@ -22,11 +22,11 @@ from notesmgr.config_files import CONFIG_NAME
 from notesmgr.errors import NotesmgrError
 from notesmgr.explorer_drop import Drop
 from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
-    EDIT_CONFIG_ENTRY, FILE_MENU, FOLDER_MENU, HELP_MENU, INITIAL_GEOMETRY, \
-    MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, NORMAL_SIZE_ENTRY, \
-    NOTE_MENU, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, \
+    EDIT_CONFIG_ENTRY, FILE_MENU, FOLDER_MENU, HELP_MENU, INITIAL_HEIGHT, \
+    INITIAL_WIDTH, MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, \
+    NORMAL_SIZE_ENTRY, NOTE_MENU, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, \
     OPEN_PROJECT_ENTRY, QUIT_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, \
-    VERSION_TITLE, MainWindow
+    VERSION_TITLE, MainWindow, fitted
 from notesmgr.order_file import read_order_text
 from notesmgr.project import config_path
 
@@ -230,6 +230,16 @@ def test_title_shows_project(main_window: MainWindow,
 def test_minimum_size(main_window: MainWindow) -> None:
     """The main window may not be made smaller than its minimum size."""
     assert main_window.window.minsize() == (MINIMUM_WIDTH, MINIMUM_HEIGHT)
+
+
+@pytest.mark.parametrize('wanted,screen,expected', [
+    (1000, 1920, 1000),
+    (1000, 1000, 900),
+    (640, 600, 540),
+    (400, 0, 0)])
+def test_fitted(wanted: int, screen: int, expected: int) -> None:
+    """A window is given what it wants, but never more than the screen."""
+    assert fitted(wanted, screen) == expected
 
 
 def test_panes_layout(main_window: MainWindow) -> None:
@@ -761,6 +771,15 @@ def test_user_wide_copied(main_window: MainWindow, home: Path,
     assert written == config_path(project).read_text(encoding='utf-8')
 
 
+def test_user_wide_told(main_window: MainWindow, home: Path, project: Path,
+                        informed: list[str]) -> None:
+    """The user is told which file the configuration was saved to."""
+    main_window.load_project(project)
+    main_window.save_user_wide()
+    assert len(informed) == 1
+    assert str(home / CONFIG_NAME) in informed[0]
+
+
 def test_user_wide_refused(main_window: MainWindow, project: Path,
                            refused: list[str]) -> None:
     """A copy that cannot be made is reported, and does not raise."""
@@ -777,6 +796,20 @@ def test_version_shown(main_window: MainWindow,
     assert shown_texts == [ShownText(VERSION_TITLE, REPORT)]
 
 
+def test_version_unreachable(main_window: MainWindow,
+                             shown_texts: list[ShownText], refused: list[str],
+                             monkeypatch: pytest.MonkeyPatch) -> None:
+    """A report that cannot be made is said, and no report is shown."""
+    def unreachable(_out_file: TextIO) -> None:
+        """Stand in for a report on a computer with no network."""
+        raise NotesmgrError('PyPI.org cannot be reached')
+    monkeypatch.setattr(window_module, 'version_report', unreachable)
+    main_window.show_version()
+    assert refused == ['PyPI.org cannot be reached']
+    assert not shown_texts
+    assert str(main_window.window.cget('cursor')) == ''
+
+
 def test_cursor_after_version(main_window: MainWindow,
                               shown_texts: list[ShownText]) -> None:
     """The waiting cursor is gone once the report has been gathered."""
@@ -788,7 +821,10 @@ def test_cursor_after_version(main_window: MainWindow,
 @pytest.mark.focus_sensitive
 def test_shown_window_size(shown_window: MainWindow) -> None:
     """A shown main window gets the size it asked for."""
-    assert shown_window.window.geometry().startswith(INITIAL_GEOMETRY)
+    window = shown_window.window
+    width = fitted(INITIAL_WIDTH, window.winfo_screenwidth())
+    height = fitted(INITIAL_HEIGHT, window.winfo_screenheight())
+    assert window.geometry().startswith(f'{width}x{height}')
 
 
 @pytest.mark.focus_sensitive

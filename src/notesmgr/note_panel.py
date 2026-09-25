@@ -7,9 +7,9 @@
 import tkinter
 from pathlib import Path
 from tkinter import ttk
-from typing import AbstractSet, Optional, Sequence
+from typing import AbstractSet, Callable, Optional, Sequence
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
-    EDIT, MOVE_DOWN, MOVE_UP, NEW
+    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER
 from notesmgr.button_row import ButtonRow, ButtonSpec
 from notesmgr.commands import Commands
 from notesmgr.config import DEFAULT_NOTE_SIZE
@@ -76,6 +76,21 @@ class NotePanel:
     def actions(self) -> Sequence[ButtonSpec]:
         """Return what the buttons of the panel are and what they do."""
         return self.row.specs
+
+    def key_commands(self) -> dict[str, Callable[[], None]]:
+        """Return what the shortcut of each action runs, by action.
+
+        A shortcut does what the button and the menu entry of its
+        action do, except that the one of Copy raw copies what is
+        selected of the note while anything is, as Cmd+C and Ctrl+C
+        do everywhere else. Making a folder has a shortcut as well,
+        though it has no button.
+        """
+        commands = {spec.label: spec.command for spec in self.actions()
+                    if spec.command is not None}
+        commands[NEW_FOLDER] = self.commands.new_folder
+        commands[COPY_RAW] = self.copy_selection
+        return commands
 
     def note_limit(self) -> int:
         """Return how much of a note the open project shows.
@@ -177,6 +192,19 @@ class NotePanel:
         note = self.copied_note()
         if note is not None:
             self.put_on_clipboard(note.text)
+
+    def copy_selection(self) -> None:
+        """Put what is selected of the note on the clipboard, or all of it.
+
+        Cmd+C and Ctrl+C copy what is selected wherever they are
+        typed, so they do that here as well while a part of the note
+        is selected, and copy the note as it is written otherwise.
+        """
+        selected = self.view.selected_text()
+        if selected:
+            self.put_on_clipboard(selected)
+        else:
+            self.copy_raw()
 
     def copy_formatted(self) -> None:
         """Put the note that is shown on the clipboard formatted.

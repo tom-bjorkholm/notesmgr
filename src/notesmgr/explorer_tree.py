@@ -67,6 +67,10 @@ class ExplorerTree:
     def select(self, path: Optional[Path]) -> Optional[Path]:
         """Select one item of the tree, or nothing at all.
 
+        The item that is selected is also the one that the arrow keys
+        move on from, so that the keyboard carries on from what a
+        command made or moved rather than from the top of the tree.
+
         Args:
             path: What is to be selected, None for nothing at all.
                 A path that the tree does not show selects nothing
@@ -80,6 +84,7 @@ class ExplorerTree:
             self.tree.selection_set(())
             return None
         self.tree.selection_set(str(path))
+        self.tree.focus(str(path))
         self.tree.see(str(path))
         return path
 

@@ -21,8 +21,6 @@ If you want to use it, install it using pip from
 There is no need to download anything from GitHub to use the application
 or to base your code on the library.
 
-**Note: notesmgr is not yet ready, and is not yet uploaded to PyPI.org**
-
 ### Installing on macOS and Linux
 
 ````sh
@@ -112,12 +110,47 @@ python-layout. After a build, the generated reports can be browsed through
 After running `run_build.py` or `run_clean_build.py`, you can manually test
 the built and installed application in the virtual environment `./venv`.
 
+## How the code is organised
+
+All code is in the single package `src/notesmgr`, and every source module
+has one test module in `test/test_notesmgr`. The code is split in two
+layers:
+
+- **Model, free of Tk.** Everything that has a right answer: which note
+  is at which place, whether a name can be used, how `.notes_order.txt`
+  is repaired, what the editor command line is, and what goes on the
+  clipboard. Examples are `project.py`, `project_ops.py`, `note_ops.py`,
+  `folder_ops.py`, `order_file.py`, `explorer_drop.py`, `note_blocks.py`
+  and `rich_clipboard.py`. These are tested without a display.
+- **View, thin Tk.** Widgets that show what the model says and call the
+  model: `main_window.py`, `explorer_tree.py`, `note_panel.py`,
+  `note_view.py`, `dialogs.py` and the others. They are tested with a real
+  Tk root window that is never shown.
+
+What cannot be done is raised as `NotesmgrError`, with a message meant for
+the user, and the view shows it in a message box. Anything else that fails
+inside a Tk callback is shown in a window with its traceback by
+`failure_report.py`, because a program started from a desktop has no
+terminal. On Windows, the `gui-scripts` entry point has no standard
+streams at all, so `console.py` shows command line errors in a window.
+
+The keyboard shortcuts are listed in `shortcuts.py`, one entry per action,
+and are shown as accelerators on the menu entries of the same actions.
+
+The implementation plan and the decisions taken step by step are in
+`.plans/initials_steps.md`.
+
+## Manual tests before a release
+
+Run `./run_focus_sensitive_tests.py` and leave the computer alone while
+it runs.
+
 ## Test summary
 
-- Test result: 1362 passed, 9 deselected in 7s
+- Test result: 1423 passed, 12 deselected in 7s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
 - No python layout warnings.
-- Built version(s): 0.0.1
+- Built version(s): 0.1.0
 - Build and test using Python 3.14.7

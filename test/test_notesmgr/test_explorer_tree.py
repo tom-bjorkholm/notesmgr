@@ -128,6 +128,15 @@ def test_select_an_item(explorer: ExplorerTree, project: Project) -> None:
     assert explorer.selected_path() == note
 
 
+def test_select_moves_focus(explorer: ExplorerTree, project: Project) \
+        -> None:
+    """The arrow keys carry on from the item that was selected."""
+    explorer.show(project)
+    note = project.root / 'first.md.txt'
+    explorer.select(note)
+    assert explorer.tree.focus() == str(note)
+
+
 def test_select_nothing(explorer: ExplorerTree, project: Project) -> None:
     """Selecting nothing at all leaves nothing selected."""
     explorer.show(project)

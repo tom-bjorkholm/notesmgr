@@ -5,11 +5,17 @@
 # MIT License
 
 import tkinter
+from pathlib import Path
 import pytest
-from notesmgr.main_window import FILE_MENU, NORMAL_SIZE_ENTRY, QUIT_ENTRY, \
-    VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, ZOOM_STEP, MainWindow, \
-    Shortcut, Shortcuts, held_shortcut, modifier, quit_shortcut, \
-    tk_window_system, window_shortcuts
+from test_notesmgr.helpers import build_project
+from notesmgr.actions import MOVE_DOWN, NEW_FOLDER
+from notesmgr.main_window import FILE_MENU, FOLDER_MENU, NORMAL_SIZE_ENTRY, \
+    NOTE_MENU, QUIT_ENTRY, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, \
+    ZOOM_STEP, MainWindow, handled
+from notesmgr.menu_bar import entry_labels
+from notesmgr.order_file import read_order_text
+from notesmgr.shortcuts import TREE_EDIT_KEYS, Shortcut, Shortcuts, \
+    quit_shortcut, tk_window_system, window_shortcuts
 
 
 @pytest.fixture(name='shortcut')
@@ -22,46 +28,6 @@ def fixture_shortcut(top_window: tkinter.Toplevel) -> Shortcut:
 def fixture_keys(top_window: tkinter.Toplevel) -> Shortcuts:
     """Provide every shortcut on the windowing system in use."""
     return window_shortcuts(tk_window_system(top_window))
-
-
-@pytest.mark.parametrize('window_system,expected', [
-    ('aqua', Shortcut(('<Command-w>',), 'Cmd+W')),
-    ('win32', Shortcut(('<Control-q>',), 'Ctrl+Q')),
-    ('x11', Shortcut(('<Control-q>',), 'Ctrl+Q')),
-    ('', Shortcut(('<Control-q>',), 'Ctrl+Q'))])
-def test_quit_shortcut(window_system: str, expected: Shortcut) -> None:
-    """The shortcut is Cmd+W on macOS and Ctrl+Q on other systems."""
-    assert quit_shortcut(window_system) == expected
-
-
-@pytest.mark.parametrize('window_system,expected', [
-    ('aqua', ('Command', 'Cmd')),
-    ('win32', ('Control', 'Ctrl')),
-    ('x11', ('Control', 'Ctrl')),
-    ('', ('Control', 'Ctrl'))])
-def test_modifier(window_system: str, expected: tuple[str, str]) \
-        -> None:
-    """The command key holds macOS, and the control key the rest."""
-    assert modifier(window_system) == expected
-
-
-def test_held_shortcut() -> None:
-    """A shortcut binds every key that stands for it and shows one."""
-    shortcut = held_shortcut('aqua', ('plus', 'KP_Add'), '+')
-    assert shortcut == Shortcut(('<Command-plus>', '<Command-KP_Add>'),
-                                'Cmd++')
-
-
-@pytest.mark.parametrize('window_system', ['aqua', 'win32', 'x11'])
-def test_zoom_shortcuts(window_system: str) -> None:
-    """Every way of asking for another size has keys of its own."""
-    keys = window_shortcuts(window_system)
-    zooming = (keys.larger, keys.smaller, keys.normal)
-    assert all(shortcut.sequences for shortcut in zooming)
-    assert len({shortcut.label for shortcut in zooming}) == 3
-    bound = [sequence for shortcut in zooming
-             for sequence in shortcut.sequences]
-    assert len(set(bound)) == len(bound)
 
 
 @pytest.mark.parametrize('entry', [ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY,
@@ -132,11 +98,6 @@ def test_zoom_keys_bound(main_window: MainWindow, keys: Shortcuts) \
             assert main_window.window.bind(sequence)
 
 
-def test_window_system_known(top_window: tkinter.Toplevel) -> None:
-    """Tk reports one of the three windowing systems that it supports."""
-    assert tk_window_system(top_window) in ('aqua', 'win32', 'x11')
-
-
 def test_quit_accelerator(main_window: MainWindow, shortcut: Shortcut) -> None:
     """The Quit entry shows the shortcut that the window listens for."""
     menu = main_window.menu_bar.menus[FILE_MENU]
@@ -168,3 +129,99 @@ def test_shortcut_quits(shown_window: MainWindow, shortcut: Shortcut) -> None:
     window = shown_window.window
     window.event_generate(shortcut.sequences[0], when='now')
     assert not window.winfo_exists()
+
+
+def test_note_accelerators(main_window: MainWindow, keys: Shortcuts) \
+        -> None:
+    """Every entry of the note menu shows the keys that stand for it."""
+    menu = main_window.menu_bar.menus[NOTE_MENU]
+    for label in entry_labels(menu):
+        shown = str(menu.entrycget(label, 'accelerator'))
+        assert shown == keys.actions[label].label
+
+
+def test_folder_accelerator(main_window: MainWindow, keys: Shortcuts) \
+        -> None:
+    """The entry that makes a folder shows the keys that make one."""
+    menu = main_window.menu_bar.menus[FOLDER_MENU]
+    shown = str(menu.entrycget(NEW_FOLDER, 'accelerator'))
+    assert shown == keys.actions[NEW_FOLDER].label
+
+
+def test_action_keys_bound(main_window: MainWindow, keys: Shortcuts) \
+        -> None:
+    """Both the window and the tree listen for the keys of an action.
+
+    The tree moves its selection on an arrow key whatever is held
+    with it, so it has to be told of the keys itself to leave that be.
+    """
+    tree = main_window.explorer.tree
+    for shortcut in keys.actions.values():
+        for sequence in shortcut.sequences:
+            assert main_window.window.bind(sequence)
+            assert tree.bind(sequence)
+
+
+def test_tree_edit_keys(main_window: MainWindow) -> None:
+    """The tree listens for Return, which edits the selected note."""
+    tree = main_window.explorer.tree
+    assert all(tree.bind(sequence) for sequence in TREE_EDIT_KEYS)
+
+
+def test_handled_ends_the_key() -> None:
+    """A key that ran its command is handled no further by Tk."""
+    ran: list[bool] = []
+    assert handled(lambda: ran.append(True), tkinter.Event()) == 'break'
+    assert ran == [True]
+
+
+@pytest.fixture(name='project')
+def fixture_project(tmp_path: Path) -> Path:
+    """Provide a project holding the notes b and a, in that order."""
+    return build_project(tmp_path / 'notes', ['b.md.txt', 'a.md.txt'])
+
+
+@pytest.mark.focus_sensitive
+def test_focus_starts_in_tree(main_window: MainWindow) -> None:
+    """The keyboard works the explorer as soon as the window is shown.
+
+    Tk gives a window that is not on the screen no focus, and keeps it
+    for when the window is shown, so the window is shown here without
+    forcing the focus on it the way the shown window of a test is.
+    """
+    window = main_window.window
+    window.deiconify()
+    window.update()
+    assert window.focus_lastfor() == main_window.explorer.tree
+
+
+@pytest.mark.focus_sensitive
+def test_tab_order(shown_window: MainWindow, project: Path) -> None:
+    """Tab goes from the explorer to the buttons and then to the note."""
+    shown_window.load_project(project, project / 'b.md.txt')
+    shown_window.window.update()
+    tree = shown_window.explorer.tree
+    visited: list[str] = []
+    widget = tree.tk_focusNext()
+    while widget is not None and widget != tree:
+        visited.append(widget.winfo_class())
+        widget = widget.tk_focusNext()
+    assert widget == tree
+    assert visited[0] == 'TButton'
+    assert visited[-1] == 'Text'
+    assert set(visited) == {'TButton', 'Text'}
+
+
+@pytest.mark.focus_sensitive
+def test_key_moves_note(shown_window: MainWindow, project: Path,
+                        keys: Shortcuts) -> None:
+    """The key of Down moves the note, and not the selection of the tree."""
+    note = project / 'b.md.txt'
+    shown_window.load_project(project, note)
+    tree = shown_window.explorer.tree
+    tree.focus_set()
+    shown_window.window.update()
+    tree.event_generate(keys.actions[MOVE_DOWN].sequences[0], when='now')
+    shown_window.window.update()
+    assert read_order_text(project) == 'a.md.txt\nb.md.txt\n'
+    assert shown_window.explorer.selected_path() == note

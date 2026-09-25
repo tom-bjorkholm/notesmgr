@@ -9,8 +9,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import AbstractSet, Callable, NamedTuple, Optional, Sequence, \
-    Union
+from typing import AbstractSet, Callable, Optional, Sequence, Union
 from edit_cfg_json import ConfigLoadError
 from edit_cfg_json_tk import TkEditorPanel
 from notesmgr.actions import DELETE_FOLDER, NEW_FOLDER, RENAME_FOLDER
@@ -29,10 +28,14 @@ from notesmgr.project import is_project
 from notesmgr.project_ops import OpenReport, changed_message, \
     create_project, open_project
 from notesmgr.session import Session
+from notesmgr.shortcuts import TREE_EDIT_KEYS, Shortcut, Shortcuts, \
+    tk_window_system, window_shortcuts
 from notesmgr.version_info import version_report
 
 APPLICATION_NAME = 'notesmgr'
-INITIAL_GEOMETRY = '1000x650'
+INITIAL_WIDTH = 1000
+INITIAL_HEIGHT = 650
+SCREEN_SHARE = 90
 MINIMUM_WIDTH = 640
 MINIMUM_HEIGHT = 400
 FILE_MENU = 'File'
@@ -48,11 +51,10 @@ ZOOM_IN_ENTRY = 'Larger text'
 ZOOM_OUT_ENTRY = 'Smaller text'
 NORMAL_SIZE_ENTRY = 'Normal text size'
 ZOOM_STEP = 1
-ZOOM_IN_KEYS = ('plus', 'equal', 'KP_Add')
-ZOOM_OUT_KEYS = ('minus', 'KP_Subtract')
-NORMAL_SIZE_KEYS = ('Key-0', 'KP_0')
 EDIT_CONFIG_ENTRY = 'Edit configuration…'
 USER_WIDE_ENTRY = 'Save configuration as user wide…'
+USER_WIDE_SAVED = 'The configuration of the project is now the user wide\n' \
+    'configuration, in the file {path}.'
 VERSION_ENTRY = 'Version information…'
 VERSION_TITLE = 'notesmgr versions'
 CONFIG_TITLE = 'Configuration'
@@ -67,84 +69,34 @@ TEMPLATE_QUESTION = 'The folder {folder} holds more than one template.\n' \
     'the one that is kept is given the file extension of the project.'
 
 
-class Shortcut(NamedTuple):
-    """A keyboard shortcut: its Tk event sequences and its menu label.
+def fitted(wanted: int, screen: int) -> int:
+    """Return a length of the window that the screen has room for.
 
-    A shortcut has more than one sequence wherever more than one key
-    stands for it, such as the plus of the keypad and the plus that
-    is typed with the shift key held down.
-    """
-
-    sequences: tuple[str, ...]
-    label: str
-
-
-class Shortcuts(NamedTuple):
-    """The keyboard shortcuts that the main window listens for."""
-
-    quit: Shortcut
-    larger: Shortcut
-    smaller: Shortcut
-    normal: Shortcut
-
-
-def tk_window_system(window: tkinter.Misc) -> str:
-    """Return the windowing system Tk uses: aqua, win32 or x11."""
-    return str(window.tk.call('tk', 'windowingsystem'))
-
-
-def quit_shortcut(window_system: str) -> Shortcut:
-    """Return the keyboard shortcut that closes the main window.
-
-    macOS closes a window with Cmd+W, while Windows and the X11
-    desktops leave a program with Ctrl+Q.
-    """
-    if window_system == 'aqua':
-        return Shortcut(('<Command-w>',), 'Cmd+W')
-    return Shortcut(('<Control-q>',), 'Ctrl+Q')
-
-
-def modifier(window_system: str) -> tuple[str, str]:
-    """Return the key held down for a shortcut, and what it is called.
-
-    macOS holds the command key down where Windows and the X11
-    desktops hold the control key down.
-    """
-    if window_system == 'aqua':
-        return ('Command', 'Cmd')
-    return ('Control', 'Ctrl')
-
-
-def held_shortcut(window_system: str, keysyms: Sequence[str],
-                  shown: str) -> Shortcut:
-    """Return a shortcut of the held key and the keys that stand for it.
+    A window larger than its screen has its edges and its title bar
+    out of reach, so a small screen gives nine tenths of itself
+    rather than the length that was wanted.
 
     Args:
-        window_system: The windowing system that Tk is using.
-        keysyms: What Tk calls each of the keys that stand for it.
-        shown: What the key is called on the menu entry.
+        wanted: Pixels the window would like to have.
+        screen: Pixels the screen has in the same direction.
 
     Returns:
-        The shortcut to bind and to show.
+        The pixels that the window is given.
     """
-    held, name = modifier(window_system)
-    sequences = tuple(f'<{held}-{keysym}>' for keysym in keysyms)
-    return Shortcut(sequences, f'{name}+{shown}')
+    return min(wanted, screen * SCREEN_SHARE // 100)
 
 
-def window_shortcuts(window_system: str) -> Shortcuts:
-    """Return the shortcuts of the main window on a windowing system.
+def accelerator(keys: Shortcuts, action: str) -> Optional[str]:
+    """Return what a menu entry shows of its keys, None for no keys."""
+    shortcut = keys.actions.get(action)
+    return None if shortcut is None else shortcut.label
 
-    Making a note larger is asked for with a plus, which is typed
-    with the shift key held down on most keyboards and is a key of
-    its own on the keypad, so every key that stands for it is bound
-    and the plainest of them is the one that is shown.
-    """
-    return Shortcuts(
-        quit=quit_shortcut(window_system),
-        larger=held_shortcut(window_system, ZOOM_IN_KEYS, '+'),
-        smaller=held_shortcut(window_system, ZOOM_OUT_KEYS, '-'),
-        normal=held_shortcut(window_system, NORMAL_SIZE_KEYS, '0'))
+
+def handled(command: Callable[[], None],
+            _event: 'tkinter.Event[tkinter.Misc]') -> str:
+    """Run the command of a key, and end the handling of that key."""
+    command()
+    return 'break'
 
 
 class MainWindow:
@@ -171,6 +123,7 @@ class MainWindow:
         self._shape_window()
         self._bind_shortcuts(keys)
         self.show_project(None)
+        self.explorer.tree.focus_set()
 
     def _menu_specs(self, keys: Shortcuts) -> list[MenuSpec]:
         """Return the menus of the main window and what they hold.
@@ -189,13 +142,13 @@ class MainWindow:
                               enabled=False)
         versions = MenuEntry(VERSION_ENTRY, self.show_version)
         return [MenuSpec(FILE_MENU, [new_entry, open_entry, quit_entry]),
-                MenuSpec(NOTE_MENU, self._note_entries()),
-                MenuSpec(FOLDER_MENU, self._folder_entries()),
+                MenuSpec(NOTE_MENU, self._note_entries(keys)),
+                MenuSpec(FOLDER_MENU, self._folder_entries(keys)),
                 MenuSpec(VIEW_MENU, self._view_entries(keys)),
                 MenuSpec(CONFIG_MENU, [edit_entry, user_wide]),
                 MenuSpec(HELP_MENU, [versions])]
 
-    def _note_entries(self) -> list[MenuEntry]:
+    def _note_entries(self, keys: Shortcuts) -> list[MenuEntry]:
         """Return one entry of the note menu for every working button.
 
         The note menu and the button row do the same things, so they
@@ -203,14 +156,16 @@ class MainWindow:
         buttons. A button that was described with no command has
         nothing to do, and is left out of the menu until it has.
         """
-        return [MenuEntry(spec.label, spec.command, enabled=False)
+        return [MenuEntry(spec.label, spec.command,
+                          accelerator(keys, spec.label), enabled=False)
                 for spec in self.note_panel.actions()
                 if spec.command is not None]
 
-    def _folder_entries(self) -> list[MenuEntry]:
+    def _folder_entries(self, keys: Shortcuts) -> list[MenuEntry]:
         """Return the entries that act on a folder of the project."""
         commands = self.note_panel.commands
-        return [MenuEntry(NEW_FOLDER, commands.new_folder, enabled=False),
+        return [MenuEntry(NEW_FOLDER, commands.new_folder,
+                          accelerator(keys, NEW_FOLDER), enabled=False),
                 MenuEntry(RENAME_FOLDER, commands.rename_folder,
                           enabled=False),
                 MenuEntry(DELETE_FOLDER, commands.delete_folder,
@@ -259,26 +214,51 @@ class MainWindow:
         Tk installs no binding for a menu accelerator, so every key
         sequence has to be bound as well. They are bound on this
         window only, so that a dialog which happens to have the
-        keyboard focus cannot reach the main window with them.
+        keyboard focus cannot reach the main window with them. The
+        Return key of the tree edits the selected note, and still
+        opens and closes a selected folder as the tree itself does.
         """
         self._bind(keys.quit, self.quit)
         self._bind(keys.larger, self._zoom_command(ZOOM_STEP))
         self._bind(keys.smaller, self._zoom_command(-ZOOM_STEP))
         self._bind(keys.normal, self._normal_command())
+        for action, command in self.note_panel.key_commands().items():
+            self._bind(keys.actions[action], command)
+        for sequence in TREE_EDIT_KEYS:
+            self.explorer.tree.bind(sequence, self._edit_key)
 
     def _bind(self, shortcut: Shortcut, command: Callable[[], None]) \
             -> None:
-        """Let every key sequence of one shortcut run a command."""
-        for sequence in shortcut.sequences:
-            self.window.bind(sequence, lambda _event: command())
+        """Let every key sequence of one shortcut run a command.
+
+        The tree moves its selection on an arrow key whatever key is
+        held down with it, so the sequences are bound on the tree as
+        well. A binding of the tree itself comes before what the tree
+        does, and ends the handling of the key once it has run.
+        """
+        for widget in (self.window, self.explorer.tree):
+            for sequence in shortcut.sequences:
+                widget.bind(sequence, partial(handled, command))
+
+    def _edit_key(self, _event: 'tkinter.Event[ttk.Treeview]') -> None:
+        """Open the note that is shown in the editor of the project."""
+        self.note_panel.edit_note()
 
     def _shape_window(self) -> None:
-        """Lay out the panes and give the window its size."""
+        """Lay out the panes and give the window its size.
+
+        The window starts out in its own size and is kept above its
+        smallest size, except that neither is larger than the screen.
+        """
         self.panes.add(self.explorer.frame, weight=0)
         self.panes.add(self.note_panel.frame, weight=1)
         self.panes.pack(fill=tkinter.BOTH, expand=True)
-        self.window.geometry(INITIAL_GEOMETRY)
-        self.window.minsize(MINIMUM_WIDTH, MINIMUM_HEIGHT)
+        width = self.window.winfo_screenwidth()
+        height = self.window.winfo_screenheight()
+        self.window.geometry(f'{fitted(INITIAL_WIDTH, width)}x'
+                             f'{fitted(INITIAL_HEIGHT, height)}')
+        self.window.minsize(fitted(MINIMUM_WIDTH, width),
+                            fitted(MINIMUM_HEIGHT, height))
 
     def show_project(self, project_name: Optional[str]) -> None:
         """Name the open project in the window title, None meaning none."""
@@ -457,14 +437,21 @@ class MainWindow:
             self.load_project(self.session.project.root)
 
     def save_user_wide(self) -> None:
-        """Copy the project's configuration to the user wide file."""
+        """Copy the project's configuration to the user wide file.
+
+        The user wide file is found in more than one way, so the user
+        is told which file it was written to.
+        """
         source = self.session.config_file()
         if source is None:
             return
         try:
-            copy_to_user_wide(source)
+            target = copy_to_user_wide(source)
         except OSError as error:
             show_error(self.window, CONFIG_TITLE, str(error))
+            return
+        show_info(self.window, CONFIG_TITLE, USER_WIDE_SAVED.format(
+            path=target))
 
     def show_version(self) -> None:
         """Show what notesmgr and the packages below it are.
@@ -474,8 +461,12 @@ class MainWindow:
         working while that is going on.
         """
         report = io.StringIO()
-        with busy_cursor(self.window):
-            version_report(report)
+        try:
+            with busy_cursor(self.window):
+                version_report(report)
+        except NotesmgrError as error:
+            show_error(self.window, VERSION_TITLE, str(error))
+            return
         show_text(self.window, VERSION_TITLE, report.getvalue())
 
     def quit(self) -> None:

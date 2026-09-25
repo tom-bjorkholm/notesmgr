@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
   name='notesmgr',
-  version='0.0.1',
+  version='0.1.0',
   description='Manager for small notes and AI prompts.',
   author='Tom Björkholm',
   author_email='klausuler_linnet0q@icloud.com',
@@ -23,7 +23,7 @@ setup(
     'edit-cfg-json-tk >= 0.4.0',
     'edit-cfg-json >= 0.4.0',
     'config-as-json >= 1.7',
-    'markdown >= 3.10.3',
+    'markdown >= 3.11',
     'types-Markdown >= 3.10.2.20260712',
     'packaging >= 26.3',
     'send2trash >= 2.1.0',

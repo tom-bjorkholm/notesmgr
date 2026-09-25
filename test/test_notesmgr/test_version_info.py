@@ -10,6 +10,7 @@ from typing import Optional, TextIO
 import pytest
 from packaging.version import Version
 from versionreporter import VersionInfo, VersionReporter
+from notesmgr.errors import NotesmgrError
 from notesmgr.version_info import MAIN_PACKAGE, RECOMMENDED_PYTHON, \
     NotesmgrVersions, version_report
 
@@ -82,3 +83,17 @@ def test_report_to_stream(written: list[Optional[TextIO]]) -> None:
     stream = io.StringIO()
     version_report(stream)
     assert written == [stream]
+
+
+def test_unreachable_told(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With PyPI.org out of reach the user is told so, in words."""
+    def unreachable(_self: VersionReporter,
+                    versions: Optional[VersionInfo] = None,
+                    out_file: Optional[TextIO] = None) -> None:
+        """Stand in for a report on a computer with no network."""
+        _ = versions, out_file
+        raise ConnectionError('no network')
+    monkeypatch.setattr(VersionReporter, 'print', unreachable)
+    with pytest.raises(NotesmgrError, match='PyPI.org') as raised:
+        version_report(io.StringIO())
+    assert 'no network' in str(raised.value)

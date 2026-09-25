@@ -8,6 +8,7 @@ from datetime import date
 from typing import TextIO
 from packaging.version import Version
 from versionreporter import SupportExpires, VersionReporter
+from notesmgr.errors import NotesmgrError
 
 MAIN_PACKAGE = 'notesmgr'
 """Package to install to get a newer notesmgr."""
@@ -19,6 +20,10 @@ REPORTED_PACKAGES = [MAIN_PACKAGE, 'edit-cfg-json-tk', 'edit-cfg-json',
 
 RECOMMENDED_PYTHON = '3.14'
 """Python version that notesmgr is developed and recommended on."""
+
+NO_REPORT = 'The version report cannot be made, as PyPI.org, which says\n' \
+    'what newer releases there are, cannot be reached.\n{reason}'
+"""What is said when the releases on PyPI.org cannot be asked about."""
 
 SUPPORT_EXPIRES: SupportExpires = {date(2027, 3, 1): '3.12',
                                    date(2028, 3, 1): '3.13'}
@@ -62,5 +67,12 @@ def version_report(out_file: TextIO) -> None:
 
     Args:
         out_file: Stream that the report is written to.
+
+    Raises:
+        NotesmgrError: PyPI.org cannot be reached, which is what a
+            computer with no network connection is told.
     """
-    NotesmgrVersions().print(out_file=out_file)
+    try:
+        NotesmgrVersions().print(out_file=out_file)
+    except OSError as error:
+        raise NotesmgrError(NO_REPORT.format(reason=error)) from error

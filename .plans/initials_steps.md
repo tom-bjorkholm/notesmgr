@@ -750,27 +750,59 @@ another folder, then check the order files.
 
 ### Step 10 — Polish, documentation and release readiness
 
-Status: **Not implemented yet.**
+Status: **Implemented, committed.**
 
 **Goal:** a finished application ready to be uploaded to PyPI.org
 
-- Every failure path reaches the user as a message box or a status line,
-  never as a traceback in a terminal that a GUI launch does not have.
-- Keyboard shortcuts for the button row, window geometry and minimum
-  size, sensible focus order.
-- `README_pypi.md` brought in line with what was built (the list of
-  changes below), `README.md` development notes, generated `doc/api.md`
-  reviewed.
-- `README_pypi.md` change focus from being a description for developers
-  of what to build, into being a description for end user to
-  - decide if they want to install `notesmgr`
-  - understand how to use `notesmgr`
-  This means that details not interesting for end user are left out
-  from `README_pypi.md`
-- test run of copy to clipboard on real Linux and real Microsoft Windows.
-- Step up version number to 0.1.0 from 0.0.1
-- Clean builds on 3.12, 3.13 and 3.14, the focus-sensitive suite run by
-  hand.
+What was built, and the decisions taken while building it:
+
+- `failure_report.py` is the safety net. `FailureReport` is installed
+  as `report_callback_exception` of the root window, so that anything
+  a Tk callback raises and nothing handled is shown in a window with
+  its traceback, and still written to the error stream when there is
+  one. Only one such window is open at a time, as a failure in the
+  file watch would otherwise open one every second. What is done
+  before the main loop, building the window and opening the project of
+  the command line, is run through `FailureReport.run()`, the one
+  place with a broad `except`.
+- `console.py` answers the Windows `gui-scripts` entry point, which
+  gives the program no standard streams. When one is missing, what the
+  command line says (its errors, `--help`, and `--version`) is gathered
+  and shown in a message box. The user said `--version` has no use case
+  on Windows; it gets the window because the same mechanism covers it.
+- With no display, `notesmgr` says so in one line instead of with a
+  traceback.
+- `versionreporter` handles only `HTTPError`, so a computer with no
+  network got a traceback from `Version information…`. The errors of
+  `requests` are `OSError`s, so `version_report()` turns one into a
+  `NotesmgrError` without `notesmgr` depending on `requests` itself.
+- `Save configuration as user wide…` now says which file it wrote.
+- `shortcuts.py` was split out of `main_window.py` and holds one table
+  of keys per action. The user chose plain `Cmd+C`/`Ctrl+C` for
+  `Copy raw`, copying the selected part of the note when there is one,
+  so `Copy formatted` is `Shift` with the same key. `Alt`/`Option` was
+  avoided, as Option changes the letter on mac. The keys are bound on
+  the tree as well as on the window, with `break`, because the tree
+  moves its selection on any arrow key whatever is held with it.
+  `Return` in the tree edits the selected note and still opens and
+  closes a folder.
+- Tk leaves a disabled `Text` out when `Tab` moves the focus, so the
+  note area has `takefocus` set, and `Tab` goes tree → buttons → note.
+  The tree has the focus when the window is shown, and a selection made
+  by a command is also the item the arrow keys move on from.
+- The window is not remembered from one run to the next (the user's
+  choice). Its first and smallest size are limited to nine tenths of
+  the screen.
+- `README_pypi.md` was rewritten for the end user, with the rules a user
+  may wonder about kept in a `Details` section at the end. `README.md`
+  got notes on how the code is organised.
+- Version 0.1.0.
+
+**Tests:** the shortcut table, the bindings on window and tree, the
+menu accelerators; the failure report, its single window, and a real
+Tk command failing into it; the console fallback for each kind of
+exit; the version report without network; `focus_sensitive` tests of
+the start focus, the Tab order and a real `Cmd+Down` on the tree.
 
 **In action:** the finished application on a real notes project
 ready to be uploaded to PyPI.org. (Uploading is outside this step.)
@@ -810,3 +842,7 @@ the behaviour lands, not all at the end:
     (step 9).
 12. The `View` menu draws the explorer larger and smaller along with
     the note, both in one size (step 9).
+13. The keyboard shortcuts of the buttons and of `New folder…` are
+    documented, `Cmd+C` copying the selected part of a note (step 10).
+14. `README_pypi.md` is written for the end user, and the rules of the
+    project files are kept in a `Details` section at its end (step 10).

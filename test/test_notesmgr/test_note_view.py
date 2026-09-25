@@ -272,3 +272,21 @@ def test_zoom_holds_the_note(view: NoteView) -> None:
     view.zoom(4)
     assert view.area_text() == shown
     assert str(BlockKind.HEADING1) in tags_at(view, '1.0')
+
+
+def test_nothing_selected(view: NoteView) -> None:
+    """A note that nothing is selected of gives no selected text."""
+    view.show(NoteText('Some text of a note.\n', ''))
+    assert view.selected_text() == ''
+
+
+def test_part_selected(view: NoteView) -> None:
+    """What is selected of a note is what is given, and no more."""
+    view.show(NoteText('Some text of a note.\n', ''))
+    view.area.tag_add(tkinter.SEL, '1.5', '1.9')
+    assert view.selected_text() == 'text'
+
+
+def test_tab_reaches_note(view: NoteView) -> None:
+    """Tab reaches the note, which cannot be written in, all the same."""
+    assert view.area.cget('takefocus')

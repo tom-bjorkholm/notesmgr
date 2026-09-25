@@ -2,271 +2,147 @@
 
 ## What it does
 
-Notes manager is a very small application to keep small notes
-and AI prompts files ordered. The main intended functionality includes:
+`notesmgr` is a small desktop application that keeps small notes and AI
+prompts in order. It is made for the texts you keep coming back to: the
+prompts you paste into an AI assistant, snippets, checklists, and short
+notes.
 
-- Keeping a project with folders of notes (that is small text files)
-- Keeping the notes in a defined order, and allowing them to be
-  reordered.
-- Opening an external editor to create and edit notes.
-- Keeping a template in each folder that will be prefilled into
-  each new notes file.
-- Allow copying of notes to the clipboard (used for instance if
-  the note is an AI prompt)
+- Notes are ordinary text files in ordinary folders, so they can be kept
+  in git, synced, backed up and edited with any editor.
+- The notes of a folder are kept in an order of your choosing, and are
+  reordered with a button, a key or by dragging.
+- A note is edited in the editor you already use, such as Visual Studio
+  Code, and the note shown in `notesmgr` follows as you save.
+- Every folder has a template that each new note of the folder starts
+  from.
+- A note is copied to the clipboard with one key, either as it is
+  written or formatted, so that pasting it into Mail, Word or Slack keeps
+  headings, lists and bold text.
+- Notes written in markdown are shown formatted for reading.
 
-## Using it
+It runs on macOS, Microsoft Windows and Linux.
 
-If you want to use it, install it using pip from
+## Installing
 
-[https://pypi.org/project/notesmgr](https://pypi.org/project/notesmgr).
+`notesmgr` needs Python 3.12 or newer, with Tk (tkinter). Install it
+from [PyPI](https://pypi.org/project/notesmgr):
 
-There is no need to download anything from GitHub to use the application
-or to base your code on the library.
-
-**Note: notesmgr is not yet ready, and is not yet uploaded to PyPI.org**
-
-### Installing on macOS and Linux
+On macOS and Linux:
 
 ````sh
 pip3 install --upgrade notesmgr
 ````
 
-### Installing on Microsoft Windows
+On Microsoft Windows:
 
 ````sh
 pip install --upgrade notesmgr
 ````
 
-### Usage overview
+The Python from python.org has Tk built in on macOS and on Windows.
+On Linux Tk is often a package of its own, such as `python3-tk` on
+Debian and Ubuntu. Copying a note formatted needs `xclip` (X11) or
+`wl-copy` (Wayland) on Linux; without them the note is copied as
+plain text.
 
-This is a simple Tk (Tkinter) based application. It has a menubar and a
-main window.
+## Getting started
 
-#### Command line
+1. Start `notesmgr`.
+2. Choose `File` → `New project…` and pick a folder. It can be an empty
+   folder or one that already holds notes, which are then taken in.
+3. Press `New` (`Cmd+N` on mac, `Ctrl+N` elsewhere), give the note a
+   name, and write it in the editor that opens.
+4. Select the note in the tree to the left to read it, and press
+   `Copy raw` (`Cmd+C` / `Ctrl+C`) to put it on the clipboard.
 
-````sh
-notesmgr [PROJECT_FOLDER]
-notesmgr --version
-````
+Next time, open the project with `File` → `Open project…`, or name it
+on the command line: `notesmgr ~/notes`.
 
-Started with no arguments, `notesmgr` opens with no project and a project
-is opened from the menu. Started with a folder, it opens that project.
-`notesmgr --version` reports the versions of `notesmgr` and of the packages
-it is built on, together with the newer releases that are available, and
-opens no window. The same report is in the menu as `Version information…`.
+## Using notesmgr
 
-#### Projects
+### The main window
 
-A project in `notesmgr` is a folder tree with a few files with special meaning.
+To the left is the tree of the project: its folders, and in each
+folder the template of the folder followed by its notes in their order.
+Subfolders come first, in alphabetical order.
 
-- in the root folder of the project there is a file called `notesmgr.cfg` that
-  holds the configuration of the project. When creating a project it is
-  automatically created from the user wide configuration
+To the right is the selected note with a row of buttons above it. A
+note whose name ends with `.md` or `.md.txt` is shown formatted, and a
+note ending with `.txt` is shown exactly as it is written. When a note
+is changed by your editor or by any other program, the note shown
+follows about a second later.
 
-- in each folder (including the root folder of the project) there is a file
-  called `template.md.txt` (or `template.md`, or `template.txt`, whichever
-  the `file_extension` of the project says). This file will be the initial
-  content of every note created in the folder. It can be edited any time
-  just like the notes files.
+A new note or folder is made in the selected folder, in the folder of
+the selected note, or in the root folder of the project when nothing is
+selected.
 
-- notes files are files in the folders with an extension of either `.txt`,
-  `.md` or `.md.txt`
+### Buttons and keyboard shortcuts
 
-- in each folder there is a hidden file with the name of `.notes_order.txt`.
-  It lists the names (without paths) of the notes file in the folder one per
-  line, and it determines the order in which the notes are shown in the
-  "explorer" part of the notesmgr Graphical User Interface.
+Every button is also in the `Note` menu. On mac the shortcuts use `Cmd`,
+and on Windows and Linux they use `Ctrl`.
 
-Folders of the project are made, renamed and deleted from the menu. A new
-folder is given a copy of the template of the folder above it, and a
-`.notes_order.txt` of its own, so that it starts out as its parent does.
-A folder is renamed whatever it holds, and is deleted only when it holds
-no notes and no folders of its own, its template and its
-`.notes_order.txt` not counting. Deleting it moves it to the trash of the
-operating system. The root folder of a project is the project itself, and
-is renamed and deleted from outside `notesmgr`.
+| Button | Shortcut | What it does |
+| --- | --- | --- |
+| `Copy raw` | `Cmd+C` | Copies the note as it is written. When part of the note is selected, the key copies just that part. |
+| `Copy formatted` | `Cmd+Shift+C` | Copies the note formatted, for pasting into Mail, Word, Slack and the like. |
+| `Duplicate` | `Cmd+D` | Copies the note, under a name and into a folder you choose. |
+| `Edit` | `Cmd+E` | Opens the note in your editor. `Return` in the tree does the same. |
+| `New` | `Cmd+N` | Makes a note from the template of the folder and opens it in your editor. |
+| `Delete` | `Cmd+Backspace` | Moves the note to the trash, after asking. |
+| `Up` | `Cmd+Up` | Moves the note one place up. |
+| `Down` | `Cmd+Down` | Moves the note one place down. |
 
-All files in the project are normal files that can be edited using a normal
-text editor like Microsoft Visual Code, TextEdit on mac, or Notepad on Windows,
-although using the `notesmgr` Graphical User Interface is recommended.
+The other shortcuts are:
 
-The `.notes_order.txt` is repaired whenever a project is opened.
-Non-existing files are removed from the `.notes_order.txt` and existing
-files not mentioned in `.notes_order.txt` are added to the end of it in
-alphabetical order. A file that was already right is left untouched, and a
-folder whose `.notes_order.txt` cannot be read or written is reported and
-then shown in alphabetical order.
+| Shortcut | What it does |
+| --- | --- |
+| `Cmd+Shift+N` | Makes a folder (`Folder` → `New folder…`). |
+| `Cmd++`, `Cmd+-`, `Cmd+0` | Draws the note and the tree larger, smaller, and in the normal size again (`View` menu). |
+| `Cmd+W` on mac, `Ctrl+Q` elsewhere | Quits. |
+| `Tab` | Goes from the tree to the buttons and on to the note. |
 
-The templates are put in order at the same time:
+The template of a folder is shown, edited and copied like any note,
+but it cannot be duplicated, deleted or moved: every folder has exactly
+one template.
 
-- A folder that holds no template gets one. In the root folder of the
-  project it is empty, and in any other folder it is a copy of the template
-  of the folder above it.
-- A template whose extension is not the `file_extension` of the project is
-  renamed to carry it, and you are told which templates were renamed. So
-  changing `file_extension` renames the templates of the project the next
-  time it is opened.
-- A folder that holds more than one template is the one case that `notesmgr`
-  cannot settle on its own. You are asked which of them to keep; the others
-  are moved to the trash of the operating system and the one you keep is
-  renamed to carry the `file_extension` of the project. Answering nothing
-  leaves every file as it is, and the project is not opened.
+### Dragging
 
-#### Menu bar
+Notes and folders can be dragged in the tree. A note dropped above or
+below another note is moved to that place, and a note dropped on a
+folder is moved to the end of that folder. A folder dropped on another
+folder is moved into it with everything it holds. While you drag, a
+line shows where a note would land and the folder that would take it is
+marked. `Escape` gives up the drag. A name that the other folder holds
+already is refused rather than moved.
 
-The menu bar has menus with actions for:
+### Folders
 
-- Creating a new project
-- Opening a project
-- Creating a note (file) in a folder in the project
-- Duplicating the selected note
-- Editing the selected notes file
-- Copying the raw text of a selected notes file to clipboard
-- Copying the formatted text of a selected note to clipboard
-- Deleting the selected note
-- Moving the selected note one position up or down
-- Creating a new folder in the project
-- Renaming a folder of the project
-- Deleting a folder of the project that holds nothing
-- Drawing the note that is shown, and the names in the "explorer",
-  larger or smaller, and back to the size they started at
-- Editing the configuration
-- Saving the configuration as the user wide configuration
-- Reporting version information and information of available updates
+The `Folder` menu makes, renames and deletes folders of the project. A
+new folder starts with a copy of the template of the folder above it. A
+folder can be renamed at any time, and is deleted, to the trash, only
+when it holds no notes and no folders. The root folder of the project
+is renamed and deleted outside `notesmgr`.
 
-Every menu entry that acts on a note does what the button of the same
-name in the main window does, and is greyed out until there is a note
-for it to act on. The entries that act on a folder are greyed out until
-a folder is selected in the same way. How large a note is drawn can be
-said at any time, and the entries of the `View` menu show the keys that
-say it: `Cmd++`, `Cmd+-` and `Cmd+0` on mac, and `Ctrl++`, `Ctrl+-` and
-`Ctrl+0` on Microsoft Windows and on Linux. The note and the names in
-the "explorer" are drawn in one size and are made larger and smaller
-together. The size is not remembered from one run to the next.
+### Configuration
 
-The configuration editor writes the configuration itself when you save in
-it, so there is no separate menu item for saving the configuration of the
-project.
+`Configuration` → `Edit configuration…` edits the configuration of the
+open project, which is stored in `notesmgr.cfg` in the root folder of the
+project. It holds:
 
-Creating a project and opening a project both ask for a folder. The folder
-chooser starts in the project that was opened last in this run of
-`notesmgr`, and in the folder that `notesmgr` was started from while no
-project has been opened yet. Nothing is remembered from one run to the next.
+- `editor`: the command that opens a note. `{file}` stands for the note,
+  and the note is put last when the command has no `{file}`, so `code`
+  and `code {file}` mean the same thing. For a new configuration it is
+  Visual Studio Code (`code`) when that is installed, otherwise the
+  editor that `$EDITOR` names, otherwise `open` on mac, Notepad on
+  Windows and `emacs` elsewhere.
+- `file_extension`: what new notes are called, one of `.md.txt` (the
+  default), `.md` and `.txt`. `.md.txt` is the default because many
+  systems do not see `.md` as a safe kind of file.
+- `max_note_size`: how many characters of a note are shown, from 2000 to
+  100000 and 25000 unless you say otherwise. A longer note is shown up to
+  there, with a warning above it.
 
-#### Main window
-
-To the left of the main window there is a tall and narrow "explorer" similar to
-the explorer of Microsoft Visual Code and other IDEs. Here all items (notes and
-folders) are listed in tree structure. Inside a folder the subfolders come
-first in alphabetical order, then the template of the folder, and after them
-the notes in the order that `.notes_order.txt` gives. Notes can be selected in
-the "explorer", and notes and folders can be dragged in it. A note dragged
-above or below another note is reordered within its folder, and a note dragged
-onto a folder is moved into that folder, after the notes it already holds. A
-folder dragged onto another folder is moved into it with everything that it
-holds. While the item is held, a line shows where a note would land, and the
-folder that would take it is marked. `Escape` gives up the drag. The template
-of a folder is dragged nowhere, a folder goes neither into itself nor into a
-folder of its own, and a name that the other folder holds already is refused
-with a message rather than moved.
-
-To the right of the main window there is a wide panel with a row of buttons at
-the top and an area showing the selected note. If the selected note is written
-in markdown this area shows the note formatted for human reading.
-
-A note whose name ends with `.md` or `.md.txt` is formatted, and a note
-whose name ends with `.txt` is shown exactly as it is written, whatever
-the `file_extension` of the project is, so that a note written elsewhere
-is read as it was meant. `notesmgr` draws the formatted note itself,
-rather than through an HTML widget, so no new version of Tk can take the
-formatting away. What it draws is:
-
-- headings of six levels, paragraphs, and the line breaks of the note
-  read as the blanks between words that markdown makes them
-- text that is bold, slanted, struck through (written `~~so~~`), code
-  inside a line of prose, and the text of a link
-- lists, ordered and not, nested as deeply as the note nests them
-- code blocks, fenced or indented, shown exactly as they are written
-- tables, laid out in columns of one width per letter, a cell too wide
-  for its column written over several lines
-- block quotes, nested quotes among them, and lines across the note
-- images beside the note that are PNG or GIF files, drawn where the note
-  shows them, and every other image named by its description instead
-
-Markup that a note holds is shown as the text that it is rather than
-obeyed, and a nested list is written with either two or four spaces of
-indentation.
-
-The area shows the selected note, and the template of a folder is shown and
-edited just like a note. A note that is not valid UTF-8 text is not shown at
-all, and a note longer than `max_note_size` is shown as far as that, each of
-them with a warning above the note saying why. While a note is shown,
-`notesmgr` follows the file, so a note saved in the external editor, or
-changed or removed by any other program, is shown as it now stands about a
-second later.
-
-The buttons are laid out in as many rows as the width of the window needs,
-so that none of them is cut off however small the window is made. They are:
-
-- `Copy raw` take a raw copy of the note file content and store to clipboard
-- `Copy formatted` take a copy of the note content formatted for human reading
-  and store to clipboard
-- `Duplicate` make a copy of the note in the project. The user is asked for
-  file name and folder.
-- `Edit` start an editor to edit the notes file.
-- `New` create a new note. The user is asked for note file name,
-  and it is opened in editor with the content of the template file.
-- `Delete` the note is moved to the trash of the operating system (after
-  confirmation), so that a note deleted by mistake can be taken back
-- `Up` the note is moved one position up in the list in the explorer
-- `Down` the note is moved one position down in the list in the explorer
-
-`Copy formatted` puts the note on the clipboard as rich text, so that
-pasting it into Mail, Word or Slack keeps the formatting, and pasting it
-into a plain text field gives the note as it is written. A note that is
-not markdown is copied as preformatted text, so that a table lined up by
-hand stays lined up. What carries the formatting is what the operating
-system has already: `textutil` and `osascript` on mac, the clipboard of
-Windows itself, and `xclip` or `wl-copy` on Linux. Where the program
-that is needed is not installed, the note is copied as plain text and a
-window says why.
-
-The template of a folder is shown, edited and copied like any other note,
-but `Duplicate`, `Delete`, `Up` and `Down` are greyed out for it: every
-folder has exactly one template, and it is not one of the notes that the
-`.notes_order.txt` of the folder orders.
-
-A new note and a new folder are made in the folder that is selected, in
-the folder of the note that is selected, and in the root folder of the
-project while nothing is selected.
-
-#### Configuration
-
-The configuration determines a few aspects of how `notesmgr` behaves.
-
-- `editor` is the command used to edit a note. The name of the note file
-  replaces `{file}` in the command, and is added at the end of a command
-  that holds no `{file}`, so `code` and `code {file}` mean the same thing.
-  When creating configuration the default is:
-  - If Microsoft Visual Code is in path, it is the default editor.
-  - Otherwise the default editor is taken from environment variable `$EDITOR`
-    if it exists
-  - Otherwise on mac the default editor is `open`
-  - Otherwise on Microsoft Windows the default editor is Notepad
-  - Otherwise the default editor is `emacs`
-- `file_extension` is the file extension of notes. It can be one of
-  `.md`, `.txt` and `.md.txt`. The configuration file holds the name
-  `MD`, `TXT` or `MD_TXT` rather than the extension itself, which is what
-  lets the configuration editor offer the three to be chosen from.
-  When creating configuration the default is `.md.txt` (written as
-  `MD_TXT`) as many systems do not recognize `.md` as a safe file type.
-- `max_note_size` is how many characters of a note the main window shows.
-  A longer note is shown up to there, with a warning saying so above it,
-  which keeps a file that is no note at all from filling the window. The
-  default is 25000, and a value below 2000 or above 100000 is refused as a
-  misunderstanding.
-
-A configuration file therefore looks like this:
+A configuration file looks like this:
 
 ````json
 {
@@ -276,32 +152,99 @@ A configuration file therefore looks like this:
 }
 ````
 
-A project always has a configuration file `notesmgr.cfg` in the root
-folder of the project. That configuration is used for the project.
+`Configuration` → `Save configuration as user wide…` makes the
+configuration of the project the one that every new project starts
+with. With no project open, `Edit configuration…` edits that user wide
+configuration.
 
-When creating a new project the user wide configuration provides the
-default values for the project's configuration file. The user wide
-configuration is read from:
+### Command line
 
-- The file named by the environment variable `$NOTESMGR_CFG` if
-  that file exists.
-- Otherwise the file `$HOME/.notesmgr.cfg` if it exists
-- Otherwise the programs built in defaults.
+````sh
+notesmgr [PROJECT_FOLDER]
+notesmgr --version
+````
 
-The user wide configuration is *written* to the file that
-`$NOTESMGR_CFG` names, whether that file exists yet or not, and to
-`$HOME/.notesmgr.cfg` when the variable names nothing. So a variable
-naming a file that has not been written yet is a place to write rather
-than a reason to refuse to start.
+Started with a folder, `notesmgr` opens the project in it. `--version`
+reports the versions of `notesmgr` and of the packages it uses, and
+which newer releases there are, just as `Help` → `Version information…`
+does.
+
+## Details
+
+This section says what `notesmgr` does in the cases where you might
+wonder.
+
+### The files of a project
+
+- `notesmgr.cfg` in the root folder holds the configuration of the
+  project.
+- Every folder holds one template, `template.md.txt`, `template.md` or
+  `template.txt` after the `file_extension` of the project.
+- Every folder holds a hidden `.notes_order.txt` that lists the notes of
+  the folder, one name per line, in the order they are shown. Folders
+  are not listed in it.
+- Every other file ending with `.txt`, `.md` or `.md.txt` is a note.
+
+All of these can be edited with any text editor while `notesmgr` is not
+looking. Deleting a note, a folder or a template always moves it to the
+trash of the operating system, so it can be taken back.
+
+### What opening a project puts in order
+
+- `.notes_order.txt` is repaired: names of notes that are gone are
+  removed, and notes it does not name are added at the end in
+  alphabetical order. A folder whose `.notes_order.txt` cannot be read or
+  written is reported, and its notes are shown in alphabetical order.
+- A folder without a template gets one: an empty one in the root
+  folder, and a copy of the template of the folder above it elsewhere.
+- A template whose extension is not the `file_extension` of the project
+  is renamed, and you are told so. Changing `file_extension` therefore
+  renames the templates the next time the project is opened.
+- A folder holding more than one template is the one thing `notesmgr`
+  cannot decide for you. You are asked which one to keep, and the others
+  go to the trash. Answering nothing leaves every file as it is, and the
+  project is not opened.
+
+### What a formatted note shows
+
+Headings, paragraphs, bold, italic, `~~struck through~~` text, code in a
+line and code blocks, lists nested as deeply as you like, tables, block
+quotes, horizontal lines, and the text of links. PNG and GIF images next
+to the note are drawn where the note shows them, and other images are
+named by their description. HTML in a note is shown as the text it is.
+A note that is not valid UTF-8 is not shown, and says why.
+
+### How `Copy formatted` works
+
+The note goes on the clipboard as rich text and as plain text, so that
+an application that takes formatting gets it, and a plain text field
+gets the note as it is written. A note that is not markdown is copied
+as preformatted text, so that a table lined up by hand stays lined up.
+It uses what the operating system already has: `textutil` and
+`osascript` on mac, the Windows clipboard itself, and `xclip` or
+`wl-copy` on Linux. When the tool it needs is missing, the note is
+copied as plain text and you are told why.
+
+### Where the user wide configuration is
+
+It is read from the file that `$NOTESMGR_CFG` names, when that file
+exists, otherwise from `~/.notesmgr.cfg`, and otherwise the built-in
+defaults are used. It is written to the file that `$NOTESMGR_CFG`
+names, whether that file exists yet or not, and to `~/.notesmgr.cfg`
+when the variable is not set.
+
+### What is remembered
+
+Nothing is remembered from one run to the next: not the last project,
+not the size of the window, and not the size of the text. Within one
+run, the folder chooser starts in the project opened last.
 
 ## What notesmgr is built on
 
 `notesmgr` uses `config-as-json` and `edit-cfg-json-tk` for its
-configuration, `markdown` for reading a note that is written in markdown,
-`versionreporter` for the version report, `argcomplete` for
-the command line, and `Send2Trash` for everything it removes, so that a file
-`notesmgr` takes away can be taken back out of the trash of the operating
-system.
+configuration, `markdown` for reading notes written in markdown,
+`versionreporter` for the version report, `argcomplete` for the command
+line, and `Send2Trash` for moving files to the trash.
 
 ## Source code
 
@@ -310,10 +253,10 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1362 passed, 9 deselected in 7s
+- Test result: 1423 passed, 12 deselected in 7s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
 - No python layout warnings.
-- Built version(s): 0.0.1
+- Built version(s): 0.1.0
 - Build and test using Python 3.14.7

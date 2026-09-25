@@ -82,13 +82,19 @@ class NoteView:
     """
 
     def __init__(self, parent: tkinter.Misc) -> None:
-        """Build the area in a frame of its own inside a parent widget."""
+        """Build the area in a frame of its own inside a parent widget.
+
+        The note is read here and edited elsewhere, so the area cannot
+        be written in. Tk leaves such an area out when Tab goes from
+        widget to widget, so it is asked to take the focus all the
+        same, which lets the note be scrolled and selected with keys.
+        """
         self.frame = ttk.Frame(parent)
         self.warning = ttk.Label(self.frame, foreground=WARNING_COLOUR,
                                  font=WARNING_FONT, justify=tkinter.LEFT,
                                  wraplength=WRAP_WIDTH)
         self.area = tkinter.Text(self.frame, wrap=tkinter.WORD,
-                                 state=tkinter.DISABLED)
+                                 state=tkinter.DISABLED, takefocus=True)
         self.tags = NoteTags(self.area)
         self.note = EMPTY_NOTE
         self.folder: Optional[Path] = None
@@ -255,6 +261,12 @@ class NoteView:
         put in.
         """
         return str(self.area.get('1.0', 'end-1c'))
+
+    def selected_text(self) -> str:
+        """Return what the user has selected of the note, empty for none."""
+        if not self.area.tag_ranges(tkinter.SEL):
+            return ''
+        return str(self.area.get(tkinter.SEL_FIRST, tkinter.SEL_LAST))
 
     def warning_shown(self) -> bool:
         """Return whether a warning is on the screen above the note."""

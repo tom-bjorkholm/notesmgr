@@ -1,13 +1,9 @@
 # Table of Contents
 
 * [notesmgr.main\_window](#notesmgr.main_window)
-  * [Shortcut](#notesmgr.main_window.Shortcut)
-  * [Shortcuts](#notesmgr.main_window.Shortcuts)
-  * [tk\_window\_system](#notesmgr.main_window.tk_window_system)
-  * [quit\_shortcut](#notesmgr.main_window.quit_shortcut)
-  * [modifier](#notesmgr.main_window.modifier)
-  * [held\_shortcut](#notesmgr.main_window.held_shortcut)
-  * [window\_shortcuts](#notesmgr.main_window.window_shortcuts)
+  * [fitted](#notesmgr.main_window.fitted)
+  * [accelerator](#notesmgr.main_window.accelerator)
+  * [handled](#notesmgr.main_window.handled)
   * [MainWindow](#notesmgr.main_window.MainWindow)
     * [\_\_init\_\_](#notesmgr.main_window.MainWindow.__init__)
     * [zoom](#notesmgr.main_window.MainWindow.zoom)
@@ -34,6 +30,7 @@
   * [MAIN\_PACKAGE](#notesmgr.version_info.MAIN_PACKAGE)
   * [REPORTED\_PACKAGES](#notesmgr.version_info.REPORTED_PACKAGES)
   * [RECOMMENDED\_PYTHON](#notesmgr.version_info.RECOMMENDED_PYTHON)
+  * [NO\_REPORT](#notesmgr.version_info.NO_REPORT)
   * [SUPPORT\_EXPIRES](#notesmgr.version_info.SUPPORT_EXPIRES)
   * [NotesmgrVersions](#notesmgr.version_info.NotesmgrVersions)
     * [package\_names](#notesmgr.version_info.NotesmgrVersions.package_names)
@@ -41,6 +38,10 @@
     * [get\_main\_package\_name](#notesmgr.version_info.NotesmgrVersions.get_main_package_name)
     * [recommended\_python](#notesmgr.version_info.NotesmgrVersions.recommended_python)
   * [version\_report](#notesmgr.version_info.version_report)
+* [notesmgr.console](#notesmgr.console)
+  * [CONSOLE\_TITLE](#notesmgr.console.CONSOLE_TITLE)
+  * [show\_said](#notesmgr.console.show_said)
+  * [console\_or\_window](#notesmgr.console.console_or_window)
 * [notesmgr.menu\_bar](#notesmgr.menu_bar)
   * [MenuEntry](#notesmgr.menu_bar.MenuEntry)
   * [MenuSpec](#notesmgr.menu_bar.MenuSpec)
@@ -154,6 +155,20 @@
   * [CHARSET](#notesmgr.clipboard_linux.CHARSET)
   * [html\_tool](#notesmgr.clipboard_linux.html_tool)
   * [copy\_to\_clipboard](#notesmgr.clipboard_linux.copy_to_clipboard)
+* [notesmgr.shortcuts](#notesmgr.shortcuts)
+  * [ZOOM\_IN\_KEYS](#notesmgr.shortcuts.ZOOM_IN_KEYS)
+  * [ZOOM\_OUT\_KEYS](#notesmgr.shortcuts.ZOOM_OUT_KEYS)
+  * [NORMAL\_SIZE\_KEYS](#notesmgr.shortcuts.NORMAL_SIZE_KEYS)
+  * [TREE\_EDIT\_KEYS](#notesmgr.shortcuts.TREE_EDIT_KEYS)
+  * [ACTION\_KEYS](#notesmgr.shortcuts.ACTION_KEYS)
+  * [Shortcut](#notesmgr.shortcuts.Shortcut)
+  * [Shortcuts](#notesmgr.shortcuts.Shortcuts)
+  * [tk\_window\_system](#notesmgr.shortcuts.tk_window_system)
+  * [quit\_shortcut](#notesmgr.shortcuts.quit_shortcut)
+  * [modifier](#notesmgr.shortcuts.modifier)
+  * [held\_shortcut](#notesmgr.shortcuts.held_shortcut)
+  * [action\_shortcuts](#notesmgr.shortcuts.action_shortcuts)
+  * [window\_shortcuts](#notesmgr.shortcuts.window_shortcuts)
 * [notesmgr.clipboard\_windows](#notesmgr.clipboard_windows)
   * [HEADER](#notesmgr.clipboard_windows.HEADER)
   * [OPENING](#notesmgr.clipboard_windows.OPENING)
@@ -263,7 +278,12 @@
   * [editor\_files](#notesmgr.config_editor.editor_files)
   * [open\_config\_editor](#notesmgr.config_editor.open_config_editor)
 * [notesmgr.application](#notesmgr.application)
+  * [NO\_WINDOW](#notesmgr.application.NO_WINDOW)
   * [main](#notesmgr.application.main)
+  * [report\_versions](#notesmgr.application.report_versions)
+  * [new\_root](#notesmgr.application.new_root)
+  * [open\_window](#notesmgr.application.open_window)
+  * [run\_window](#notesmgr.application.run_window)
 * [notesmgr.trash](#notesmgr.trash)
   * [send\_to\_trash](#notesmgr.trash.send_to_trash)
 * [notesmgr.config\_defaults](#notesmgr.config_defaults)
@@ -319,6 +339,7 @@
   * [NotePanel](#notesmgr.note_panel.NotePanel)
     * [\_\_init\_\_](#notesmgr.note_panel.NotePanel.__init__)
     * [actions](#notesmgr.note_panel.NotePanel.actions)
+    * [key\_commands](#notesmgr.note_panel.NotePanel.key_commands)
     * [note\_limit](#notesmgr.note_panel.NotePanel.note_limit)
     * [note\_path](#notesmgr.note_panel.NotePanel.note_path)
     * [has\_note](#notesmgr.note_panel.NotePanel.has_note)
@@ -332,6 +353,7 @@
     * [copied\_note](#notesmgr.note_panel.NotePanel.copied_note)
     * [put\_on\_clipboard](#notesmgr.note_panel.NotePanel.put_on_clipboard)
     * [copy\_raw](#notesmgr.note_panel.NotePanel.copy_raw)
+    * [copy\_selection](#notesmgr.note_panel.NotePanel.copy_selection)
     * [copy\_formatted](#notesmgr.note_panel.NotePanel.copy_formatted)
 * [notesmgr.markdown\_render](#notesmgr.markdown_render)
   * [EXTENSIONS](#notesmgr.markdown_render.EXTENSIONS)
@@ -423,6 +445,15 @@
   * [order\_text](#notesmgr.order_file.order_text)
   * [write\_order](#notesmgr.order_file.write_order)
   * [repair\_order\_file](#notesmgr.order_file.repair_order_file)
+* [notesmgr.failure\_report](#notesmgr.failure_report)
+  * [FAILURE\_TITLE](#notesmgr.failure_report.FAILURE_TITLE)
+  * [FAILURE\_TEXT](#notesmgr.failure_report.FAILURE_TEXT)
+  * [failure\_details](#notesmgr.failure_report.failure_details)
+  * [FailureReport](#notesmgr.failure_report.FailureReport)
+    * [\_\_init\_\_](#notesmgr.failure_report.FailureReport.__init__)
+    * [\_\_call\_\_](#notesmgr.failure_report.FailureReport.__call__)
+    * [run](#notesmgr.failure_report.FailureReport.run)
+  * [report\_failures](#notesmgr.failure_report.report_failures)
 * [notesmgr.explorer\_tree](#notesmgr.explorer_tree)
   * [EXPLORER\_WIDTH](#notesmgr.explorer_tree.EXPLORER_WIDTH)
   * [SELECT\_EVENT](#notesmgr.explorer_tree.SELECT_EVENT)
@@ -591,6 +622,7 @@
     * [zoom\_normal](#notesmgr.note_view.NoteView.zoom_normal)
     * [shown\_note](#notesmgr.note_view.NoteView.shown_note)
     * [area\_text](#notesmgr.note_view.NoteView.area_text)
+    * [selected\_text](#notesmgr.note_view.NoteView.selected_text)
     * [warning\_shown](#notesmgr.note_view.NoteView.warning_shown)
 * [notesmgr.descriptions](#notesmgr.descriptions)
   * [DESCRIPTIONS](#notesmgr.descriptions.DESCRIPTIONS)
@@ -629,102 +661,50 @@
 
 The main window of the notesmgr application.
 
-<a id="notesmgr.main_window.Shortcut"></a>
+<a id="notesmgr.main_window.fitted"></a>
 
-## Shortcut Objects
-
-```python
-class Shortcut(NamedTuple)
-```
-
-A keyboard shortcut: its Tk event sequences and its menu label.
-
-A shortcut has more than one sequence wherever more than one key
-stands for it, such as the plus of the keypad and the plus that
-is typed with the shift key held down.
-
-<a id="notesmgr.main_window.Shortcuts"></a>
-
-## Shortcuts Objects
+#### fitted
 
 ```python
-class Shortcuts(NamedTuple)
+def fitted(wanted: int, screen: int) -> int
 ```
 
-The keyboard shortcuts that the main window listens for.
+Return a length of the window that the screen has room for.
 
-<a id="notesmgr.main_window.tk_window_system"></a>
-
-#### tk\_window\_system
-
-```python
-def tk_window_system(window: tkinter.Misc) -> str
-```
-
-Return the windowing system Tk uses: aqua, win32 or x11.
-
-<a id="notesmgr.main_window.quit_shortcut"></a>
-
-#### quit\_shortcut
-
-```python
-def quit_shortcut(window_system: str) -> Shortcut
-```
-
-Return the keyboard shortcut that closes the main window.
-
-macOS closes a window with Cmd+W, while Windows and the X11
-desktops leave a program with Ctrl+Q.
-
-<a id="notesmgr.main_window.modifier"></a>
-
-#### modifier
-
-```python
-def modifier(window_system: str) -> tuple[str, str]
-```
-
-Return the key held down for a shortcut, and what it is called.
-
-macOS holds the command key down where Windows and the X11
-desktops hold the control key down.
-
-<a id="notesmgr.main_window.held_shortcut"></a>
-
-#### held\_shortcut
-
-```python
-def held_shortcut(window_system: str, keysyms: Sequence[str],
-                  shown: str) -> Shortcut
-```
-
-Return a shortcut of the held key and the keys that stand for it.
+A window larger than its screen has its edges and its title bar
+out of reach, so a small screen gives nine tenths of itself
+rather than the length that was wanted.
 
 **Arguments**:
 
-- `window_system` - The windowing system that Tk is using.
-- `keysyms` - What Tk calls each of the keys that stand for it.
-- `shown` - What the key is called on the menu entry.
+- `wanted` - Pixels the window would like to have.
+- `screen` - Pixels the screen has in the same direction.
   
 
 **Returns**:
 
-  The shortcut to bind and to show.
+  The pixels that the window is given.
 
-<a id="notesmgr.main_window.window_shortcuts"></a>
+<a id="notesmgr.main_window.accelerator"></a>
 
-#### window\_shortcuts
+#### accelerator
 
 ```python
-def window_shortcuts(window_system: str) -> Shortcuts
+def accelerator(keys: Shortcuts, action: str) -> Optional[str]
 ```
 
-Return the shortcuts of the main window on a windowing system.
+Return what a menu entry shows of its keys, None for no keys.
 
-Making a note larger is asked for with a plus, which is typed
-with the shift key held down on most keyboards and is a key of
-its own on the keypad, so every key that stands for it is bound
-and the plainest of them is the one that is shown.
+<a id="notesmgr.main_window.handled"></a>
+
+#### handled
+
+```python
+def handled(command: Callable[[], None],
+            _event: 'tkinter.Event[tkinter.Misc]') -> str
+```
+
+Run the command of a key, and end the handling of that key.
 
 <a id="notesmgr.main_window.MainWindow"></a>
 
@@ -991,6 +971,9 @@ def save_user_wide() -> None
 
 Copy the project's configuration to the user wide file.
 
+The user wide file is found in more than one way, so the user
+is told which file it was written to.
+
 <a id="notesmgr.main_window.MainWindow.show_version"></a>
 
 #### show\_version
@@ -1038,6 +1021,12 @@ Packages whose versions are worth reporting to a user.
 #### RECOMMENDED\_PYTHON
 
 Python version that notesmgr is developed and recommended on.
+
+<a id="notesmgr.version_info.NO_REPORT"></a>
+
+#### NO\_REPORT
+
+What is said when the releases on PyPI.org cannot be asked about.
 
 <a id="notesmgr.version_info.SUPPORT_EXPIRES"></a>
 
@@ -1119,6 +1108,60 @@ window, so that both ways of asking report exactly the same thing.
 **Arguments**:
 
 - `out_file` - Stream that the report is written to.
+  
+
+**Raises**:
+
+- `NotesmgrError` - PyPI.org cannot be reached, which is what a
+  computer with no network connection is told.
+
+<a id="notesmgr.console"></a>
+
+# notesmgr.console
+
+Where notesmgr says what its command line asks it to say.
+
+<a id="notesmgr.console.CONSOLE_TITLE"></a>
+
+#### CONSOLE\_TITLE
+
+What the window showing what the command line said is called.
+
+<a id="notesmgr.console.show_said"></a>
+
+#### show\_said
+
+```python
+def show_said(text: str, failed: bool) -> None
+```
+
+Show in a window of its own what the command line said.
+
+Nothing has been shown yet when the command line is read, so the
+window is shown over a root window of its own that is never seen.
+
+**Arguments**:
+
+- `text` - What was said, nothing at all meaning no window.
+- `failed` - Whether it says that the command line was refused.
+
+<a id="notesmgr.console.console_or_window"></a>
+
+#### console\_or\_window
+
+```python
+@contextmanager
+def console_or_window() -> Iterator[None]
+```
+
+Show in a window what is said while there is no console.
+
+Windows starts a program that is installed as a graphical one
+with no standard output and no standard error stream, so what the
+command line asks to have said, the help and the errors among it,
+would be lost. It is gathered instead and shown in a window once
+all of it is said, while a stream that is there is written to as
+usual.
 
 <a id="notesmgr.menu_bar"></a>
 
@@ -2691,6 +2734,156 @@ and is therefore not waited for.
 - `NotesmgrError` - The desktop has no program that takes a
   formatted copy, or the one it has refused this copy.
 
+<a id="notesmgr.shortcuts"></a>
+
+# notesmgr.shortcuts
+
+The keyboard shortcuts of the notesmgr main window.
+
+<a id="notesmgr.shortcuts.ZOOM_IN_KEYS"></a>
+
+#### ZOOM\_IN\_KEYS
+
+What Tk calls the keys that ask for a larger note.
+
+<a id="notesmgr.shortcuts.ZOOM_OUT_KEYS"></a>
+
+#### ZOOM\_OUT\_KEYS
+
+What Tk calls the keys that ask for a smaller note.
+
+<a id="notesmgr.shortcuts.NORMAL_SIZE_KEYS"></a>
+
+#### NORMAL\_SIZE\_KEYS
+
+What Tk calls the keys that ask for the note in its first size.
+
+<a id="notesmgr.shortcuts.TREE_EDIT_KEYS"></a>
+
+#### TREE\_EDIT\_KEYS
+
+What Tk calls the keys of the tree that edit the selected note.
+
+<a id="notesmgr.shortcuts.ACTION_KEYS"></a>
+
+#### ACTION\_KEYS
+
+The key of each action held with Cmd or Ctrl, and what it is called.
+
+A capital letter is what Tk calls a letter typed with the shift key
+held down, so the shift key is named along with it.
+
+<a id="notesmgr.shortcuts.Shortcut"></a>
+
+## Shortcut Objects
+
+```python
+class Shortcut(NamedTuple)
+```
+
+A keyboard shortcut: its Tk event sequences and its menu label.
+
+A shortcut has more than one sequence wherever more than one key
+stands for it, such as the plus of the keypad and the plus that
+is typed with the shift key held down.
+
+<a id="notesmgr.shortcuts.Shortcuts"></a>
+
+## Shortcuts Objects
+
+```python
+class Shortcuts(NamedTuple)
+```
+
+The keyboard shortcuts that the main window listens for.
+
+The actions are known by what their buttons and menu entries are
+called, so that a button, its menu entry and its keys are one
+action wherever it is asked for.
+
+<a id="notesmgr.shortcuts.tk_window_system"></a>
+
+#### tk\_window\_system
+
+```python
+def tk_window_system(window: tkinter.Misc) -> str
+```
+
+Return the windowing system Tk uses: aqua, win32 or x11.
+
+<a id="notesmgr.shortcuts.quit_shortcut"></a>
+
+#### quit\_shortcut
+
+```python
+def quit_shortcut(window_system: str) -> Shortcut
+```
+
+Return the keyboard shortcut that closes the main window.
+
+macOS closes a window with Cmd+W, while Windows and the X11
+desktops leave a program with Ctrl+Q.
+
+<a id="notesmgr.shortcuts.modifier"></a>
+
+#### modifier
+
+```python
+def modifier(window_system: str) -> tuple[str, str]
+```
+
+Return the key held down for a shortcut, and what it is called.
+
+macOS holds the command key down where Windows and the X11
+desktops hold the control key down.
+
+<a id="notesmgr.shortcuts.held_shortcut"></a>
+
+#### held\_shortcut
+
+```python
+def held_shortcut(window_system: str, keysyms: Sequence[str],
+                  shown: str) -> Shortcut
+```
+
+Return a shortcut of the held key and the keys that stand for it.
+
+**Arguments**:
+
+- `window_system` - The windowing system that Tk is using.
+- `keysyms` - What Tk calls each of the keys that stand for it.
+- `shown` - What the key is called on the menu entry.
+  
+
+**Returns**:
+
+  The shortcut to bind and to show.
+
+<a id="notesmgr.shortcuts.action_shortcuts"></a>
+
+#### action\_shortcuts
+
+```python
+def action_shortcuts(window_system: str) -> dict[str, Shortcut]
+```
+
+Return the shortcut of every action that has one, by action.
+
+<a id="notesmgr.shortcuts.window_shortcuts"></a>
+
+#### window\_shortcuts
+
+```python
+def window_shortcuts(window_system: str) -> Shortcuts
+```
+
+Return the shortcuts of the main window on a windowing system.
+
+Making a note larger is asked for with a plus, which is typed
+with the shift key held down on most keyboards and is a key of
+its own on the keypad, so every key that stands for it is bound
+and the plainest of them is the one that is shown.
+
 <a id="notesmgr.clipboard_windows"></a>
 
 # notesmgr.clipboard\_windows
@@ -3957,6 +4150,12 @@ returns at once, and on_close says that the session has ended.
 
 Start-up of the notesmgr application.
 
+<a id="notesmgr.application.NO_WINDOW"></a>
+
+#### NO\_WINDOW
+
+What is said when there is no display to show a window on.
+
 <a id="notesmgr.application.main"></a>
 
 #### main
@@ -3970,12 +4169,70 @@ Run the notesmgr graphical user interface until the user quits.
 A command line asking for version information is answered on the
 standard output stream, and no window is opened for it. A command
 line naming a project folder opens that project, and says in a
-window of its own when the folder holds no project.
+window of its own when the folder holds no project. What the
+command line has to say is shown in a window where there is no
+console to say it on.
 
 **Arguments**:
 
 - `argv` - Command line arguments, or None for the ones this
   program was started with.
+
+<a id="notesmgr.application.report_versions"></a>
+
+#### report\_versions
+
+```python
+def report_versions() -> None
+```
+
+Write the version report on the standard output stream.
+
+**Raises**:
+
+- `SystemExit` - The report cannot be made, which is said on the
+  standard error stream in words rather than as a traceback,
+  and is said before leaving, as a command line error is, so
+  that a window can show it where there is no console.
+
+<a id="notesmgr.application.new_root"></a>
+
+#### new\_root
+
+```python
+def new_root() -> tkinter.Tk
+```
+
+Return the root window, or leave saying why there can be none.
+
+**Raises**:
+
+- `SystemExit` - There is no display, which a program started from
+  a terminal with no display is told in one line.
+
+<a id="notesmgr.application.open_window"></a>
+
+#### open\_window
+
+```python
+def open_window(root: tkinter.Tk, project: Optional[Path]) -> None
+```
+
+Fill the root window, and open the named project in it, if any.
+
+<a id="notesmgr.application.run_window"></a>
+
+#### run\_window
+
+```python
+def run_window(project: Optional[Path]) -> None
+```
+
+Show the main window until the user quits.
+
+**Arguments**:
+
+- `project` - The project to open at start, None for none at all.
 
 <a id="notesmgr.trash"></a>
 
@@ -4568,6 +4825,22 @@ def actions() -> Sequence[ButtonSpec]
 
 Return what the buttons of the panel are and what they do.
 
+<a id="notesmgr.note_panel.NotePanel.key_commands"></a>
+
+#### key\_commands
+
+```python
+def key_commands() -> dict[str, Callable[[], None]]
+```
+
+Return what the shortcut of each action runs, by action.
+
+A shortcut does what the button and the menu entry of its
+action do, except that the one of Copy raw copies what is
+selected of the note while anything is, as Cmd+C and Ctrl+C
+do everywhere else. Making a folder has a shortcut as well,
+though it has no button.
+
 <a id="notesmgr.note_panel.NotePanel.note_limit"></a>
 
 #### note\_limit
@@ -4721,6 +4994,20 @@ def copy_raw() -> None
 ```
 
 Put the text of the note that is shown on the clipboard.
+
+<a id="notesmgr.note_panel.NotePanel.copy_selection"></a>
+
+#### copy\_selection
+
+```python
+def copy_selection() -> None
+```
+
+Put what is selected of the note on the clipboard, or all of it.
+
+Cmd+C and Ctrl+C copy what is selected wherever they are
+typed, so they do that here as well while a part of the note
+is selected, and copy the note as it is written otherwise.
 
 <a id="notesmgr.note_panel.NotePanel.copy_formatted"></a>
 
@@ -5868,6 +6155,119 @@ untouched as it found them.
 
 - `NotesmgrError` - The order file cannot be read or written.
 
+<a id="notesmgr.failure_report"></a>
+
+# notesmgr.failure\_report
+
+What the user is told of a failure that notesmgr was not made for.
+
+<a id="notesmgr.failure_report.FAILURE_TITLE"></a>
+
+#### FAILURE\_TITLE
+
+What the window telling of an unexpected failure is called.
+
+<a id="notesmgr.failure_report.FAILURE_TEXT"></a>
+
+#### FAILURE\_TEXT
+
+What the user is told of a failure that notesmgr was not made for.
+
+<a id="notesmgr.failure_report.failure_details"></a>
+
+#### failure\_details
+
+```python
+def failure_details(error_type: type[BaseException], error: BaseException,
+                    trace: Optional[TracebackType]) -> str
+```
+
+Return where a failure happened and what it said, as Python does.
+
+<a id="notesmgr.failure_report.FailureReport"></a>
+
+## FailureReport Objects
+
+```python
+class FailureReport()
+```
+
+Tells the user of every failure that nothing else has handled.
+
+Tk writes such a failure of a callback to the standard error
+stream and carries on, and a program started from a desktop has
+no terminal where that stream is read. It is shown in a window
+instead, and is still written to the stream when there is one.
+
+A failure that recurs, such as one in a file watch that polls
+every second, would open a window every time it happens, so a
+window is opened only while none of them is open already.
+
+<a id="notesmgr.failure_report.FailureReport.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(root: tkinter.Tk) -> None
+```
+
+Get ready to tell of failures over the given root window.
+
+<a id="notesmgr.failure_report.FailureReport.__call__"></a>
+
+#### \_\_call\_\_
+
+```python
+def __call__(error_type: type[BaseException], error: BaseException,
+             trace: Optional[TracebackType]) -> None
+```
+
+Tell of a failure, in the way that Tk reports one.
+
+**Arguments**:
+
+- `error_type` - The class of what was raised.
+- `error` - What was raised.
+- `trace` - Where it was raised, None when that is not known.
+
+<a id="notesmgr.failure_report.FailureReport.run"></a>
+
+#### run
+
+```python
+def run(action: Callable[[], None]) -> None
+```
+
+Do what is done before the main loop, telling of its failure.
+
+Tk handles only the failures of what it calls itself, so what
+is done before the main loop has started is told of here, in
+the same way.
+
+**Arguments**:
+
+- `action` - What is to be done.
+
+<a id="notesmgr.failure_report.report_failures"></a>
+
+#### report\_failures
+
+```python
+def report_failures(root: tkinter.Tk) -> FailureReport
+```
+
+Have every unhandled failure under a root window told of.
+
+**Arguments**:
+
+- `root` - The root window of the application.
+  
+
+**Returns**:
+
+  What tells of the failures, which also runs what is done
+  before the main loop has started.
+
 <a id="notesmgr.explorer_tree"></a>
 
 # notesmgr.explorer\_tree
@@ -5948,6 +6348,10 @@ def select(path: Optional[Path]) -> Optional[Path]
 ```
 
 Select one item of the tree, or nothing at all.
+
+The item that is selected is also the one that the arrow keys
+move on from, so that the keyboard carries on from what a
+command made or moved rather than from the top of the tree.
 
 **Arguments**:
 
@@ -7735,6 +8139,11 @@ def __init__(parent: tkinter.Misc) -> None
 
 Build the area in a frame of its own inside a parent widget.
 
+The note is read here and edited elsewhere, so the area cannot
+be written in. Tk leaves such an area out when Tab goes from
+widget to widget, so it is asked to take the focus all the
+same, which lets the note be scrolled and selected with keys.
+
 <a id="notesmgr.note_view.NoteView.show"></a>
 
 #### show
@@ -7837,6 +8246,16 @@ Return the text that the area holds, as the user sees it.
 Tk keeps a newline of its own at the end of a text area,
 which is left out here, so that what is returned is what was
 put in.
+
+<a id="notesmgr.note_view.NoteView.selected_text"></a>
+
+#### selected\_text
+
+```python
+def selected_text() -> str
+```
+
+Return what the user has selected of the note, empty for none.
 
 <a id="notesmgr.note_view.NoteView.warning_shown"></a>
 
