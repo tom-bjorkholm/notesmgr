@@ -7,6 +7,7 @@
 import json
 from pathlib import Path
 from typing import Optional, Sequence
+import pytest
 from notesmgr.config import NoteExtension, DEFAULT_NOTE_SIZE
 from notesmgr.note_file import template_name
 from notesmgr.order_file import ORDER_NAME
@@ -66,6 +67,46 @@ def write_template(folder: Path, extension: NoteExtension,
                    text: str = '') -> Path:
     """Write the template of a folder, carrying the given extension."""
     return write_file(folder / template_name(extension), text)
+
+
+def fail_on(monkeypatch: pytest.MonkeyPatch, owner: object, name: str,
+            refused: Path) -> None:
+    """Make a function of the file system fail on one path alone.
+
+    The function raises the OSError that a file system raises
+    whenever it is handed the refused path, and does what it does
+    for every other path, so that what notesmgr writes elsewhere,
+    such as the note order files, is written as it always is.
+
+    Args:
+        monkeypatch: Where the function is stood in for.
+        owner: The class or the module that holds the function.
+        name: What the function is called there.
+        refused: The path that the function fails on.
+    """
+    original = getattr(owner, name)
+
+    def failing(*args: object, **kwargs: object) -> object:
+        """Stand in for the function, failing on the refused path."""
+        if refused in args:
+            raise OSError(f'{name} refused for {refused}')
+        return original(*args, **kwargs)
+    monkeypatch.setattr(owner, name, failing)
+
+
+def reports(told: str, message: str, path: Path) -> bool:
+    """Return whether what was told is a message about a path.
+
+    The reason at the end of the message is what the operating system
+    said, which differs from one system to the next, so only what the
+    message says before it is compared.
+
+    Args:
+        told: What the user was told.
+        message: The message, with a path and a reason to fill in.
+        path: The path that the message is to be about.
+    """
+    return told.startswith(message.format(path=path, reason=''))
 
 
 def refuse_choice(_folder: Path, _templates: Sequence[Path]) -> Optional[Path]:

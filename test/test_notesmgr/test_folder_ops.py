@@ -6,12 +6,13 @@
 
 from pathlib import Path
 import pytest
-from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, \
-    refuse_choice, write_file, write_notes
+from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, fail_on, \
+    refuse_choice, reports, write_file, write_notes
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
-from notesmgr.folder_ops import delete_folder, is_empty, move_folder, \
-    new_folder, rename_folder
+from notesmgr.folder_ops import NOT_MADE, NOT_MOVED, NOT_RENAMED, \
+    delete_folder, is_empty, move_folder, new_folder, rename_folder
+from notesmgr.note_file import template_name
 from notesmgr.order_file import ORDER_NAME, read_order_text
 from notesmgr.project_ops import open_project
 
@@ -200,3 +201,32 @@ def test_move_folder_taken(root: Path, empty: Path) -> None:
     with pytest.raises(NotesmgrError):
         move_folder(root / 'full', empty)
     assert (root / 'full' / 'deep.md.txt').is_file()
+
+
+@pytest.mark.parametrize('name,refused', [
+    ('mkdir', 'ideas'), ('write_text', f'ideas/{template_name(EXTENSION)}')])
+def test_new_folder_fails(root: Path, monkeypatch: pytest.MonkeyPatch,
+                          name: str, refused: str) -> None:
+    """A folder or a template the file system would not take is told."""
+    fail_on(monkeypatch, Path, name, root / refused)
+    with pytest.raises(NotesmgrError) as raised:
+        new_folder(root, 'ideas', EXTENSION)
+    assert reports(str(raised.value), NOT_MADE, root / 'ideas')
+
+
+def test_rename_what_is_gone(root: Path) -> None:
+    """A folder another program took away is told, not renamed."""
+    gone = root / 'gone'
+    with pytest.raises(NotesmgrError) as raised:
+        rename_folder(gone, 'renamed')
+    assert reports(str(raised.value), NOT_RENAMED, gone)
+    assert not (root / 'renamed').exists()
+
+
+def test_move_what_is_gone(root: Path, empty: Path) -> None:
+    """A folder another program took away is told, not moved."""
+    gone = root / 'gone'
+    with pytest.raises(NotesmgrError) as raised:
+        move_folder(gone, empty)
+    assert reports(str(raised.value), NOT_MOVED, gone)
+    assert not (empty / 'gone').exists()

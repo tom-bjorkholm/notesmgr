@@ -12,8 +12,9 @@ from typing import Iterator, Optional
 import pytest
 from notesmgr.dialogs import ACCEPT_LABEL, BUSY_CURSOR, CANCEL_LABEL, \
     CHOOSE_LABEL, MAX_TEXT_HEIGHT, MAX_TEXT_WIDTH, MIN_TEXT_WIDTH, \
-    ChoiceDialog, NameFolder, NameFolderDialog, ask_folder, ask_name, \
-    ask_yes_no, busy_cursor, show_error, show_info, show_text, text_size
+    ChoiceDialog, NameFolder, NameFolderDialog, ask_choice, ask_folder, \
+    ask_name, ask_name_folder, ask_yes_no, busy_cursor, show_error, \
+    show_info, show_text, text_size
 
 TEMPLATES = ['template.md', 'template.txt']
 """Options of the kind that the choosing window is made to offer."""
@@ -282,3 +283,75 @@ def test_copy_closed(copying: NameFolderDialog) -> None:
     """Closing the window answers nothing at all."""
     copying.cancel()
     assert copying.given is None
+
+
+def answer_by(monkeypatch: pytest.MonkeyPatch, label: str) -> list[str]:
+    """Make a waiting window be answered by pressing one of its buttons.
+
+    No test may wait for a user who is not there, so waiting for the
+    window presses the button at once, before the window is drawn.
+
+    Args:
+        monkeypatch: Where the waiting is stood in for.
+        label: What the button that is pressed says.
+
+    Returns:
+        What was done to wait for the answer, in the order it was.
+    """
+    done: list[str] = []
+
+    def grab(_window: tkinter.Toplevel) -> None:
+        """Stand in for holding the rest of the application."""
+        done.append('grab')
+
+    def wait(window: tkinter.Toplevel) -> None:
+        """Stand in for waiting until the user answers the window."""
+        done.append('wait')
+        window.withdraw()
+        buttons_of(window)[label].invoke()
+    monkeypatch.setattr(tkinter.Toplevel, 'grab_set', grab)
+    monkeypatch.setattr(tkinter.Toplevel, 'wait_window', wait)
+    return done
+
+
+@pytest.mark.parametrize('label,expected', [
+    (CHOOSE_LABEL, TEMPLATES[0]), (CANCEL_LABEL, None)])
+def test_ask_choice(top_window: tkinter.Toplevel, label: str,
+                    expected: Optional[str],
+                    monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asking holds the application until the choice window is answered."""
+    done = answer_by(monkeypatch, label)
+    assert ask_choice(top_window, 'Templates', 'Which one?',
+                      TEMPLATES) == expected
+    assert done == ['grab', 'wait']
+
+
+@pytest.mark.parametrize('label,expected', [
+    (ACCEPT_LABEL, GIVEN), (CANCEL_LABEL, None)])
+def test_ask_name_folder(top_window: tkinter.Toplevel, label: str,
+                         expected: Optional[NameFolder],
+                         monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asking holds the application until the copy window is answered."""
+    done = answer_by(monkeypatch, label)
+    assert ask_name_folder(top_window, 'Duplicate note', GIVEN,
+                           FOLDERS) == expected
+    assert done == ['grab', 'wait']
+
+
+def test_choice_waits(choice: ChoiceDialog,
+                      monkeypatch: pytest.MonkeyPatch) -> None:
+    """Waiting for a choice gives what was marked when it was taken."""
+    answer_by(monkeypatch, CHOOSE_LABEL)
+    choice.picked.set(TEMPLATES[1])
+    assert choice.choose() == TEMPLATES[1]
+    assert not choice.window.winfo_exists()
+
+
+def test_copy_waits(copying: NameFolderDialog,
+                    monkeypatch: pytest.MonkeyPatch) -> None:
+    """Waiting for a copy gives what was filled in when it was taken."""
+    answer_by(monkeypatch, ACCEPT_LABEL)
+    copying.typed.set('another')
+    copying.picked.set(FOLDERS[1])
+    assert copying.ask_for() == NameFolder('another', FOLDERS[1])
+    assert not copying.window.winfo_exists()

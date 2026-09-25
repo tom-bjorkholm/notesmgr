@@ -465,3 +465,101 @@ def test_no_project_no_note(top_window: tkinter.Toplevel, tmp_path: Path,
     commands.new_folder()
     assert commands.note_folder() is None
     assert reopened == []
+
+
+def test_edit_no_project(top_window: tkinter.Toplevel, tmp_path: Path,
+                         launched: list[Path], reopened: list[Optional[Path]],
+                         offers: list[frozenset[str]]) -> None:
+    """With no project open there is no editor to open a note in."""
+    hooks = WindowHooks(reopened.append, offers.append)
+    commands = Commands(top_window, Session(tmp_path), hooks)
+    commands.edit(tmp_path / NOTES[0])
+    assert launched == []
+
+
+def test_delete_nothing(commands: Commands, root: Path,
+                        monkeypatch: pytest.MonkeyPatch,
+                        trashed: list[Path]) -> None:
+    """With no note selected nothing is asked and nothing taken away."""
+    asked: list[str] = []
+
+    def record(_parent: object, _title: str, question: str) -> bool:
+        """Stand in for a user who would say yes to anything."""
+        asked.append(question)
+        return True
+    monkeypatch.setattr(commands_module, 'ask_yes_no', record)
+    for selected in (None, root / TEMPLATE, root / 'sub'):
+        commands.select(selected)
+        commands.delete_note()
+    assert not asked
+    assert trashed == []
+
+
+def test_new_folder_cancelled(commands: Commands, root: Path,
+                              reopened: list[Optional[Path]]) -> None:
+    """A folder name that is not given makes no folder at all."""
+    before = sorted(root.iterdir())
+    commands.new_folder()
+    assert sorted(root.iterdir()) == before
+    assert reopened == []
+
+
+def test_rename_cancelled(commands: Commands, root: Path,
+                          reopened: list[Optional[Path]]) -> None:
+    """A new name that is not given leaves the folder as it was."""
+    commands.select(root / 'sub')
+    commands.rename_folder()
+    assert (root / 'sub').is_dir()
+    assert reopened == []
+
+
+def test_rename_refused(commands: Commands, root: Path, errors: list[str],
+                        monkeypatch: pytest.MonkeyPatch,
+                        reopened: list[Optional[Path]]) -> None:
+    """A new name that cannot be used is reported, and nothing renamed."""
+    answer_name(monkeypatch, NOTES[0])
+    commands.select(root / 'sub')
+    commands.rename_folder()
+    assert len(errors) == 1
+    assert (root / 'sub').is_dir()
+    assert reopened == []
+
+
+@pytest.mark.parametrize('selected', [None, NOTES[0], ''])
+def test_delete_folder_none(commands: Commands, root: Path,
+                            monkeypatch: pytest.MonkeyPatch,
+                            trashed: list[Path],
+                            selected: Optional[str]) -> None:
+    """With no folder selected, the root folder included, none is taken."""
+    answer_yes_no(monkeypatch, True)
+    commands.select(None if selected is None else root / selected)
+    commands.delete_folder()
+    assert trashed == []
+    assert root.is_dir()
+
+
+def test_folder_answered_no(commands: Commands, root: Path,
+                            monkeypatch: pytest.MonkeyPatch,
+                            trashed: list[Path],
+                            reopened: list[Optional[Path]]) -> None:
+    """A folder is left alone when the user does not say to take it."""
+    answer_name(monkeypatch, 'ideas')
+    commands.new_folder()
+    commands.select(root / 'ideas')
+    commands.delete_folder()
+    assert trashed == []
+    assert (root / 'ideas').is_dir()
+    assert reopened == [root / 'ideas']
+
+
+def test_duplicate_refused(commands: Commands, root: Path, errors: list[str],
+                           monkeypatch: pytest.MonkeyPatch,
+                           reopened: list[Optional[Path]]) -> None:
+    """A copy whose name is taken already is reported, and not made."""
+    answer_copy(monkeypatch, NameFolder(NOTES[1].removesuffix('.md.txt'),
+                                        shown_folder(root, root)))
+    commands.select(root / NOTES[0])
+    commands.duplicate_note()
+    assert len(errors) == 1
+    assert order_of(root) == NOTES
+    assert reopened == []

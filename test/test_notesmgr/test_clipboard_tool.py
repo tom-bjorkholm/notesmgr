@@ -5,6 +5,7 @@
 # MIT License
 
 import sys
+from pathlib import Path
 from typing import Optional
 import pytest
 from notesmgr.clipboard_tool import NOT_INSTALLED, REFUSED, RichText, \
@@ -48,6 +49,16 @@ def test_program_missing() -> None:
     with pytest.raises(NotesmgrError) as raised:
         run_tool((MISSING,), b'')
     assert str(raised.value) == NOT_INSTALLED.format(program=MISSING)
+
+
+def test_not_a_program(tmp_path: Path) -> None:
+    """A file that is there but cannot be run is reported as refusing."""
+    text = tmp_path / 'not-a-program.txt'
+    text.write_text('Just words.\n', encoding='utf-8')
+    with pytest.raises(NotesmgrError) as raised:
+        run_tool((str(text),), b'')
+    told = str(raised.value)
+    assert told.startswith(REFUSED.format(program=text, reason=''))
 
 
 def test_refusal_explained() -> None:

@@ -77,6 +77,15 @@ def test_note_over_nothing(project: Project) -> None:
     assert drop_target(project, project.root / NOTES[0], None, False) is None
 
 
+@pytest.mark.parametrize('over', ['../elsewhere.md.txt', 'unknown.md.txt',
+                                  'sub/below/unknown.md.txt'])
+@pytest.mark.parametrize('lower', [False, True])
+def test_note_over_stranger(project: Project, over: str, lower: bool) -> None:
+    """An item that the project holds no note of is no place to land."""
+    root = project.root
+    assert drop_target(project, root / NOTES[0], root / over, lower) is None
+
+
 def test_template_not_dragged(project: Project) -> None:
     """The template of a folder is no note and is not dragged anywhere."""
     root = project.root

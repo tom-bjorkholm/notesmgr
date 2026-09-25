@@ -4,6 +4,8 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
+import importlib
+import subprocess
 import sys
 import tkinter
 from pathlib import Path
@@ -229,3 +231,17 @@ def test_start_failure_told(shown: list[WindowState], project: Path,
     assert len(told) == 1
     assert 'RuntimeError: not made for this' in told[0]
     assert len(shown) == 1
+
+
+def test_module_entry_point() -> None:
+    """Running notesmgr as a module runs the entry point of the program."""
+    module = importlib.import_module('notesmgr.__main__')
+    assert module.main is main
+
+
+def test_module_runs() -> None:
+    """Running notesmgr as a module answers a command line as main does."""
+    done = subprocess.run([sys.executable, '-m', 'notesmgr', '--version'],
+                          capture_output=True, text=True, check=True,
+                          timeout=60)
+    assert done.stdout.startswith(APPLICATION_NAME)

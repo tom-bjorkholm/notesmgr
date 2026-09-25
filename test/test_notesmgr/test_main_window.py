@@ -4,12 +4,14 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
+import shutil
 import tkinter
 from pathlib import Path
 from typing import Callable, NamedTuple, Optional, Sequence, TextIO
 import pytest
 from edit_cfg_json import ConfigLoadError
-from test_notesmgr.helpers import write_config, write_notes, write_template
+from test_notesmgr.helpers import fail_on, write_config, write_notes, \
+    write_template
 from notesmgr import commands as commands_module
 from notesmgr import main_window as window_module
 from notesmgr import note_panel as panel_module
@@ -29,6 +31,7 @@ from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
     VERSION_TITLE, MainWindow, fitted
 from notesmgr.order_file import read_order_text
 from notesmgr.project import config_path
+from notesmgr.shortcuts import TREE_EDIT_KEYS
 
 REPORT = 'notesmgr 0.0.1\n'
 """What the version report says in these tests."""
@@ -512,19 +515,55 @@ def test_formatted_from_menu(main_window: MainWindow, project: Path,
         [note.read_text(encoding='utf-8')]
 
 
-def test_edit_from_menu(main_window: MainWindow, project: Path,
-                        monkeypatch: pytest.MonkeyPatch) -> None:
-    """Choosing Note > Edit starts the editor on the note selected."""
+def record_editor(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
+    """Record the notes that the editor is started on, starting none."""
     started: list[Path] = []
 
     def record(_command: str, path: Path) -> None:
         """Stand in for starting the editor of the project."""
         started.append(path)
     monkeypatch.setattr(commands_module, 'launch_editor', record)
+    return started
+
+
+def test_edit_from_menu(main_window: MainWindow, project: Path,
+                        monkeypatch: pytest.MonkeyPatch) -> None:
+    """Choosing Note > Edit starts the editor on the note selected."""
+    started = record_editor(monkeypatch)
     note = project / NOTES[0]
     main_window.load_project(project)
     main_window.show_selected(note)
     main_window.menu_bar.menus[NOTE_MENU].invoke(EDIT)
+    assert started == [note]
+
+
+@pytest.mark.parametrize('shown', [True, False])
+def test_edit_key(main_window: MainWindow, project: Path,
+                  monkeypatch: pytest.MonkeyPatch, shown: bool) -> None:
+    """The edit key of the tree edits the note shown, if one is shown.
+
+    A window that is not on a screen gets no keys, so what the key
+    runs is run here, and the key itself is pressed in a test of a
+    window that is shown.
+    """
+    started = record_editor(monkeypatch)
+    note = project / NOTES[0]
+    main_window.load_project(project, note if shown else None)
+    main_window._edit_key(tkinter.Event())  # pylint: disable=protected-access
+    assert started == ([note] if shown else [])
+
+
+@pytest.mark.focus_sensitive
+def test_return_edits(shown_window: MainWindow, project: Path,
+                      monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pressing Return in the tree edits the note that is shown."""
+    started = record_editor(monkeypatch)
+    note = project / NOTES[0]
+    shown_window.load_project(project, note)
+    tree = shown_window.explorer.tree
+    tree.focus_set()
+    shown_window.window.update()
+    tree.event_generate(TREE_EDIT_KEYS[0], when='now')
     assert started == [note]
 
 
@@ -570,6 +609,35 @@ def test_opening_is_refused(main_window: MainWindow, tmp_path: Path,
     main_window.load_project(tmp_path)
     assert len(refused) == 1
     assert main_window.session.project is None
+
+
+def test_problems_are_told(main_window: MainWindow, project: Path,
+                           monkeypatch: pytest.MonkeyPatch,
+                           informed: list[str], refused: list[str]) -> None:
+    """What opening the project could not do is told as an error."""
+    wanted = project / 'sub' / 'template.md.txt'
+    wanted.unlink()
+    fail_on(monkeypatch, shutil, 'copyfile', wanted)
+    main_window.load_project(project)
+    assert not informed
+    assert len(refused) == 1
+    assert str(wanted) in refused[0]
+    assert main_window.session.project is not None
+
+
+def test_changes_and_problems(main_window: MainWindow, project: Path,
+                              monkeypatch: pytest.MonkeyPatch,
+                              informed: list[str], refused: list[str]) -> None:
+    """Both what opening changed and what it could not do are told."""
+    (project / 'template.md.txt').unlink()
+    wanted = project / 'sub' / 'template.md.txt'
+    wanted.unlink()
+    fail_on(monkeypatch, shutil, 'copyfile', wanted)
+    main_window.load_project(project)
+    assert len(informed) == 1
+    assert str(project / 'template.md.txt') in informed[0]
+    assert len(refused) == 1
+    assert str(wanted) in refused[0]
 
 
 def test_changes_are_told(main_window: MainWindow, project: Path,

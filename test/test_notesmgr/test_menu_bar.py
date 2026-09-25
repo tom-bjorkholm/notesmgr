@@ -7,20 +7,13 @@
 import tkinter
 import pytest
 from notesmgr.menu_bar import MenuBar, MenuEntry, MenuSpec, build_menu_bar, \
-    entry_state, set_enabled
+    entry_labels, entry_state, set_enabled
 
 EDIT_MENU = 'Edit'
 """Title of the second menu that these tests build."""
 
 FILE_MENU = 'File'
 """Title of the first menu that these tests build."""
-
-
-def entry_labels(menu: tkinter.Menu) -> list[str]:
-    """Return the labels of the entries of a menu, in their order."""
-    last = menu.index('end')
-    assert isinstance(last, int)
-    return [str(menu.entrycget(index, 'label')) for index in range(last + 1)]
 
 
 @pytest.fixture(name='chosen')
@@ -107,3 +100,8 @@ def test_set_disabled(menu_bar: MenuBar) -> None:
 def test_no_tearoff(menu_bar: MenuBar) -> None:
     """A menu cannot be torn off, as no desktop does that any more."""
     assert not menu_bar.menus[FILE_MENU].cget('tearoff')
+
+
+def test_labels_of_no_entries(top_window: tkinter.Toplevel) -> None:
+    """A menu that holds no entries says nothing at all."""
+    assert not entry_labels(tkinter.Menu(top_window, tearoff=False))

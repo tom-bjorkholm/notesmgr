@@ -6,11 +6,13 @@
 
 from pathlib import Path
 import pytest
-from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, \
-    refuse_choice, write_config, write_file, write_notes, write_template
+from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, fail_on, \
+    refuse_choice, reports, write_config, write_file, write_notes, \
+    write_template
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
-from notesmgr.note_ops import delete_note, duplicate_note, free_path, \
+from notesmgr.note_ops import NOT_COPIED, NOT_MOVED, NOT_WRITTEN, \
+    delete_note, duplicate_note, free_path, \
     moved_order, moved_to, move_note, new_note, new_path, resync_order, \
     shift_note, template_text
 from notesmgr.order_file import order_text, read_order_text
@@ -280,3 +282,33 @@ def test_move_keeps_content(root: Path) -> None:
     held = (root / NOTES[0]).read_text(encoding='utf-8')
     moved = move_note(root / NOTES[0], root / 'sub', 0)
     assert moved.read_text(encoding='utf-8') == held
+
+
+def test_new_note_not_written(root: Path,
+                              monkeypatch: pytest.MonkeyPatch) -> None:
+    """A note the file system would not take is told, and not ordered."""
+    wanted = root / 'fourth.md.txt'
+    fail_on(monkeypatch, Path, 'write_text', wanted)
+    with pytest.raises(NotesmgrError) as raised:
+        new_note(root, 'fourth', EXTENSION)
+    assert reports(str(raised.value), NOT_WRITTEN, wanted)
+    assert order_of(root) == NOTES
+
+
+def test_duplicate_gone(root: Path) -> None:
+    """A note another program took away is told, and no copy made."""
+    gone = root / 'gone.md.txt'
+    with pytest.raises(NotesmgrError) as raised:
+        duplicate_note(gone, root / 'sub', 'copied', EXTENSION)
+    assert reports(str(raised.value), NOT_COPIED, gone)
+    assert order_of(root / 'sub') == ['other.md.txt']
+
+
+def test_move_what_is_gone(root: Path) -> None:
+    """A note another program took away is told, and no order changed."""
+    gone = root / 'gone.md.txt'
+    with pytest.raises(NotesmgrError) as raised:
+        move_note(gone, root / 'sub', 0)
+    assert reports(str(raised.value), NOT_MOVED, gone)
+    assert order_of(root) == NOTES
+    assert order_of(root / 'sub') == ['other.md.txt']

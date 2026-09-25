@@ -326,3 +326,50 @@ def test_deeply_nested(deep: int, expected: Optional[int]) -> None:
     """
     text = ''.join(f'{"  " * level}- item\n' for level in range(deep))
     assert markdown_blocks(text)[-1].indent == expected
+
+
+@pytest.mark.parametrize('html', [
+    '<br>', '<img src="file.png" alt="a picture">', '<td>cell</td>',
+    '<tr>', '</td>', '</table>'])
+def test_tag_outside_a_piece(html: str) -> None:
+    """A tag that belongs inside a piece draws nothing outside of one."""
+    assert not html_blocks(html)
+
+
+def test_item_outside_a_list() -> None:
+    """An item that no list holds is drawn as a paragraph, unmarked."""
+    assert html_blocks('<li>stray</li>') == (
+        Block(BlockKind.PARAGRAPH, (Span('stray'),)),)
+
+
+@pytest.mark.parametrize('html', [
+    '<table></table>', '<table><tr></tr></table>',
+    '<table><tr><td></td></tr></table>'])
+def test_empty_table(html: str) -> None:
+    """A table holding no text at all is drawn in no piece."""
+    assert not html_blocks(html)
+
+
+def test_cell_outside_a_row() -> None:
+    """A cell that no row of its table holds is drawn nowhere."""
+    html = '<table><td>lost</td><tr><td>kept</td></tr></table>'
+    assert texts(html_blocks(html)) == ['kept']
+
+
+def test_table_in_a_quote() -> None:
+    """A quoted table is drawn one step from the left, as a table."""
+    block = only(markdown_blocks('> | a |\n> | --- |\n> | 1 |\n'))
+    assert block.kind is BlockKind.TABLE
+    assert block.indent == 1
+
+
+def test_rule_in_a_quote() -> None:
+    """A quoted line across the note is drawn one step from the left."""
+    assert markdown_blocks('> ---\n') == (Block(BlockKind.RULE, indent=1),)
+
+
+def test_text_after_a_table() -> None:
+    """The piece after a table is read as it would be anywhere else."""
+    blocks = markdown_blocks('| a |\n| --- |\n| 1 |\n\nAfter.\n')
+    assert kinds(blocks) == [BlockKind.TABLE, BlockKind.PARAGRAPH]
+    assert texts(blocks)[1] == 'After.'

@@ -179,11 +179,14 @@
   * [NOT\_WINDOWS](#notesmgr.clipboard_windows.NOT_WINDOWS)
   * [NOT\_OPENED](#notesmgr.clipboard_windows.NOT_OPENED)
   * [NO\_MEMORY](#notesmgr.clipboard_windows.NO_MEMORY)
+  * [NOT\_TAKEN](#notesmgr.clipboard_windows.NOT_TAKEN)
   * [byte\_length](#notesmgr.clipboard_windows.byte_length)
   * [cf\_html](#notesmgr.clipboard_windows.cf_html)
   * [html\_bytes](#notesmgr.clipboard_windows.html_bytes)
   * [text\_bytes](#notesmgr.clipboard_windows.text_bytes)
+  * [declare\_memory](#notesmgr.clipboard_windows.declare_memory)
   * [moveable\_memory](#notesmgr.clipboard_windows.moveable_memory)
+  * [hand\_over](#notesmgr.clipboard_windows.hand_over)
   * [write\_clipboard](#notesmgr.clipboard_windows.write_clipboard)
   * [copy\_to\_clipboard](#notesmgr.clipboard_windows.copy_to_clipboard)
 * [notesmgr.rich\_clipboard](#notesmgr.rich_clipboard)
@@ -2948,6 +2951,12 @@ What is said when the clipboard could not be opened at all.
 
 What is said when the memory for a copy could not be had.
 
+<a id="notesmgr.clipboard_windows.NOT_TAKEN"></a>
+
+#### NOT\_TAKEN
+
+What is said when the clipboard refused a shape of the copy.
+
 <a id="notesmgr.clipboard_windows.byte_length"></a>
 
 #### byte\_length
@@ -3002,6 +3011,16 @@ def text_bytes(text: str) -> bytes
 
 Return the plain shape of a copy as Windows holds it.
 
+<a id="notesmgr.clipboard_windows.declare_memory"></a>
+
+#### declare\_memory
+
+```python
+def declare_memory(kernel32: ctypes.CDLL) -> None
+```
+
+Tell ctypes what the functions that hand out memory take.
+
 <a id="notesmgr.clipboard_windows.moveable_memory"></a>
 
 #### moveable\_memory
@@ -3014,7 +3033,8 @@ Return a handle to memory holding the given bytes.
 
 The clipboard takes over the memory it is given, so what is
 allocated here is moveable, as the clipboard asks, and is not
-freed again by notesmgr.
+freed again by notesmgr once the clipboard has it. Memory that
+was had but could not be written to is freed here instead.
 
 **Arguments**:
 
@@ -3029,7 +3049,34 @@ freed again by notesmgr.
 
 **Raises**:
 
-- `NotesmgrError` - The memory could not be had.
+- `NotesmgrError` - The memory could not be had or written to.
+
+<a id="notesmgr.clipboard_windows.hand_over"></a>
+
+#### hand\_over
+
+```python
+def hand_over(user32: ctypes.CDLL, kernel32: ctypes.CDLL, named: int,
+              data: bytes) -> None
+```
+
+Give one shape of a copy to the clipboard, which then owns it.
+
+Memory that the clipboard did not take is still notesmgr's own,
+and is freed again rather than left behind.
+
+**Arguments**:
+
+- `user32` - The library of Windows that owns the clipboard.
+- `kernel32` - The library of Windows that hands out memory.
+- `named` - What the clipboard calls the shape.
+- `data` - What the shape holds.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The memory for the shape could not be had, or
+  the clipboard did not take it.
 
 <a id="notesmgr.clipboard_windows.write_clipboard"></a>
 
@@ -3055,8 +3102,9 @@ session put there.
 
 **Raises**:
 
-- `NotesmgrError` - The clipboard could not be opened, or the
-  memory for a shape could not be had.
+- `NotesmgrError` - The clipboard could not be opened, the memory
+  for a shape could not be had, or the clipboard did not
+  take a shape.
 
 <a id="notesmgr.clipboard_windows.copy_to_clipboard"></a>
 

@@ -466,7 +466,7 @@ class NoteParser(HTMLParser):
         if self.table is None:
             return
         if tag == 'table':
-            self._close_table()
+            self._close_table(self.table)
         elif tag in CELL_TAGS:
             self.table.end_cell()
 
@@ -475,11 +475,9 @@ class NoteParser(HTMLParser):
         self._flush()
         self.table = TableReader()
 
-    def _close_table(self) -> None:
+    def _close_table(self, table: TableReader) -> None:
         """Put the table that was read among the pieces of the note."""
-        if self.table is None:
-            return
-        text = self.table.text()
+        text = table.text()
         self.table = None
         if text:
             self.blocks.append(Block(BlockKind.TABLE, (Span(text),),

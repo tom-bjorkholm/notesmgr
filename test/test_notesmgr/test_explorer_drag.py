@@ -306,3 +306,11 @@ def test_real_drag(explorer: ExplorerTree, project: Project,
     tree.event_generate('<B1-Motion>', x=5, y=over[1] + 1, when='now')
     tree.event_generate('<ButtonRelease-1>', x=5, y=over[1] + 1, when='now')
     assert dropped == [(project.root / 'first.md.txt', Drop(project.root, 0))]
+
+
+def test_edge_of_no_row(explorer: ExplorerTree, project: Project) -> None:
+    """A row with no place on the screen takes every mark away."""
+    drag(explorer, upper(FIRST_ROW), upper(SECOND_ROW), release=False)
+    explorer.drag.mark.at_edge(project.root / 'gone.md.txt', True)
+    assert not line_shown(explorer)
+    assert not marked_items(explorer)

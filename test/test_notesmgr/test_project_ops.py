@@ -5,20 +5,21 @@
 # MIT License
 
 import os
+import shutil
 import stat
 from pathlib import Path
 from typing import Sequence
 import pytest
-from test_notesmgr.helpers import first_choice, refuse_choice, write_config, \
-    write_file, write_notes, write_order, write_template
+from test_notesmgr.helpers import fail_on, first_choice, refuse_choice, \
+    reports, write_config, write_file, write_notes, write_order, write_template
 from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME
 from notesmgr import trash
 from notesmgr.errors import NotesmgrError
 from notesmgr.order_file import ORDER_NAME, order_text, read_order_text
 from notesmgr.project import Folder, config_path, read_config
-from notesmgr.project_ops import CREATED_HEAD, RENAMED_HEAD, changed_message, \
-    create_project, open_project
+from notesmgr.project_ops import CREATED_HEAD, NOT_CREATED, NOT_RENAMED, \
+    RENAMED_HEAD, changed_message, create_project, open_project
 
 USER_CONFIG = '{"editor": "nano", "file_extension": "MD", ' + \
     '"max_note_size": 25000}'
@@ -261,3 +262,49 @@ def test_changed_message(project: Path, renamed: list[str], created: list[str],
     for part in holds:
         assert part in message
     assert bool(message) == bool(holds)
+
+
+def test_rename_problem_told(project: Path,
+                             monkeypatch: pytest.MonkeyPatch) -> None:
+    """A template that cannot be renamed is kept, and copied below."""
+    kept = write_template(project, NoteExtension.TXT, 'Mine.\n')
+    fail_on(monkeypatch, Path, 'rename', kept)
+    report = open_project(project, refuse_choice)
+    assert len(report.problems) == 1
+    assert reports(report.problems[0], NOT_RENAMED, kept)
+    assert report.project.tree.template == kept
+    assert not report.renamed
+    below = project / 'sub' / 'template.md.txt'
+    assert below.read_text(encoding='utf-8') == 'Mine.\n'
+
+
+def test_root_template_fails(project: Path,
+                             monkeypatch: pytest.MonkeyPatch) -> None:
+    """A root template that cannot be written is told, not the end.
+
+    The folder below still gets a template, as empty as the template
+    of the root folder would have been.
+    """
+    wanted = project / 'template.md.txt'
+    fail_on(monkeypatch, Path, 'write_text', wanted)
+    report = open_project(project, refuse_choice)
+    assert len(report.problems) == 1
+    assert reports(report.problems[0], NOT_CREATED, wanted)
+    assert report.project.tree.template is None
+    below = project / 'sub' / 'template.md.txt'
+    assert list(report.created) == [below]
+    assert below.read_text(encoding='utf-8') == ''
+
+
+def test_copy_problem_told(project: Path,
+                           monkeypatch: pytest.MonkeyPatch) -> None:
+    """A template that cannot be copied below is told, and none is there."""
+    write_template(project, NoteExtension.MD_TXT, 'Written above.\n')
+    wanted = project / 'sub' / 'template.md.txt'
+    fail_on(monkeypatch, shutil, 'copyfile', wanted)
+    report = open_project(project, refuse_choice)
+    assert len(report.problems) == 1
+    assert reports(report.problems[0], NOT_CREATED, wanted)
+    assert report.project.tree.folders[0].template is None
+    assert not report.created
+    assert not wanted.exists()

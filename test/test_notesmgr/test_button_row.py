@@ -203,3 +203,12 @@ def test_width_kept_as_it_was(row: ButtonRow) -> None:
     places = places_of(row)
     row.fit_into(2000)
     assert places_of(row) == places
+
+
+def test_resized_row_wraps(row: ButtonRow) -> None:
+    """A row that Tk makes narrower or wider is laid out again for it."""
+    row.frame.event_generate('<Configure>', width=max(row.widths()) + GAP,
+                             when='now')
+    assert row.columns == 1
+    row.frame.event_generate('<Configure>', width=2000, when='now')
+    assert row.columns == len(LABELS)

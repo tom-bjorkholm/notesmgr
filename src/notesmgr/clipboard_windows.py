@@ -44,6 +44,9 @@ NOT_OPENED = 'The clipboard is held by another program just now.'
 NO_MEMORY = 'There is not memory enough to copy the note.'
 """What is said when the memory for a copy could not be had."""
 
+NOT_TAKEN = 'The clipboard did not take the copy of the note.'
+"""What is said when the clipboard refused a shape of the copy."""
+
 
 def byte_length(text: str) -> int:
     """Return how many bytes a text is when it is written as UTF-8."""
@@ -82,12 +85,23 @@ def text_bytes(text: str) -> bytes:
     return text.encode('utf-16-le') + b'\0\0'
 
 
+def declare_memory(kernel32: ctypes.CDLL) -> None:
+    """Tell ctypes what the functions that hand out memory take."""
+    kernel32.GlobalAlloc.restype = ctypes.c_void_p
+    kernel32.GlobalAlloc.argtypes = [ctypes.c_uint, ctypes.c_size_t]
+    kernel32.GlobalLock.restype = ctypes.c_void_p
+    kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+    kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+    kernel32.GlobalFree.argtypes = [ctypes.c_void_p]
+
+
 def moveable_memory(kernel32: ctypes.CDLL, data: bytes) -> int:
     """Return a handle to memory holding the given bytes.
 
     The clipboard takes over the memory it is given, so what is
     allocated here is moveable, as the clipboard asks, and is not
-    freed again by notesmgr.
+    freed again by notesmgr once the clipboard has it. Memory that
+    was had but could not be written to is freed here instead.
 
     Args:
         kernel32: The library of Windows that hands out memory.
@@ -97,19 +111,42 @@ def moveable_memory(kernel32: ctypes.CDLL, data: bytes) -> int:
         The handle to give to the clipboard.
 
     Raises:
-        NotesmgrError: The memory could not be had.
+        NotesmgrError: The memory could not be had or written to.
     """
-    kernel32.GlobalAlloc.restype = ctypes.c_void_p
-    kernel32.GlobalAlloc.argtypes = [ctypes.c_uint, ctypes.c_size_t]
-    kernel32.GlobalLock.restype = ctypes.c_void_p
-    kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
-    kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+    declare_memory(kernel32)
     handle = kernel32.GlobalAlloc(MOVEABLE, len(data))
     if not handle:
         raise NotesmgrError(NO_MEMORY)
-    ctypes.memmove(kernel32.GlobalLock(handle), data, len(data))
+    place = kernel32.GlobalLock(handle)
+    if not place:
+        kernel32.GlobalFree(handle)
+        raise NotesmgrError(NO_MEMORY)
+    ctypes.memmove(place, data, len(data))
     kernel32.GlobalUnlock(handle)
     return int(handle)
+
+
+def hand_over(user32: ctypes.CDLL, kernel32: ctypes.CDLL, named: int,
+              data: bytes) -> None:
+    """Give one shape of a copy to the clipboard, which then owns it.
+
+    Memory that the clipboard did not take is still notesmgr's own,
+    and is freed again rather than left behind.
+
+    Args:
+        user32: The library of Windows that owns the clipboard.
+        kernel32: The library of Windows that hands out memory.
+        named: What the clipboard calls the shape.
+        data: What the shape holds.
+
+    Raises:
+        NotesmgrError: The memory for the shape could not be had, or
+            the clipboard did not take it.
+    """
+    handle = moveable_memory(kernel32, data)
+    if not user32.SetClipboardData(named, handle):
+        kernel32.GlobalFree(handle)
+        raise NotesmgrError(NOT_TAKEN)
 
 
 def write_clipboard(user32: ctypes.CDLL, kernel32: ctypes.CDLL,
@@ -126,8 +163,9 @@ def write_clipboard(user32: ctypes.CDLL, kernel32: ctypes.CDLL,
         shapes: What each shape of the copy is called and holds.
 
     Raises:
-        NotesmgrError: The clipboard could not be opened, or the
-            memory for a shape could not be had.
+        NotesmgrError: The clipboard could not be opened, the memory
+            for a shape could not be had, or the clipboard did not
+            take a shape.
     """
     user32.SetClipboardData.restype = ctypes.c_void_p
     user32.SetClipboardData.argtypes = [ctypes.c_uint, ctypes.c_void_p]
@@ -136,7 +174,7 @@ def write_clipboard(user32: ctypes.CDLL, kernel32: ctypes.CDLL,
     try:
         user32.EmptyClipboard()
         for named, data in shapes:
-            user32.SetClipboardData(named, moveable_memory(kernel32, data))
+            hand_over(user32, kernel32, named, data)
     finally:
         user32.CloseClipboard()
 
