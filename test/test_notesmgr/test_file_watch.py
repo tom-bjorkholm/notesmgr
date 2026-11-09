@@ -18,8 +18,8 @@ LATER = 100.0
 SHORT = 5
 """Milliseconds between two looks, for a test that waits for one."""
 
-WAITED = 0.2
-"""Seconds that a test waits for a look that was asked for."""
+WAITED = 200
+"""Milliseconds that a test waits for a look that was asked for."""
 
 
 @pytest.fixture(name='note')
@@ -44,6 +44,18 @@ def fixture_watch(top_window: tkinter.Toplevel,
 def touch_later(path: Path) -> None:
     """Give a file a modification time well after the one it has."""
     os.utime(path, (time.time() + LATER, time.time() + LATER))
+
+
+def run_event_loop(window: tkinter.Misc, milliseconds: int) -> None:
+    """Let the Tk event loop run for a while, and then return.
+
+    Unlike update, which only returns once no event is due, this
+    returns when the time is up, even though a look that comes every
+    few milliseconds is due again and again until then.
+    """
+    done = tkinter.BooleanVar(window)
+    window.after(milliseconds, done.set, True)
+    window.wait_variable(done)
 
 
 def test_no_file_is_missing() -> None:
@@ -189,7 +201,6 @@ def test_event_loop_polls(top_window: tkinter.Toplevel, note: Path,
     watch.watch(note)
     note.write_text('edited elsewhere\n', encoding='utf-8')
     touch_later(note)
-    time.sleep(WAITED)
-    top_window.update()
+    run_event_loop(top_window, WAITED)
     watch.cancel()
     assert changes == [1]

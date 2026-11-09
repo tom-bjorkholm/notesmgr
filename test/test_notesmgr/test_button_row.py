@@ -6,8 +6,10 @@
 
 import tkinter
 from functools import partial
+from tkinter import ttk
 from typing import Callable
 import pytest
+from test_notesmgr.tk_windows import show_filled
 from notesmgr.button_row import GAP, ButtonRow, ButtonSpec, fitting_columns, \
     grid_width
 
@@ -205,8 +207,37 @@ def test_width_kept_as_it_was(row: ButtonRow) -> None:
     assert places_of(row) == places
 
 
+def width_event(width: int) -> 'tkinter.Event[ttk.Frame]':
+    """Return what Tk tells a row of when it is given another width."""
+    event: 'tkinter.Event[ttk.Frame]' = tkinter.Event()
+    event.width = width
+    return event
+
+
+def test_resize_is_watched(row: ButtonRow) -> None:
+    """The row listens for Tk telling it that its size changed."""
+    assert '<Configure>' in row.frame.bind()
+
+
+def test_resize_lays_out(row: ButtonRow) -> None:
+    """Being told of a narrower or wider row lays it out again for it.
+
+    Tk only tells a widget of a window that is shown of its new size,
+    so the handler that the row binds is called here. That Tk calls it
+    is tested in a window that is really shown, by
+    test_resized_row_wraps.
+    """
+    # pylint: disable=protected-access
+    row._width_changed(width_event(max(row.widths()) + GAP))
+    assert row.columns == 1
+    row._width_changed(width_event(2000))
+    assert row.columns == len(LABELS)
+
+
+@pytest.mark.focus_sensitive
 def test_resized_row_wraps(row: ButtonRow) -> None:
     """A row that Tk makes narrower or wider is laid out again for it."""
+    show_filled(row.frame)
     row.frame.event_generate('<Configure>', width=max(row.widths()) + GAP,
                              when='now')
     assert row.columns == 1

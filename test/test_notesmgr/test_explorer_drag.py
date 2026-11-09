@@ -10,14 +10,12 @@ from tkinter import ttk
 from typing import Union
 import pytest
 from test_notesmgr.helpers import build_folder_project, refuse_choice
+from test_notesmgr.tk_windows import show_filled
 from notesmgr.explorer_drag import DRAG_START, MARK_TAG
 from notesmgr.explorer_drop import Drop
 from notesmgr.explorer_tree import ExplorerTree
 from notesmgr.project import Project
 from notesmgr.project_ops import open_project
-
-SHOWN_GEOMETRY = '300x400'
-"""How large the window of the drag that is really shown is made."""
 
 ROW = 20
 """How high a row of the tree is in the layout of these tests."""
@@ -290,12 +288,7 @@ def test_real_drag(explorer: ExplorerTree, project: Project,
     events that a mouse would send.
     """
     monkeypatch.undo()
-    window = explorer.frame.winfo_toplevel()
-    explorer.frame.pack(fill=tkinter.BOTH, expand=True)
-    window.geometry(SHOWN_GEOMETRY)
-    window.deiconify()
-    window.lift()
-    window.update()
+    show_filled(explorer.frame)
     tree = explorer.tree
     note = str(project.root / 'first.md.txt')
     box = tree.bbox(note)

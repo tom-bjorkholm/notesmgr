@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Optional
 import pytest
 from test_notesmgr.helpers import build_folder_project, refuse_choice
+from test_notesmgr.tk_windows import show_filled
 from notesmgr.explorer_drop import Drop
-from notesmgr.explorer_tree import EXPLORER_WIDTH, ExplorerTree
+from notesmgr.explorer_tree import EXPLORER_WIDTH, SELECT_EVENT, ExplorerTree
 from notesmgr.project import Project
 from notesmgr.project_ops import open_project
 
@@ -105,13 +106,36 @@ def test_showing_again(explorer: ExplorerTree, project: Project) -> None:
 
 def test_selection_told(explorer: ExplorerTree, project: Project,
                         selected: list[Optional[Path]]) -> None:
-    """Selecting an item tells whoever is listening which path it is."""
+    """Selecting an item tells whoever is listening which path it is.
+
+    Tk only tells a widget of a window that is shown of a selection,
+    so the handler that the tree binds is called here. That Tk calls
+    it is tested in a window that is really shown, by
+    test_tk_tells_selection.
+    """
     explorer.show(project)
+    note = project.root / 'first.md.txt'
+    explorer.tree.selection_set(str(note))
+    explorer.selection_changed(tkinter.Event())
+    assert selected == [note]
+    assert explorer.selected_path() == note
+
+
+def test_selection_watched(explorer: ExplorerTree) -> None:
+    """The tree listens for Tk telling it of a new selection."""
+    assert SELECT_EVENT in explorer.tree.bind()
+
+
+@pytest.mark.focus_sensitive
+def test_tk_tells_selection(explorer: ExplorerTree, project: Project,
+                            selected: list[Optional[Path]]) -> None:
+    """Tk itself tells of a selection made in a window that is shown."""
+    explorer.show(project)
+    show_filled(explorer.frame)
     note = project.root / 'first.md.txt'
     explorer.tree.selection_set(str(note))
     explorer.tree.update()
     assert selected == [note]
-    assert explorer.selected_path() == note
 
 
 def test_one_at_a_time(explorer: ExplorerTree, project: Project) -> None:
