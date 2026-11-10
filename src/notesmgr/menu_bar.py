@@ -8,6 +8,9 @@ import tkinter
 from typing import Callable, Literal, Mapping, NamedTuple, Optional, \
     Sequence, Union
 
+UNLABELED_TYPES = ('tearoff', 'separator')
+"""Types of menu entries that have no label, as they say nothing."""
+
 
 class MenuEntry(NamedTuple):
     """One command of a menu, and whether it can be chosen."""
@@ -81,7 +84,7 @@ def build_menu_bar(window: Union[tkinter.Tk, tkinter.Toplevel],
     Returns:
         The menu bar that was made.
     """
-    widget = tkinter.Menu(window)
+    widget = tkinter.Menu(window, tearoff=False)
     built = {spec.title: build_menu(widget, spec) for spec in menus}
     window.configure(menu=widget)
     return MenuBar(widget=widget, menus=built)
@@ -101,14 +104,17 @@ def set_enabled(menu: tkinter.Menu, label: str, enabled: bool) -> None:
 def entry_labels(menu: tkinter.Menu) -> list[str]:
     """Return what the entries of a menu say, in the order they are in.
 
+    Tearoff entries and separators say nothing, so they are left out.
+
     Args:
         menu: The menu to look through.
 
     Returns:
-        The label of every entry, and nothing at all for a menu that
-        holds no entries.
+        The labels of the entries that have a label, in menu order, or
+        an empty list when no entry has one.
     """
     last = menu.index(tkinter.END)
     if last is None:
         return []
-    return [str(menu.entrycget(index, 'label')) for index in range(last + 1)]
+    return [str(menu.entrycget(index, 'label')) for index in range(last + 1)
+            if menu.type(index) not in UNLABELED_TYPES]

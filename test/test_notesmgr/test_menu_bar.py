@@ -98,10 +98,26 @@ def test_set_disabled(menu_bar: MenuBar) -> None:
 
 
 def test_no_tearoff(menu_bar: MenuBar) -> None:
-    """A menu cannot be torn off, as no desktop does that any more."""
-    assert not menu_bar.menus[FILE_MENU].cget('tearoff')
+    """No menu, nor the menu bar, can be torn off, as no desktop does that.
+
+    The default of Tk differs between windowing systems (no tearoff on
+    macOS, tearoff on X11), so the menu bar must say it explicitly.
+    """
+    menus = [menu_bar.widget, *menu_bar.menus.values()]
+    assert not any(menu.cget('tearoff') for menu in menus)
 
 
 def test_labels_of_no_entries(top_window: tkinter.Toplevel) -> None:
     """A menu that holds no entries says nothing at all."""
     assert not entry_labels(tkinter.Menu(top_window, tearoff=False))
+
+
+@pytest.mark.parametrize('tearoff', [True, False])
+def test_labels_skip_others(top_window: tkinter.Toplevel,
+                            tearoff: bool) -> None:
+    """Tearoff entries and separators are left out of the labels."""
+    menu = tkinter.Menu(top_window, tearoff=tearoff)
+    menu.add_command(label='Open')
+    menu.add_separator()
+    menu.add_command(label='Quit')
+    assert entry_labels(menu) == ['Open', 'Quit']

@@ -54,6 +54,7 @@
   * [show\_said](#notesmgr.console.show_said)
   * [console\_or\_window](#notesmgr.console.console_or_window)
 * [notesmgr.menu\_bar](#notesmgr.menu_bar)
+  * [UNLABELED\_TYPES](#notesmgr.menu_bar.UNLABELED_TYPES)
   * [MenuEntry](#notesmgr.menu_bar.MenuEntry)
   * [MenuSpec](#notesmgr.menu_bar.MenuSpec)
   * [MenuBar](#notesmgr.menu_bar.MenuBar)
@@ -1374,6 +1375,12 @@ usual.
 
 The menu bar of a notesmgr window.
 
+<a id="notesmgr.menu_bar.UNLABELED_TYPES"></a>
+
+#### UNLABELED\_TYPES
+
+Types of menu entries that have no label, as they say nothing.
+
 <a id="notesmgr.menu_bar.MenuEntry"></a>
 
 ## MenuEntry Objects
@@ -1496,6 +1503,8 @@ def entry_labels(menu: tkinter.Menu) -> list[str]
 
 Return what the entries of a menu say, in the order they are in.
 
+Tearoff entries and separators say nothing, so they are left out.
+
 **Arguments**:
 
 - `menu` - The menu to look through.
@@ -1503,8 +1512,8 @@ Return what the entries of a menu say, in the order they are in.
 
 **Returns**:
 
-  The label of every entry, and nothing at all for a menu that
-  holds no entries.
+  The labels of the entries that have a label, in menu order, or
+  an empty list when no entry has one.
 
 <a id="notesmgr.note_blocks"></a>
 
