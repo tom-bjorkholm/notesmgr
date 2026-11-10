@@ -67,7 +67,7 @@ git submodule update --remote --merge
 ## Supported Python versions
 
 - Package runtime baseline: Python 3.12 or newer
-- Maintainer validation target: Python 3.12, 3.13, and 3.14
+- Maintainer validation target: Python 3.12, 3.13, 3.14 and 3.15
 - Main day-to-day development: usually the newest supported Python version
 
 ## Development workflow
@@ -147,10 +147,10 @@ it runs.
 
 ## Test summary
 
-- Test result: 1546 passed, 15 deselected in 9s
+- Test result: 1546 passed, 15 deselected in 10s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
 - No python layout warnings.
-- Built version(s): 0.1.1
+- Built version(s): 0.2.0
 - Build and test using Python 3.15.2
