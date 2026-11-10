@@ -153,4 +153,4 @@ it runs.
 - No pylint warnings.
 - No python layout warnings.
 - Built version(s): 0.2.0
-- Build and test using Python 3.15.2
+- Build and test using Python 3.12.10
