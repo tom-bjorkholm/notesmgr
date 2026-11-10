@@ -62,11 +62,11 @@ def test_image_named_whole(tmp_path: Path) -> None:
         f'<p><img alt="dot" src="{(tmp_path / IMAGE).as_uri()}" /></p>'
 
 
-def test_image_first_named() -> None:
+def test_image_first_named(tmp_path: Path) -> None:
     """An image is found however its description is written."""
     html = f'<img src="{IMAGE}">'
-    named = local_images(html, Path('/notes'))
-    assert named == f'<img src="{Path("/notes/pic.png").as_uri()}">'
+    named = local_images(html, tmp_path)
+    assert named == f'<img src="{(tmp_path / IMAGE).as_uri()}">'
 
 
 @pytest.mark.parametrize('target', [

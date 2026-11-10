@@ -13,6 +13,9 @@ from notesmgr.note_image import MAX_IMAGE_WIDTH, image_path, is_remote, \
 FOLDER = Path('/notes/project')
 """The folder that the note of these tests is taken to be in."""
 
+ELSEWHERE = Path(Path.cwd().anchor, 'elsewhere', 'picture.png')
+"""An image named by its whole path, with a drive where there are drives."""
+
 
 @pytest.mark.parametrize('target,expected', [
     ('picture.png', False),
@@ -39,7 +42,7 @@ def test_is_remote(target: str, expected: bool) -> None:
     ('picture.png', FOLDER / 'picture.png'),
     ('deeper/picture.png', FOLDER / 'deeper/picture.png'),
     ('../picture.png', FOLDER / '../picture.png'),
-    ('/elsewhere/picture.png', Path('/elsewhere/picture.png')),
+    (str(ELSEWHERE), ELSEWHERE),
     ('', None),
     ('https://example.com/picture.png', None)])
 def test_image_beside_note(target: str, expected: Optional[Path]) -> None:
@@ -55,8 +58,7 @@ def test_image_of_no_folder(target: str) -> None:
 
 def test_whole_path_alone() -> None:
     """An image named by its whole path needs no folder to be in."""
-    assert image_path(None, '/elsewhere/picture.png') == \
-        Path('/elsewhere/picture.png')
+    assert image_path(None, str(ELSEWHERE)) == ELSEWHERE
 
 
 @pytest.mark.parametrize('width,limit,expected', [

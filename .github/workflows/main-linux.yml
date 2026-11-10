@@ -27,9 +27,13 @@ jobs:
       - name: Build tools sync
         run: cd common_build_tools && git checkout master && git pull
 
-      - name: Run clean build
-        run: python3 -m pip install --upgrade gitpython && python3 ./run_clean_build.py
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
 
+      - name: Run clean build
+        run: |
+          python3 -m pip install --upgrade gitpython
+          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" python3 ./run_clean_build.py
 
       - name: Upload reports
         uses: actions/upload-artifact@v7

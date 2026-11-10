@@ -101,6 +101,7 @@ def test_nothing_said(boxes: list[Box]) -> None:
     assert not boxes
 
 
+@pytest.mark.usefixtures('tk_root')    # skipped without a display
 @pytest.mark.parametrize('failed,kind', [(True, 'error'), (False, 'info')])
 def test_said_in_box(boxes: list[Box], failed: bool, kind: str) -> None:
     """What was said is shown as an error only when it tells of one."""
