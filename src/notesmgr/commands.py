@@ -11,11 +11,12 @@ from typing import Callable, NamedTuple, Optional, Sequence, Union
 from notesmgr import folder_ops, note_ops
 from notesmgr.actions import Selected, offered
 from notesmgr.config import NoteExtension
-from notesmgr.dialogs import NameFolder, ask_name, ask_name_folder, \
-    ask_yes_no, show_error, show_info
+from notesmgr.dialogs import NameFolder, ask_if_sure, ask_name, \
+    ask_name_folder, ask_yes_no, show_error, show_info
 from notesmgr.editor_command import launch_editor
 from notesmgr.errors import NotesmgrError
 from notesmgr.explorer_drop import Drop, drop_item
+from notesmgr.folder_ops import Tally
 from notesmgr.note_file import is_plain_note, note_stem
 from notesmgr.project import Project, folder_paths, is_project
 from notesmgr.session import Session
@@ -42,7 +43,14 @@ ASK_RENAME_FOLDER = 'What is the folder {name} to be called?'
 """What the user is asked when renaming a folder."""
 
 ASK_DELETE_FOLDER = 'Move the folder {name} to the trash?'
-"""What the user is asked before a folder is taken away."""
+"""What the user is asked before an empty folder is taken away."""
+
+WARN_FULL_FOLDER = 'Folder {name} is not empty.'
+"""What the user is warned of before a folder that is not empty goes."""
+
+ASK_DELETE_FULL = 'It contains {content}.\n\nDo you really want to move ' \
+    'the folder with notes to trash?'
+"""What the user is asked before a folder that is not empty goes."""
 
 COPY_SUFFIX = ' copy'
 """What is put after the name of a note to name a copy of it."""
@@ -69,6 +77,24 @@ def shown_folder(root: Path, folder: Path) -> str:
 def folder_of(root: Path, shown: str) -> Path:
     """Return the folder that a name shown to the user stands for."""
     return root.parent / shown
+
+
+def counted(count: int, noun: str) -> str:
+    """Return a count followed by a noun, given an s unless it is one."""
+    return f'{count} {noun}' if count == 1 else f'{count} {noun}s'
+
+
+def contained_text(tally: Tally) -> str:
+    """Return what a folder holds, in the words the user is told it in.
+
+    The notes are always told, even when there are none, and the
+    sub-folders and other things only when there are any.
+    """
+    *first, last = [counted(tally.notes, 'note')] + [
+        counted(count, noun) for count, noun in
+        ((tally.folders, 'sub-folder'), (tally.others, 'other item'))
+        if count]
+    return f'{", ".join(first)} and {last}' if first else last
 
 
 class WindowHooks(NamedTuple):
@@ -298,10 +324,35 @@ class Commands:
             self.done(partial(folder_ops.rename_folder, folder, typed))
 
     def delete_folder(self) -> None:
-        """Move the selected folder to the trash, once the user is sure."""
+        """Move the selected folder to the trash, once the user is sure.
+
+        What the folder holds is looked at before the user is asked,
+        so that a folder holding something is warned of in the very
+        question, rather than refused after the user has said yes.
+        """
         folder = self.chosen_folder()
         if folder is None:
             return
-        if ask_yes_no(self.window, FOLDER_TITLE,
-                      ASK_DELETE_FOLDER.format(name=folder.name)):
-            self.done(partial(folder_ops.delete_folder, folder))
+        try:
+            tally = folder_ops.tally_folder(folder)
+        except NotesmgrError as error:
+            self.report_error(str(error))
+            return
+        if self._sure_to_delete(folder, tally):
+            self.done(partial(folder_ops.delete_folder, folder,
+                              with_content=not tally.empty))
+
+    def _sure_to_delete(self, folder: Path, tally: Tally) -> bool:
+        """Return whether the user wants a folder moved to the trash.
+
+        An empty folder is asked about with yes as the default answer,
+        and one holding something with a warning of what it holds and
+        no as the default answer.
+        """
+        if tally.empty:
+            return ask_yes_no(self.window, FOLDER_TITLE,
+                              ASK_DELETE_FOLDER.format(name=folder.name))
+        return ask_if_sure(self.window, FOLDER_TITLE,
+                           WARN_FULL_FOLDER.format(name=folder.name),
+                           ASK_DELETE_FULL.format(
+                               content=contained_text(tally)))

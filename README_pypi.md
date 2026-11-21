@@ -119,9 +119,14 @@ already is refused rather than moved.
 
 The `Folder` menu makes, renames and deletes folders of the project. A
 new folder starts with a copy of the template of the folder above it. A
-folder can be renamed at any time, and is deleted, to the trash, only
-when it holds no notes and no folders. The root folder of the project
-is renamed and deleted outside `notesmgr`.
+folder can be renamed at any time, and is deleted to the trash after
+asking. A folder that is not empty is deleted only when the user
+confirms a warning that tells how many notes, sub-folders and other
+items it holds; that warning answers `No` unless the user chooses
+`Yes`. The template, the note order file `.notes_order.txt` and files
+that file managers create (`.DS_Store`, `.localized`, `Thumbs.db`,
+`desktop.ini`, `.directory`) do not make a folder non-empty. The root
+folder of the project is renamed and deleted outside `notesmgr`.
 
 ### Configuration
 
@@ -253,7 +258,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1547 passed, 15 deselected in 8s
+- Test result: 1576 passed, 15 deselected in 8s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

@@ -546,6 +546,7 @@
   * [busy\_cursor](#notesmgr.dialogs.busy_cursor)
   * [ask\_folder](#notesmgr.dialogs.ask_folder)
   * [ask\_yes\_no](#notesmgr.dialogs.ask_yes_no)
+  * [ask\_if\_sure](#notesmgr.dialogs.ask_if_sure)
   * [show\_info](#notesmgr.dialogs.show_info)
   * [AskingWindow](#notesmgr.dialogs.AskingWindow)
     * [\_\_init\_\_](#notesmgr.dialogs.AskingWindow.__init__)
@@ -601,9 +602,13 @@
   * [ASK\_NEW\_FOLDER](#notesmgr.commands.ASK_NEW_FOLDER)
   * [ASK\_RENAME\_FOLDER](#notesmgr.commands.ASK_RENAME_FOLDER)
   * [ASK\_DELETE\_FOLDER](#notesmgr.commands.ASK_DELETE_FOLDER)
+  * [WARN\_FULL\_FOLDER](#notesmgr.commands.WARN_FULL_FOLDER)
+  * [ASK\_DELETE\_FULL](#notesmgr.commands.ASK_DELETE_FULL)
   * [COPY\_SUFFIX](#notesmgr.commands.COPY_SUFFIX)
   * [shown\_folder](#notesmgr.commands.shown_folder)
   * [folder\_of](#notesmgr.commands.folder_of)
+  * [counted](#notesmgr.commands.counted)
+  * [contained\_text](#notesmgr.commands.contained_text)
   * [WindowHooks](#notesmgr.commands.WindowHooks)
   * [Commands](#notesmgr.commands.Commands)
     * [\_\_init\_\_](#notesmgr.commands.Commands.__init__)
@@ -630,6 +635,7 @@
     * [new\_folder](#notesmgr.commands.Commands.new_folder)
     * [rename\_folder](#notesmgr.commands.Commands.rename_folder)
     * [delete\_folder](#notesmgr.commands.Commands.delete_folder)
+    * [\_sure\_to\_delete](#notesmgr.commands.Commands._sure_to_delete)
 * [notesmgr.note\_file](#notesmgr.note_file)
   * [TEMPLATE\_STEM](#notesmgr.note_file.TEMPLATE_STEM)
   * [NOTE\_EXTENSIONS](#notesmgr.note_file.NOTE_EXTENSIONS)
@@ -711,9 +717,16 @@
   * [NOT\_TRASHED](#notesmgr.folder_ops.NOT_TRASHED)
   * [NOT\_MOVED](#notesmgr.folder_ops.NOT_MOVED)
   * [INTO\_ITSELF](#notesmgr.folder_ops.INTO_ITSELF)
+  * [FILE\_MANAGER\_NAMES](#notesmgr.folder_ops.FILE_MANAGER_NAMES)
+  * [IGNORED\_NAMES](#notesmgr.folder_ops.IGNORED_NAMES)
+  * [Tally](#notesmgr.folder_ops.Tally)
+    * [empty](#notesmgr.folder_ops.Tally.empty)
   * [new\_folder](#notesmgr.folder_ops.new_folder)
   * [rename\_folder](#notesmgr.folder_ops.rename_folder)
+  * [is\_ignored](#notesmgr.folder_ops.is_ignored)
   * [is\_empty](#notesmgr.folder_ops.is_empty)
+  * [all\_entries](#notesmgr.folder_ops.all_entries)
+  * [tally\_folder](#notesmgr.folder_ops.tally_folder)
   * [delete\_folder](#notesmgr.folder_ops.delete_folder)
   * [move\_folder](#notesmgr.folder_ops.move_folder)
 
@@ -7394,6 +7407,32 @@ Ask the user something that is answered with yes or no.
 
   Whether the user answered yes.
 
+<a id="notesmgr.dialogs.ask_if_sure"></a>
+
+#### ask\_if\_sure
+
+```python
+def ask_if_sure(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+                warning: str, question: str) -> bool
+```
+
+Ask the user whether to go on with something that risks work.
+
+The user is warned, and no is the default answer, so that pressing
+Return without reading loses nothing.
+
+**Arguments**:
+
+- `parent` - The window that the question is asked over.
+- `title` - What the window asking is called.
+- `warning` - What the user is warned of, shown in bold.
+- `question` - What the user is asked, shown below the warning.
+  
+
+**Returns**:
+
+  Whether the user answered yes.
+
 <a id="notesmgr.dialogs.show_info"></a>
 
 #### show\_info
@@ -8059,7 +8098,19 @@ What the user is asked when renaming a folder.
 
 #### ASK\_DELETE\_FOLDER
 
-What the user is asked before a folder is taken away.
+What the user is asked before an empty folder is taken away.
+
+<a id="notesmgr.commands.WARN_FULL_FOLDER"></a>
+
+#### WARN\_FULL\_FOLDER
+
+What the user is warned of before a folder that is not empty goes.
+
+<a id="notesmgr.commands.ASK_DELETE_FULL"></a>
+
+#### ASK\_DELETE\_FULL
+
+What the user is asked before a folder that is not empty goes.
 
 <a id="notesmgr.commands.COPY_SUFFIX"></a>
 
@@ -8101,6 +8152,29 @@ def folder_of(root: Path, shown: str) -> Path
 ```
 
 Return the folder that a name shown to the user stands for.
+
+<a id="notesmgr.commands.counted"></a>
+
+#### counted
+
+```python
+def counted(count: int, noun: str) -> str
+```
+
+Return a count followed by a noun, given an s unless it is one.
+
+<a id="notesmgr.commands.contained_text"></a>
+
+#### contained\_text
+
+```python
+def contained_text(tally: Tally) -> str
+```
+
+Return what a folder holds, in the words the user is told it in.
+
+The notes are always told, even when there are none, and the
+sub-folders and other things only when there are any.
 
 <a id="notesmgr.commands.WindowHooks"></a>
 
@@ -8407,6 +8481,24 @@ def delete_folder() -> None
 ```
 
 Move the selected folder to the trash, once the user is sure.
+
+What the folder holds is looked at before the user is asked,
+so that a folder holding something is warned of in the very
+question, rather than refused after the user has said yes.
+
+<a id="notesmgr.commands.Commands._sure_to_delete"></a>
+
+#### \_sure\_to\_delete
+
+```python
+def _sure_to_delete(folder: Path, tally: Tally) -> bool
+```
+
+Return whether the user wants a folder moved to the trash.
+
+An empty folder is asked about with yes as the default answer,
+and one holding something with a warning of what it holds and
+no as the default answer.
 
 <a id="notesmgr.note_file"></a>
 
@@ -9316,6 +9408,46 @@ What is said about a folder that could not be moved.
 
 What is said about a folder that would be put inside its own tree.
 
+<a id="notesmgr.folder_ops.FILE_MANAGER_NAMES"></a>
+
+#### FILE\_MANAGER\_NAMES
+
+Files that macOS, Windows and KDE file managers put into folders.
+
+<a id="notesmgr.folder_ops.IGNORED_NAMES"></a>
+
+#### IGNORED\_NAMES
+
+Casefolded names of the files that do not make a folder non-empty.
+
+They are notesmgr's own note order file, the template of a folder
+whatever extension the project has, and the files that file managers
+put there on their own, none of which the user wrote.
+
+<a id="notesmgr.folder_ops.Tally"></a>
+
+## Tally Objects
+
+```python
+class Tally(NamedTuple)
+```
+
+How much of the user's a folder holds, all the way down.
+
+The files named in IGNORED_NAMES are not the user's, so they are
+not counted.
+
+<a id="notesmgr.folder_ops.Tally.empty"></a>
+
+#### empty
+
+```python
+@property
+def empty() -> bool
+```
+
+Whether nothing of the user's is held at all.
+
 <a id="notesmgr.folder_ops.new_folder"></a>
 
 #### new\_folder
@@ -9378,6 +9510,19 @@ rather than a folder in it, and is renamed from the outside.
   the name names no folder, the name is taken already, or
   the folder cannot be renamed.
 
+<a id="notesmgr.folder_ops.is_ignored"></a>
+
+#### is\_ignored
+
+```python
+def is_ignored(path: Path) -> bool
+```
+
+Return whether a path is a file that IGNORED_NAMES names.
+
+Names are compared whatever their case, as the file systems of
+macOS and Windows compare them.
+
 <a id="notesmgr.folder_ops.is_empty"></a>
 
 #### is\_empty
@@ -9386,11 +9531,10 @@ rather than a folder in it, and is renamed from the outside.
 def is_empty(folder: Path) -> bool
 ```
 
-Return whether a folder holds nothing but notesmgr's own files.
+Return whether a folder holds nothing but files that are ignored.
 
-The template of a folder and its note order file are notesmgr's
-doing rather than anything the user put there, so a folder that
-holds only those is empty to the user who is looking at it.
+A folder that holds only its template, its note order file and
+what file managers put there is empty to the user looking at it.
 
 **Arguments**:
 
@@ -9406,26 +9550,71 @@ holds only those is empty to the user who is looking at it.
 
 - `NotesmgrError` - The folder cannot be read.
 
+<a id="notesmgr.folder_ops.all_entries"></a>
+
+#### all\_entries
+
+```python
+def all_entries(folder: Path) -> Iterator[Path]
+```
+
+Yield everything below a folder, going down into shown folders.
+
+Hidden folders and folders reached through a symbolic link are
+yielded themselves, but not gone into, just as the tree does not
+show them.
+
+**Raises**:
+
+- `NotesmgrError` - A folder cannot be read.
+
+<a id="notesmgr.folder_ops.tally_folder"></a>
+
+#### tally\_folder
+
+```python
+def tally_folder(folder: Path) -> Tally
+```
+
+Return how much of the user's a folder holds, all the way down.
+
+**Arguments**:
+
+- `folder` - The folder to look into.
+  
+
+**Returns**:
+
+  The notes and the shown folders below it, and everything else
+  of the user's, such as pictures or hidden folders.
+  
+
+**Raises**:
+
+- `NotesmgrError` - A folder below it cannot be read.
+
 <a id="notesmgr.folder_ops.delete_folder"></a>
 
 #### delete\_folder
 
 ```python
-def delete_folder(folder: Path) -> None
+def delete_folder(folder: Path, with_content: bool = False) -> None
 ```
 
-Move a folder that holds nothing of the user's to the trash.
+Move a folder of the project to the trash.
 
 **Arguments**:
 
 - `folder` - The folder to take away.
+- `with_content` - Whether the folder may be taken away with things
+  of the user's in it, which only the user is to decide.
   
 
 **Raises**:
 
 - `NotesmgrError` - The folder is the root folder of the project,
-  it holds notes or folders of its own, or the trash would
-  not take it.
+  it holds things of the user's that it is not to be taken
+  away with, or the trash would not take it.
 
 <a id="notesmgr.folder_ops.move_folder"></a>
 

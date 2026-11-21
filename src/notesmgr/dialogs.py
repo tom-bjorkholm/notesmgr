@@ -163,6 +163,27 @@ def ask_yes_no(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
     return messagebox.askyesno(title=title, message=question, parent=parent)
 
 
+def ask_if_sure(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+                warning: str, question: str) -> bool:
+    """Ask the user whether to go on with something that risks work.
+
+    The user is warned, and no is the default answer, so that pressing
+    Return without reading loses nothing.
+
+    Args:
+        parent: The window that the question is asked over.
+        title: What the window asking is called.
+        warning: What the user is warned of, shown in bold.
+        question: What the user is asked, shown below the warning.
+
+    Returns:
+        Whether the user answered yes.
+    """
+    return messagebox.askyesno(title=title, message=warning, detail=question,
+                               icon=messagebox.WARNING, default=messagebox.NO,
+                               parent=parent)
+
+
 def show_info(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
               message: str) -> None:
     """Tell the user something that is no cause for worry.

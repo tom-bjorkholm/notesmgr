@@ -10,14 +10,16 @@ from typing import Optional, Sequence
 import pytest
 from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, \
     refuse_choice, write_notes
-from notesmgr import commands as commands_module
+from notesmgr import commands as commands_module, folder_ops
 from notesmgr.actions import DELETE, DELETE_FOLDER, DUPLICATE, EDIT, \
     MOVE_UP, NEW, NEW_FOLDER, RENAME_FOLDER
-from notesmgr.commands import Commands, WindowHooks, folder_of, shown_folder
+from notesmgr.commands import ASK_DELETE_FOLDER, Commands, WindowHooks, \
+    contained_text, folder_of, shown_folder
 from notesmgr.dialogs import NameFolder
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
 from notesmgr.explorer_drop import Drop
+from notesmgr.folder_ops import Tally
 from notesmgr.order_file import read_order_text
 from notesmgr.project_ops import open_project
 from notesmgr.session import Session
@@ -77,6 +79,7 @@ def fixture_no_dialogs(monkeypatch: pytest.MonkeyPatch) -> None:
     """Let no test of this module put a real dialog on the screen."""
     answer_name(monkeypatch, None)
     answer_yes_no(monkeypatch, False)
+    answer_if_sure(monkeypatch, False)
     answer_copy(monkeypatch, None)
 
 
@@ -119,12 +122,38 @@ def answer_name(monkeypatch: pytest.MonkeyPatch,
     return given
 
 
-def answer_yes_no(monkeypatch: pytest.MonkeyPatch, answer: bool) -> None:
-    """Make the yes or no question be answered in the given way."""
-    def asked(_parent: object, _title: str, _question: str) -> bool:
+def answer_yes_no(monkeypatch: pytest.MonkeyPatch, answer: bool) -> list[str]:
+    """Make the yes or no question be answered in the given way.
+
+    Returns:
+        The questions that the user was asked.
+    """
+    questions: list[str] = []
+
+    def asked(_parent: object, _title: str, question: str) -> bool:
         """Stand in for asking the user a question of yes or no."""
+        questions.append(question)
         return answer
     monkeypatch.setattr(commands_module, 'ask_yes_no', asked)
+    return questions
+
+
+def answer_if_sure(monkeypatch: pytest.MonkeyPatch,
+                   answer: bool) -> list[tuple[str, str]]:
+    """Make the risky yes or no question be answered in the given way.
+
+    Returns:
+        The warnings that the user was given, each with its question.
+    """
+    warned: list[tuple[str, str]] = []
+
+    def asked(_parent: object, _title: str, warning: str,
+              question: str) -> bool:
+        """Stand in for asking the user a question that risks work."""
+        warned.append((warning, question))
+        return answer
+    monkeypatch.setattr(commands_module, 'ask_if_sure', asked)
+    return warned
 
 
 def answer_copy(monkeypatch: pytest.MonkeyPatch,
@@ -420,21 +449,69 @@ def test_delete_folder(commands: Commands, root: Path,
     """An empty folder is taken away once the user has said so."""
     answer_name(monkeypatch, 'ideas')
     commands.new_folder()
-    answer_yes_no(monkeypatch, True)
+    questions = answer_yes_no(monkeypatch, True)
+    warned = answer_if_sure(monkeypatch, True)
     commands.select(root / 'ideas')
     commands.delete_folder()
+    assert questions == [ASK_DELETE_FOLDER.format(name='ideas')]
+    assert not warned
     assert trashed == [root / 'ideas']
 
 
 def test_delete_folder_full(commands: Commands, root: Path, errors: list[str],
                             monkeypatch: pytest.MonkeyPatch,
                             trashed: list[Path]) -> None:
-    """A folder holding notes is reported rather than taken away."""
-    answer_yes_no(monkeypatch, True)
+    """A folder holding notes is warned of, and taken away when sure."""
+    questions = answer_yes_no(monkeypatch, True)
+    warned = answer_if_sure(monkeypatch, True)
+    commands.select(root / 'sub')
+    commands.delete_folder()
+    assert not questions
+    assert warned == [('Folder sub is not empty.', 'It contains 1 note.\n\n'
+                       'Do you really want to move the folder with notes '
+                       'to trash?')]
+    assert trashed == [root / 'sub']
+    assert not errors
+
+
+def test_full_folder_kept(commands: Commands, root: Path, trashed: list[Path],
+                          reopened: list[Optional[Path]]) -> None:
+    """A folder holding notes stays when the user does not say yes."""
     commands.select(root / 'sub')
     commands.delete_folder()
     assert trashed == []
-    assert len(errors) == 1
+    assert (root / 'sub' / 'deep.md.txt').is_file()
+    assert reopened == []
+
+
+def test_delete_unreadable(commands: Commands, root: Path, errors: list[str],
+                           monkeypatch: pytest.MonkeyPatch,
+                           trashed: list[Path]) -> None:
+    """A folder that cannot be looked into is reported, and not asked of."""
+    def refuse(_folder: Path) -> Tally:
+        """Stand in for a folder that the system will not list."""
+        raise NotesmgrError('cannot read')
+    monkeypatch.setattr(folder_ops, 'tally_folder', refuse)
+    questions = answer_yes_no(monkeypatch, True)
+    warned = answer_if_sure(monkeypatch, True)
+    commands.select(root / 'sub')
+    commands.delete_folder()
+    assert errors == ['cannot read']
+    assert not questions
+    assert not warned
+    assert trashed == []
+
+
+@pytest.mark.parametrize('tally,expected', [
+    (Tally(), '0 notes'),
+    (Tally(notes=1), '1 note'),
+    (Tally(notes=7, folders=3), '7 notes and 3 sub-folders'),
+    (Tally(others=2), '0 notes and 2 other items'),
+    (Tally(notes=2, folders=1, others=1),
+     '2 notes, 1 sub-folder and 1 other item')])
+def test_contained_text(tally: Tally, expected: str) -> None:
+    """The notes are always told, and anything else only when there."""
+    assert contained_text(tally) == expected
 
 
 def test_edit_starts_editor(commands: Commands, root: Path,
@@ -532,6 +609,7 @@ def test_delete_folder_none(commands: Commands, root: Path,
                             selected: Optional[str]) -> None:
     """With no folder selected, the root folder included, none is taken."""
     answer_yes_no(monkeypatch, True)
+    answer_if_sure(monkeypatch, True)
     commands.select(None if selected is None else root / selected)
     commands.delete_folder()
     assert trashed == []

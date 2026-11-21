@@ -13,8 +13,8 @@ import pytest
 from notesmgr.dialogs import ACCEPT_LABEL, BUSY_CURSOR, CANCEL_LABEL, \
     CHOOSE_LABEL, MAX_TEXT_HEIGHT, MAX_TEXT_WIDTH, MIN_TEXT_WIDTH, \
     ChoiceDialog, NameFolder, NameFolderDialog, ask_choice, ask_folder, \
-    ask_name, ask_name_folder, ask_yes_no, busy_cursor, show_error, \
-    show_info, show_text, text_size
+    ask_if_sure, ask_name, ask_name_folder, ask_yes_no, busy_cursor, \
+    show_error, show_info, show_text, text_size
 
 TEMPLATES = ['template.md', 'template.txt']
 """Options of the kind that the choosing window is made to offer."""
@@ -163,6 +163,24 @@ def test_ask_yes_no(top_window: tkinter.Toplevel, answered: bool,
     """A question answered with yes or no is answered with yes or no."""
     monkeypatch.setattr(messagebox, 'askyesno', lambda **kwargs: answered)
     assert ask_yes_no(top_window, 'Project', 'Open it?') is answered
+
+
+@pytest.mark.parametrize('answered', [True, False])
+def test_ask_if_sure(top_window: tkinter.Toplevel, answered: bool,
+                     monkeypatch: pytest.MonkeyPatch) -> None:
+    """A risky question warns, and is answered no unless told otherwise."""
+    asked: list[dict[str, object]] = []
+
+    def record(**kwargs: object) -> bool:
+        """Stand in for the yes or no question of Tk."""
+        asked.append(kwargs)
+        return answered
+    monkeypatch.setattr(messagebox, 'askyesno', record)
+    assert ask_if_sure(top_window, 'Folder', 'Not empty.', 'Sure?') \
+        is answered
+    assert asked == [{'title': 'Folder', 'message': 'Not empty.',
+                      'detail': 'Sure?', 'icon': messagebox.WARNING,
+                      'default': messagebox.NO, 'parent': top_window}]
 
 
 def test_show_info(top_window: tkinter.Toplevel,

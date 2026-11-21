@@ -10,8 +10,9 @@ from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, fail_on, \
     refuse_choice, reports, write_file, write_notes
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
-from notesmgr.folder_ops import NOT_MADE, NOT_MOVED, NOT_RENAMED, \
-    delete_folder, is_empty, move_folder, new_folder, rename_folder
+from notesmgr.folder_ops import NOT_MADE, NOT_MOVED, NOT_RENAMED, Tally, \
+    delete_folder, is_empty, move_folder, new_folder, rename_folder, \
+    tally_folder
 from notesmgr.note_file import template_name
 from notesmgr.order_file import ORDER_NAME, read_order_text
 from notesmgr.project_ops import open_project
@@ -31,7 +32,7 @@ def fixture_root(tmp_path: Path) -> Path:
 
 @pytest.fixture(name='empty')
 def fixture_empty(root: Path) -> Path:
-    """Provide a folder holding nothing but notesmgr's own files."""
+    """Provide a folder holding nothing but its template and order file."""
     return new_folder(root, 'empty', EXTENSION)
 
 
@@ -137,17 +138,68 @@ def test_delete_not_empty(root: Path, trashed: list[Path]) -> None:
     assert (root / 'full' / 'deep.md.txt').is_file()
 
 
-def test_delete_root_refused(root: Path, trashed: list[Path]) -> None:
+def test_delete_with_content(root: Path, trashed: list[Path]) -> None:
+    """A folder holding notes is taken away with them when allowed to."""
+    delete_folder(root / 'full', with_content=True)
+    assert trashed == [root / 'full']
+
+
+@pytest.mark.parametrize('with_content', [False, True])
+def test_delete_root_refused(root: Path, trashed: list[Path],
+                             with_content: bool) -> None:
     """The root folder is the project itself and is not taken away here."""
     with pytest.raises(NotesmgrError):
-        delete_folder(root)
+        delete_folder(root, with_content)
     assert trashed == []
+
+
+def test_tally_empty(empty: Path) -> None:
+    """A folder holding only ignored files holds nothing at all."""
+    assert tally_folder(empty) == Tally()
+    assert tally_folder(empty).empty
+
+
+@pytest.mark.parametrize('names,expected', [
+    (['a.md.txt'], Tally(notes=1)),
+    (['a.md.txt', 'below/b.md.txt', 'below/deeper/c.md.txt'],
+     Tally(notes=3, folders=2)),
+    (['below/'], Tally(folders=1)),
+    (['below/template.md.txt', f'below/{ORDER_NAME}'], Tally(folders=1)),
+    (['below/.DS_Store', 'below/Thumbs.db'], Tally(folders=1)),
+    (['.DS_Store/'], Tally(others=1)),
+    (['picture.png', 'below/picture.png'], Tally(folders=1, others=2)),
+    (['.hidden/a.md.txt'], Tally(others=1)),
+    (['a.md.txt', 'below/', 'picture.png'],
+     Tally(notes=1, folders=1, others=1))])
+def test_tally_folder(empty: Path, names: list[str], expected: Tally) -> None:
+    """Notes, shown folders and other things are counted all the way down.
+
+    A name ending in a slash is made as a folder and every other name
+    as a file. A hidden folder is one other thing, and not gone into.
+    """
+    for name in names:
+        if name.endswith('/'):
+            (empty / name).mkdir(parents=True)
+        else:
+            write_file(empty / name)
+    assert tally_folder(empty) == expected
+    assert not tally_folder(empty).empty
 
 
 def test_order_name_ignored(empty: Path) -> None:
     """The note order file is notesmgr's own and does not fill a folder."""
     assert (empty / ORDER_NAME).is_file()
     assert is_empty(empty)
+
+
+@pytest.mark.parametrize('name', [
+    '.DS_Store', '.ds_store', '.localized', 'Thumbs.db', 'desktop.ini',
+    '.directory', 'template.md', 'Template.TXT'])
+def test_ignored_name(empty: Path, name: str) -> None:
+    """Files that file managers or other templates make leave it empty."""
+    write_file(empty / name)
+    assert is_empty(empty)
+    assert tally_folder(empty).empty
 
 
 def test_move_folder(root: Path, empty: Path) -> None:

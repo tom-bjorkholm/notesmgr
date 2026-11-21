@@ -5,12 +5,13 @@
 # MIT License
 
 from pathlib import Path
+from typing import Iterator, NamedTuple
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
-from notesmgr.note_file import checked_name, is_template, template_name
+from notesmgr.note_file import checked_name, is_plain_note, template_name
 from notesmgr.note_ops import free_path, resync_order, template_text
 from notesmgr.order_file import ORDER_NAME
-from notesmgr.project import folder_entries, is_project
+from notesmgr.project import folder_entries, is_project, is_shown_folder
 from notesmgr.trash import send_to_trash
 
 IS_PROJECT = 'The folder {folder} is the project itself.'
@@ -33,6 +34,36 @@ NOT_MOVED = 'The folder {path} cannot be moved.\n{reason}'
 
 INTO_ITSELF = 'The folder {folder} cannot be moved into itself.'
 """What is said about a folder that would be put inside its own tree."""
+
+FILE_MANAGER_NAMES = ('.DS_Store', '.localized', 'Thumbs.db', 'desktop.ini',
+                      '.directory')
+"""Files that macOS, Windows and KDE file managers put into folders."""
+
+IGNORED_NAMES = frozenset(name.casefold() for name in (
+    ORDER_NAME, *FILE_MANAGER_NAMES, *map(template_name, NoteExtension)))
+"""Casefolded names of the files that do not make a folder non-empty.
+
+They are notesmgr's own note order file, the template of a folder
+whatever extension the project has, and the files that file managers
+put there on their own, none of which the user wrote.
+"""
+
+
+class Tally(NamedTuple):
+    """How much of the user's a folder holds, all the way down.
+
+    The files named in IGNORED_NAMES are not the user's, so they are
+    not counted.
+    """
+
+    notes: int = 0
+    folders: int = 0
+    others: int = 0
+
+    @property
+    def empty(self) -> bool:
+        """Whether nothing of the user's is held at all."""
+        return self == Tally()
 
 
 def new_folder(parent: Path, typed: str, extension: NoteExtension) -> Path:
@@ -99,12 +130,20 @@ def rename_folder(folder: Path, typed: str) -> Path:
     return wanted
 
 
-def is_empty(folder: Path) -> bool:
-    """Return whether a folder holds nothing but notesmgr's own files.
+def is_ignored(path: Path) -> bool:
+    """Return whether a path is a file that IGNORED_NAMES names.
 
-    The template of a folder and its note order file are notesmgr's
-    doing rather than anything the user put there, so a folder that
-    holds only those is empty to the user who is looking at it.
+    Names are compared whatever their case, as the file systems of
+    macOS and Windows compare them.
+    """
+    return path.is_file() and path.name.casefold() in IGNORED_NAMES
+
+
+def is_empty(folder: Path) -> bool:
+    """Return whether a folder holds nothing but files that are ignored.
+
+    A folder that holds only its template, its note order file and
+    what file managers put there is empty to the user looking at it.
 
     Args:
         folder: The folder to look into.
@@ -115,25 +154,63 @@ def is_empty(folder: Path) -> bool:
     Raises:
         NotesmgrError: The folder cannot be read.
     """
-    return all(path.is_file() and (path.name == ORDER_NAME
-                                   or is_template(path.name))
-               for path in folder_entries(folder))
+    return all(is_ignored(path) for path in folder_entries(folder))
 
 
-def delete_folder(folder: Path) -> None:
-    """Move a folder that holds nothing of the user's to the trash.
+def all_entries(folder: Path) -> Iterator[Path]:
+    """Yield everything below a folder, going down into shown folders.
+
+    Hidden folders and folders reached through a symbolic link are
+    yielded themselves, but not gone into, just as the tree does not
+    show them.
+
+    Raises:
+        NotesmgrError: A folder cannot be read.
+    """
+    for path in folder_entries(folder):
+        yield path
+        if is_shown_folder(path):
+            yield from all_entries(path)
+
+
+def tally_folder(folder: Path) -> Tally:
+    """Return how much of the user's a folder holds, all the way down.
+
+    Args:
+        folder: The folder to look into.
+
+    Returns:
+        The notes and the shown folders below it, and everything else
+        of the user's, such as pictures or hidden folders.
+
+    Raises:
+        NotesmgrError: A folder below it cannot be read.
+    """
+    entries = [path for path in all_entries(folder)
+               if not is_ignored(path)]
+    folders = sum(1 for path in entries if is_shown_folder(path))
+    notes = sum(1 for path in entries
+                if path.is_file() and is_plain_note(path.name))
+    return Tally(notes=notes, folders=folders,
+                 others=len(entries) - notes - folders)
+
+
+def delete_folder(folder: Path, with_content: bool = False) -> None:
+    """Move a folder of the project to the trash.
 
     Args:
         folder: The folder to take away.
+        with_content: Whether the folder may be taken away with things
+            of the user's in it, which only the user is to decide.
 
     Raises:
         NotesmgrError: The folder is the root folder of the project,
-            it holds notes or folders of its own, or the trash would
-            not take it.
+            it holds things of the user's that it is not to be taken
+            away with, or the trash would not take it.
     """
     if is_project(folder):
         raise NotesmgrError(IS_PROJECT.format(folder=folder))
-    if not is_empty(folder):
+    if not with_content and not is_empty(folder):
         raise NotesmgrError(NOT_EMPTY.format(folder=folder))
     send_to_trash(folder, NOT_TRASHED)
 
