@@ -80,8 +80,9 @@ class NotesmgrConfig(Config):
 
     def __init__(self, from_json_data_text: Optional[str] = None,
                  from_json_filename: Optional[PathOrStr] = None,
-                 stderr_file: TextIO = sys.stderr,
-                 member_name: Optional[str] = None) -> None:
+                 stderr_file: TextIO = sys.stderr, *,
+                 member_name: Optional[str] = None,
+                 ok_to_use_defaults: bool = False) -> None:
         """Construct the configuration with its default values.
 
         Args:
@@ -90,13 +91,16 @@ class NotesmgrConfig(Config):
             stderr_file: Stream used for user-facing diagnostics.
             member_name: Path for reaching this object from the top
                 level configuration, None for the top level itself.
+            ok_to_use_defaults: Whether it is acceptable to use
+                default values for members missing in the configuration file.
         """
         self.editor: str = default_editor()
         self.file_extension: NoteExtension = DEFAULT_EXTENSION
         self.max_note_size: int = DEFAULT_NOTE_SIZE
         super().__init__(from_json_data_text=from_json_data_text,
                          from_json_filename=from_json_filename,
-                         stderr_file=stderr_file, member_name=member_name)
+                         stderr_file=stderr_file, member_name=member_name,
+                         ok_to_use_defaults=ok_to_use_defaults)
 
     def _get_read_old_config(self) -> ReadOldConfiguration:
         """Return how a file of an older notesmgr is read."""
@@ -133,7 +137,7 @@ class NotesmgrConfig(Config):
                 MemberValidationStep(member_names=['max_note_size'],
                                      validator=in_range)]
 
-    def stripped_editor(self, value: object) -> str:
+    def stripped_editor(self, value: str) -> str:
         """Return the editor command without the blanks around it.
 
         Args:

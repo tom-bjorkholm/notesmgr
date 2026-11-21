@@ -93,11 +93,14 @@ def config_error(template: str, path: Path, said: str,
     return NotesmgrError(template.format(path=path, reason=reason))
 
 
-def read_config_file(path: Path) -> NotesmgrConfig:
+def read_config_file(path: Path, *, ok_to_use_defaults: bool = False) \
+        -> NotesmgrConfig:
     """Return the configuration that a file holds.
 
     Args:
         path: The configuration file to read.
+        ok_to_use_defaults: Whether it is acceptable to use default values
+            for members missing in the configuration file.
 
     Returns:
         The configuration it holds.
@@ -110,7 +113,8 @@ def read_config_file(path: Path) -> NotesmgrConfig:
         raise NotesmgrError(MISSING.format(path=path))
     said = io.StringIO()
     try:
-        return NotesmgrConfig(from_json_filename=path, stderr_file=said)
+        return NotesmgrConfig(from_json_filename=path, stderr_file=said,
+                              ok_to_use_defaults=ok_to_use_defaults)
     except (ValueError, KeyError, OSError) as error:
         raise config_error(NOT_READ, path, said.getvalue(), error) from error
 
@@ -133,9 +137,12 @@ def write_config_file(config: NotesmgrConfig, path: Path) -> None:
                            error) from error
 
 
-def user_wide_config() -> NotesmgrConfig:
+def user_wide_config(*, ok_to_use_defaults: bool = False) -> NotesmgrConfig:
     """Return the user wide configuration, or the built-in defaults.
 
+    Args:
+        ok_to_use_defaults: Whether it is acceptable to use default values
+            for members missing in the configuration file.
     Returns:
         What a new project starts its own configuration out as.
 
@@ -144,4 +151,5 @@ def user_wide_config() -> NotesmgrConfig:
             holds no configuration that notesmgr can use.
     """
     source = user_config_source()
-    return NotesmgrConfig() if source is None else read_config_file(source)
+    return NotesmgrConfig() if source is None else \
+        read_config_file(source, ok_to_use_defaults=ok_to_use_defaults)

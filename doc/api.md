@@ -2235,7 +2235,9 @@ shown before the rest of it is left out.
 def __init__(from_json_data_text: Optional[str] = None,
              from_json_filename: Optional[PathOrStr] = None,
              stderr_file: TextIO = sys.stderr,
-             member_name: Optional[str] = None) -> None
+             *,
+             member_name: Optional[str] = None,
+             ok_to_use_defaults: bool = False) -> None
 ```
 
 Construct the configuration with its default values.
@@ -2247,6 +2249,8 @@ Construct the configuration with its default values.
 - `stderr_file` - Stream used for user-facing diagnostics.
 - `member_name` - Path for reaching this object from the top
   level configuration, None for the top level itself.
+- `ok_to_use_defaults` - Whether it is acceptable to use
+  default values for members missing in the configuration file.
 
 <a id="notesmgr.config.NotesmgrConfig.parse_converters"></a>
 
@@ -2276,7 +2280,7 @@ Return the checks that every configuration has to pass.
 #### stripped\_editor
 
 ```python
-def stripped_editor(value: object) -> str
+def stripped_editor(value: str) -> str
 ```
 
 Return the editor command without the blanks around it.
@@ -3622,7 +3626,9 @@ there is any, and the exception is what is shown when there is not.
 #### read\_config\_file
 
 ```python
-def read_config_file(path: Path) -> NotesmgrConfig
+def read_config_file(path: Path,
+                     *,
+                     ok_to_use_defaults: bool = False) -> NotesmgrConfig
 ```
 
 Return the configuration that a file holds.
@@ -3630,6 +3636,8 @@ Return the configuration that a file holds.
 **Arguments**:
 
 - `path` - The configuration file to read.
+- `ok_to_use_defaults` - Whether it is acceptable to use default values
+  for members missing in the configuration file.
   
 
 **Returns**:
@@ -3667,10 +3675,15 @@ Write a configuration to a file, replacing what was there.
 #### user\_wide\_config
 
 ```python
-def user_wide_config() -> NotesmgrConfig
+def user_wide_config(*, ok_to_use_defaults: bool = False) -> NotesmgrConfig
 ```
 
 Return the user wide configuration, or the built-in defaults.
+
+**Arguments**:
+
+- `ok_to_use_defaults` - Whether it is acceptable to use default values
+  for members missing in the configuration file.
 
 **Returns**:
 

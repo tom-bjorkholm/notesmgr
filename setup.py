@@ -20,14 +20,14 @@ setup(
   },
   install_requires=[
     'argcomplete >= 3.7.2',
-    'edit-cfg-json-tk >= 1.0.0',
-    'edit-cfg-json >= 1.0.0',
-    'config-as-json >= 1.8',
+    'edit-cfg-json-tk >= 1.1.0',
+    'edit-cfg-json >= 1.1.0',
+    'config-as-json >= 1.9',
     'markdown >= 3.11.3',
     'types-Markdown >= 3.11.3.20261108',
     'packaging >= 26.3',
-    'send2trash >= 2.1.0',
-    'types-Send2Trash >= 2.1.0.20260408',
+    'send2trash >= 2.2.0',
+    'types-Send2Trash >= 2.2.0.20261114',
     'versionreporter >= 0.5'
   ]
 )
