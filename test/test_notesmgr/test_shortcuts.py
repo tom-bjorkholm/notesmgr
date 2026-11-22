@@ -6,8 +6,8 @@
 
 import tkinter
 import pytest
-from notesmgr.actions import COPY_RAW, NEW_FOLDER, ON_NOTE, ON_PLAIN, \
-    ON_PROJECT, RENAME
+from notesmgr.actions import COPY_RAW, FOCUS_FOLDER, NEW_FOLDER, ON_NOTE, \
+    ON_PLAIN, ON_PROJECT, RENAME, SHOW_ALL
 from notesmgr.shortcuts import Shortcut, action_shortcuts, held_shortcut, \
     modifier, quit_shortcut, tk_window_system, window_shortcuts
 
@@ -89,6 +89,19 @@ def test_copy_raw_keys(window_system: str, expected: Shortcut) -> None:
 def test_shifted_keys(window_system: str, expected: Shortcut) -> None:
     """A capital letter is bound and shown with the shift key held."""
     assert action_shortcuts(window_system)[NEW_FOLDER] == expected
+
+
+@pytest.mark.parametrize('window_system,action,expected', [
+    ('aqua', FOCUS_FOLDER, Shortcut(('<Command-l>',), 'Cmd+L')),
+    ('aqua', SHOW_ALL, Shortcut(('<Command-Shift-L>',), 'Cmd+Shift+L')),
+    ('win32', FOCUS_FOLDER, Shortcut(('<Control-l>',), 'Ctrl+L')),
+    ('win32', SHOW_ALL, Shortcut(('<Control-Shift-L>',), 'Ctrl+Shift+L')),
+    ('x11', FOCUS_FOLDER, Shortcut(('<Control-l>',), 'Ctrl+L')),
+    ('x11', SHOW_ALL, Shortcut(('<Control-Shift-L>',), 'Ctrl+Shift+L'))])
+def test_focus_keys(window_system: str, action: str,
+                    expected: Shortcut) -> None:
+    """L focuses on the local folder, and with Shift shows the large view."""
+    assert action_shortcuts(window_system)[action] == expected
 
 
 @pytest.mark.parametrize('window_system,expected', [

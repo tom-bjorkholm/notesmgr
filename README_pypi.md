@@ -102,6 +102,8 @@ The other shortcuts are:
 | Shortcut | What it does |
 | --- | --- |
 | `Cmd+Shift+N` | Makes a folder (`Folder` → `New folder…`). |
+| `Cmd+L` | Closes every folder but the current one and those above it (`Folder` → `Focus on current folder`). L for local. |
+| `Cmd+Shift+L` | Opens every folder again (`Folder` → `Show all folders`). Shift for the large view. |
 | `Cmd+R` | Reads the open project again (`File` → `Refresh project`). |
 | `Cmd++`, `Cmd+-`, `Cmd+0` | Draws the note and the tree larger, smaller, and in the normal size again (`View` menu). |
 | `Cmd+W` on mac, `Ctrl+Q` elsewhere | Quits. |
@@ -133,6 +135,14 @@ items it holds; that warning answers `No` unless the user chooses
 that file managers create (`.DS_Store`, `.localized`, `Thumbs.db`,
 `desktop.ini`, `.directory`) do not make a folder non-empty. The root
 folder of the project is renamed and deleted outside `notesmgr`.
+
+`Folder` → `Focus on current folder` (`Cmd+L` / `Ctrl+L`) keeps open
+only the current folder, which is the selected folder or the folder of
+the selected note, and the folders above it. With nothing selected only
+the root folder stays open. `Folder` → `Show all folders`
+(`Cmd+Shift+L` / `Ctrl+Shift+L`) opens every folder again. Both are
+also in the menu of a right-click on a folder. Folders that are closed
+stay closed when the project is refreshed or changed by a command.
 
 ### Refreshing
 
@@ -276,7 +286,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1701 passed, 20 deselected in 9s
+- Test result: 1753 passed, 21 deselected in 10s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

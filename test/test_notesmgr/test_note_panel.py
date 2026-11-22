@@ -16,7 +16,8 @@ from test_notesmgr.helpers import refuse_choice, write_config, write_file, \
 from notesmgr import commands as commands_module
 from notesmgr import note_panel as panel_module
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
-    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, ON_FOLDER, RENAME
+    EDIT, FOCUS_FOLDER, MOVE_DOWN, MOVE_UP, NEW, ON_FOLDER, ON_PROJECT, \
+    RENAME, SHOW_ALL
 from notesmgr.clipboard_tool import RichText
 from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config import DEFAULT_NOTE_SIZE, MIN_NOTE_SIZE, NoteExtension
@@ -264,7 +265,7 @@ def test_folder_is_no_note(panel: NotePanel, project: Path,
     assert panel.shown_path() == str(project)
     assert panel.view.area_text() == ''
     assert panel.note_path() is None
-    assert offers[-1] == {NEW, NEW_FOLDER}
+    assert offers[-1] == set(ON_PROJECT)
 
 
 @pytest.mark.parametrize('name', ['ideas.md.txt', 'template.md'])
@@ -278,7 +279,7 @@ def test_note_named_folder(panel: NotePanel, project: Path, name: str,
     assert panel.view.area_text() == ''
     assert not panel.view.warning_shown()
     assert panel.note_path() is None
-    assert offers[-1] == {NEW, NEW_FOLDER, *ON_FOLDER}
+    assert offers[-1] == {*ON_PROJECT, *ON_FOLDER}
 
 
 def test_nothing_selected(panel: NotePanel, note: Path) -> None:
@@ -395,8 +396,13 @@ def test_copy_raw(panel: NotePanel, note: Path) -> None:
 
 
 def test_every_action_keyed(panel: NotePanel) -> None:
-    """Every action that has keys is given a command to run."""
-    assert set(panel.key_commands()) == set(action_shortcuts('x11'))
+    """Every action that has keys is given a command to run.
+
+    Focusing on a folder and showing all folders act on the explorer,
+    so the main window runs them, and the panel runs the rest.
+    """
+    assert set(panel.key_commands()) == \
+        set(action_shortcuts('x11')) - {FOCUS_FOLDER, SHOW_ALL}
 
 
 def test_copy_key_copies_part(panel: NotePanel) -> None:
@@ -551,7 +557,7 @@ def test_gone_note_told(panel: NotePanel, note: Path,
     panel.watch.poll()
     assert panel.view.warning_shown()
     assert not panel.has_note()
-    assert offers[-1] == {NEW, NEW_FOLDER}
+    assert offers[-1] == set(ON_PROJECT)
     assert unusable(panel) == NO_NOTE
 
 

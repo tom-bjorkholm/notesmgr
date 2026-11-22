@@ -138,6 +138,19 @@ def test_entry_menu(top_window: tkinter.Toplevel, chosen: list[str]) -> None:
     assert chosen == ['Open']
 
 
+@pytest.mark.parametrize('separated,expected', [
+    (True, ['command', 'separator', 'command']),
+    (False, ['command', 'command'])])
+def test_entry_separated(top_window: tkinter.Toplevel, separated: bool,
+                         expected: list[str]) -> None:
+    """A separated entry has a line drawn above it, and no other entry."""
+    menu = entry_menu(top_window,
+                      [MenuEntry('Open', lambda: None),
+                       MenuEntry('Quit', lambda: None, separated=separated)])
+    assert [menu.type(index) for index in range(len(expected))] == expected
+    assert menu.index(tkinter.END) == len(expected) - 1
+
+
 def test_popups_asked_for(menu_bar: MenuBar) -> None:
     """Only the menus asked for are made as popup menus as well."""
     assert set(menu_bar.popups) == {FILE_MENU}

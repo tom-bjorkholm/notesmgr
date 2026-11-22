@@ -7,7 +7,7 @@
 import tkinter
 from typing import Mapping, NamedTuple, Sequence
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
-    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, RENAME
+    EDIT, FOCUS_FOLDER, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, RENAME, SHOW_ALL
 
 ZOOM_IN_KEYS = ('plus', 'equal', 'KP_Add')
 """What Tk calls the keys that ask for a larger note."""
@@ -33,11 +33,14 @@ ACTION_KEYS: Mapping[str, tuple[str, str]] = {
     DELETE: ('BackSpace', 'Backspace'),
     MOVE_UP: ('Up', 'Up'),
     MOVE_DOWN: ('Down', 'Down'),
-    NEW_FOLDER: ('Shift-N', 'Shift+N')}
+    NEW_FOLDER: ('Shift-N', 'Shift+N'),
+    FOCUS_FOLDER: ('l', 'L'),
+    SHOW_ALL: ('Shift-L', 'Shift+L')}
 """The key of each action held with Cmd or Ctrl, and what it is called.
 
 A capital letter is what Tk calls a letter typed with the shift key
-held down, so the shift key is named along with it.
+held down, so the shift key is named along with it. L is for local,
+the folder in focus, and with Shift for the large view of them all.
 """
 
 UNHELD_KEYS: Mapping[str, str] = {RENAME: 'F2'}

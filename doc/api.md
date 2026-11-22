@@ -229,6 +229,8 @@
   * [NEW\_FOLDER](#notesmgr.actions.NEW_FOLDER)
   * [RENAME\_FOLDER](#notesmgr.actions.RENAME_FOLDER)
   * [DELETE\_FOLDER](#notesmgr.actions.DELETE_FOLDER)
+  * [FOCUS\_FOLDER](#notesmgr.actions.FOCUS_FOLDER)
+  * [SHOW\_ALL](#notesmgr.actions.SHOW_ALL)
   * [ON\_NOTE](#notesmgr.actions.ON_NOTE)
   * [ON\_PLAIN](#notesmgr.actions.ON_PLAIN)
   * [ON\_PROJECT](#notesmgr.actions.ON_PROJECT)
@@ -486,6 +488,11 @@
     * [zoom\_normal](#notesmgr.explorer_tree.ExplorerTree.zoom_normal)
     * [show](#notesmgr.explorer_tree.ExplorerTree.show)
     * [add\_folder](#notesmgr.explorer_tree.ExplorerTree.add_folder)
+    * [items](#notesmgr.explorer_tree.ExplorerTree.items)
+    * [closed\_items](#notesmgr.explorer_tree.ExplorerTree.closed_items)
+    * [focus\_selected](#notesmgr.explorer_tree.ExplorerTree.focus_selected)
+    * [open\_all](#notesmgr.explorer_tree.ExplorerTree.open_all)
+    * [open\_only](#notesmgr.explorer_tree.ExplorerTree.open_only)
     * [shown\_files](#notesmgr.explorer_tree.ExplorerTree.shown_files)
 * [notesmgr.errors](#notesmgr.errors)
   * [NotesmgrError](#notesmgr.errors.NotesmgrError)
@@ -959,6 +966,10 @@ def refresh() -> None
 
 Read the open project again, keeping what is selected.
 
+The folders that were closed stay closed, as they do whenever
+the project is shown again, and the entry that shows all
+folders is what opens them all.
+
 Another program, or notesmgr on another computer sharing the
 folder, can change the project while it is open, and notesmgr
 hears nothing of it, so the user asks for it to be read again.
@@ -1262,6 +1273,9 @@ class MenuEntry(NamedTuple)
 ```
 
 One command of a menu, and whether it can be chosen.
+
+A separated entry has a line drawn above it, which sets it and
+the entries after it apart from the entries before it.
 
 <a id="notesmgr.menu_bar.MenuSpec"></a>
 
@@ -2959,7 +2973,8 @@ What Tk calls the keys of the tree that edit the selected note.
 The key of each action held with Cmd or Ctrl, and what it is called.
 
 A capital letter is what Tk calls a letter typed with the shift key
-held down, so the shift key is named along with it.
+held down, so the shift key is named along with it. L is for local,
+the folder in focus, and with Shift for the large view of them all.
 
 <a id="notesmgr.shortcuts.UNHELD_KEYS"></a>
 
@@ -3640,6 +3655,18 @@ What the action that gives a folder another name is called.
 #### DELETE\_FOLDER
 
 What the action that takes an empty folder away is called.
+
+<a id="notesmgr.actions.FOCUS_FOLDER"></a>
+
+#### FOCUS\_FOLDER
+
+What the action that closes all folders but the current one is called.
+
+<a id="notesmgr.actions.SHOW_ALL"></a>
+
+#### SHOW\_ALL
+
+What the action that opens every folder of the explorer is called.
 
 <a id="notesmgr.actions.ON_NOTE"></a>
 
@@ -6772,12 +6799,16 @@ def show(project: Optional[Project]) -> None
 
 Show a project, or nothing at all when there is none.
 
+Every command shows the project anew, so a folder that was
+closed is shown closed again, while a folder that the tree
+did not show before, such as a new or renamed one, is open.
+
 <a id="notesmgr.explorer_tree.ExplorerTree.add_folder"></a>
 
 #### add\_folder
 
 ```python
-def add_folder(folder: Folder, parent: str) -> None
+def add_folder(folder: Folder, parent: str, closed: AbstractSet[str]) -> None
 ```
 
 Add one folder of the project and everything below it.
@@ -6790,6 +6821,74 @@ gives them.
 
 - `folder` - The folder of the project to add.
 - `parent` - Item the folder is added under, empty for the top.
+- `closed` - The items to add closed, every other folder being
+  added open.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.items"></a>
+
+#### items
+
+```python
+def items(parent: str = '') -> Iterator[str]
+```
+
+Return every item below one item, of the whole tree by default.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.closed_items"></a>
+
+#### closed\_items
+
+```python
+def closed_items() -> set[str]
+```
+
+Return the items of the tree that are closed.
+
+A note is never opened, so the notes are among them, which
+does no harm, as only a folder is ever shown open or closed.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.focus_selected"></a>
+
+#### focus\_selected
+
+```python
+def focus_selected() -> None
+```
+
+Close every folder but the current one and those above it.
+
+The current folder is the selected folder, or the folder of
+the selected note, and with nothing selected only the root
+folder of the project stays open. The folders below the
+current folder are closed, so that its notes stand out.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.open_all"></a>
+
+#### open\_all
+
+```python
+def open_all() -> None
+```
+
+Open every folder, so that the whole project is shown.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.open_only"></a>
+
+#### open\_only
+
+```python
+def open_only(kept: Container[str]) -> None
+```
+
+Open the items that are kept open, and close every other one.
+
+Opening and closing folders moves the items below them, so the
+selected item is scrolled into view again afterwards.
+
+**Arguments**:
+
+- `kept` - The items to open. Opening a note does nothing, as
+  a note holds nothing to show.
 
 <a id="notesmgr.explorer_tree.ExplorerTree.shown_files"></a>
 

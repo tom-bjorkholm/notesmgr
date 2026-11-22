@@ -12,7 +12,8 @@ from tkinter import ttk
 from typing import AbstractSet, Callable, Optional, Sequence, Union
 from edit_cfg_json import ConfigLoadError
 from edit_cfg_json_tk import TkEditorPanel
-from notesmgr.actions import DELETE_FOLDER, NEW_FOLDER, RENAME_FOLDER
+from notesmgr.actions import DELETE_FOLDER, FOCUS_FOLDER, NEW_FOLDER, \
+    RENAME_FOLDER, SHOW_ALL
 from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config_editor import open_config_editor
 from notesmgr.config_files import copy_to_user_wide
@@ -195,14 +196,28 @@ class MainWindow:
                 if spec.command is not None]
 
     def _folder_entries(self, keys: Shortcuts) -> list[MenuEntry]:
-        """Return the entries that act on a folder of the project."""
+        """Return the entries that act on a folder of the project.
+
+        Below a line come the entries that say which folders the
+        explorer shows open.
+        """
         commands = self.note_panel.commands
-        return [MenuEntry(NEW_FOLDER, commands.new_folder,
-                          accelerator(keys, NEW_FOLDER), enabled=False),
-                MenuEntry(RENAME_FOLDER, commands.rename_folder,
-                          enabled=False),
-                MenuEntry(DELETE_FOLDER, commands.delete_folder,
-                          enabled=False)]
+        acting = [MenuEntry(NEW_FOLDER, commands.new_folder,
+                            accelerator(keys, NEW_FOLDER), enabled=False),
+                  MenuEntry(RENAME_FOLDER, commands.rename_folder,
+                            enabled=False),
+                  MenuEntry(DELETE_FOLDER, commands.delete_folder,
+                            enabled=False)]
+        showing = [MenuEntry(label, command, accelerator(keys, label),
+                             enabled=False, separated=index == 0)
+                   for index, (label, command)
+                   in enumerate(self._tree_commands().items())]
+        return acting + showing
+
+    def _tree_commands(self) -> dict[str, Callable[[], None]]:
+        """Return what each action on the folders the explorer opens runs."""
+        return {FOCUS_FOLDER: self.explorer.focus_selected,
+                SHOW_ALL: self.explorer.open_all}
 
     def _view_entries(self, keys: Shortcuts) -> list[MenuEntry]:
         """Return the entries that say how large a note is drawn.
@@ -256,7 +271,8 @@ class MainWindow:
         self._bind(keys.larger, self._zoom_command(ZOOM_STEP))
         self._bind(keys.smaller, self._zoom_command(-ZOOM_STEP))
         self._bind(keys.normal, self._normal_command())
-        for action, command in self.note_panel.key_commands().items():
+        commands = self.note_panel.key_commands() | self._tree_commands()
+        for action, command in commands.items():
             self._bind(keys.actions[action], command)
         for sequence in TREE_EDIT_KEYS:
             self.explorer.tree.bind(sequence, self._edit_key)
@@ -395,6 +411,10 @@ class MainWindow:
 
     def refresh(self) -> None:
         """Read the open project again, keeping what is selected.
+
+        The folders that were closed stay closed, as they do whenever
+        the project is shown again, and the entry that shows all
+        folders is what opens them all.
 
         Another program, or notesmgr on another computer sharing the
         folder, can change the project while it is open, and notesmgr

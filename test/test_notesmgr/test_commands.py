@@ -12,7 +12,7 @@ from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, \
     refuse_choice, write_notes
 from notesmgr import commands as commands_module, folder_ops
 from notesmgr.actions import DELETE, DELETE_FOLDER, DUPLICATE, EDIT, \
-    MOVE_UP, NEW, NEW_FOLDER, RENAME_FOLDER
+    FOCUS_FOLDER, MOVE_UP, NEW, NEW_FOLDER, RENAME_FOLDER, SHOW_ALL
 from notesmgr.commands import ASK_DELETE_FOLDER, Commands, WindowHooks, \
     contained_text, folder_of, shown_folder
 from notesmgr.dialogs import NameFolder
@@ -250,7 +250,8 @@ def test_offer_for_folder(commands: Commands, root: Path,
     """A selected folder offers what is done to a folder, and no more."""
     commands.select(root / 'sub')
     commands.note_shown(False)
-    assert offers[-1] == {NEW, NEW_FOLDER, RENAME_FOLDER, DELETE_FOLDER}
+    assert offers[-1] == {NEW, NEW_FOLDER, RENAME_FOLDER, DELETE_FOLDER,
+                          FOCUS_FOLDER, SHOW_ALL}
 
 
 def test_new_note(commands: Commands, root: Path,

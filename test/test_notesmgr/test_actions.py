@@ -6,9 +6,9 @@
 
 import pytest
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, \
-    DELETE_FOLDER, DUPLICATE, EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, \
-    NOTHING, ON_FOLDER, ON_NOTE, ON_PLAIN, ON_PROJECT, RENAME, \
-    RENAME_FOLDER, Selected, offered
+    DELETE_FOLDER, DUPLICATE, EDIT, FOCUS_FOLDER, MOVE_DOWN, MOVE_UP, NEW, \
+    NEW_FOLDER, NOTHING, ON_FOLDER, ON_NOTE, ON_PLAIN, ON_PROJECT, RENAME, \
+    RENAME_FOLDER, SHOW_ALL, Selected, offered
 
 EVERY_ACTION = ON_NOTE + ON_PLAIN + ON_PROJECT + ON_FOLDER
 """Every action that the buttons and the menu entries offer."""
@@ -24,7 +24,8 @@ def test_every_action_named() -> None:
     assert len(set(EVERY_ACTION)) == len(EVERY_ACTION)
     assert set(EVERY_ACTION) == {COPY_RAW, COPY_FORMATTED, DUPLICATE, EDIT,
                                  RENAME, NEW, DELETE, MOVE_UP, MOVE_DOWN,
-                                 NEW_FOLDER, RENAME_FOLDER, DELETE_FOLDER}
+                                 NEW_FOLDER, RENAME_FOLDER, DELETE_FOLDER,
+                                 FOCUS_FOLDER, SHOW_ALL}
 
 
 @pytest.mark.parametrize('selected,expected', [
@@ -59,3 +60,14 @@ def test_new_needs_a_project() -> None:
     """Making a note or a folder asks for a project to make it in."""
     assert NEW not in offered(Selected(note=True, plain=True))
     assert NEW_FOLDER not in offered(Selected(folder=True))
+
+
+@pytest.mark.parametrize('action', [FOCUS_FOLDER, SHOW_ALL])
+def test_folders_shown(action: str) -> None:
+    """Which folders are open is said whenever a project is open.
+
+    What is selected does not matter, as nothing selected stands for
+    the root folder of the project.
+    """
+    assert action in offered(Selected(project=True))
+    assert action not in offered(Selected(note=True, folder=True))

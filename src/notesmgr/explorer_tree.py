@@ -7,7 +7,7 @@
 import tkinter
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable, Optional
+from typing import AbstractSet, Callable, Container, Iterator, Optional
 from notesmgr.explorer_drag import ExplorerDrag, row_at
 from notesmgr.explorer_drop import Drop, drop_target
 from notesmgr.explorer_font import TreeFont
@@ -172,14 +172,21 @@ class ExplorerTree:
         self.font.normal_size()
 
     def show(self, project: Optional[Project]) -> None:
-        """Show a project, or nothing at all when there is none."""
+        """Show a project, or nothing at all when there is none.
+
+        Every command shows the project anew, so a folder that was
+        closed is shown closed again, while a folder that the tree
+        did not show before, such as a new or renamed one, is open.
+        """
         self.drag.cancel()
+        closed = self.closed_items()
         self.project = project
         self.tree.delete(*self.tree.get_children())
         if project is not None:
-            self.add_folder(project.tree, '')
+            self.add_folder(project.tree, '', closed)
 
-    def add_folder(self, folder: Folder, parent: str) -> None:
+    def add_folder(self, folder: Folder, parent: str,
+                   closed: AbstractSet[str]) -> None:
         """Add one folder of the project and everything below it.
 
         The subfolders come first, then the template of the folder,
@@ -189,14 +196,66 @@ class ExplorerTree:
         Args:
             folder: The folder of the project to add.
             parent: Item the folder is added under, empty for the top.
+            closed: The items to add closed, every other folder being
+                added open.
         """
         item = self.tree.insert(parent, tkinter.END, iid=str(folder.path),
                                 text=folder.path.name or str(folder.path),
-                                open=True)
+                                open=str(folder.path) not in closed)
         for below in folder.folders:
-            self.add_folder(below, item)
+            self.add_folder(below, item, closed)
         for path in self.shown_files(folder):
             self.tree.insert(item, tkinter.END, iid=str(path), text=path.name)
+
+    def items(self, parent: str = '') -> Iterator[str]:
+        """Return every item below one item, of the whole tree by default."""
+        for item in self.tree.get_children(parent):
+            yield item
+            yield from self.items(item)
+
+    def closed_items(self) -> set[str]:
+        """Return the items of the tree that are closed.
+
+        A note is never opened, so the notes are among them, which
+        does no harm, as only a folder is ever shown open or closed.
+        """
+        return {item for item in self.items()
+                if not self.tree.tk.getboolean(self.tree.item(item, 'open'))}
+
+    def focus_selected(self) -> None:
+        """Close every folder but the current one and those above it.
+
+        The current folder is the selected folder, or the folder of
+        the selected note, and with nothing selected only the root
+        folder of the project stays open. The folders below the
+        current folder are closed, so that its notes stand out.
+        """
+        selected = self.selected_path()
+        if selected is None:
+            self.open_only(set(self.tree.get_children('')))
+            return
+        above = (selected, *selected.parents)
+        self.open_only({str(path) for path in above})
+
+    def open_all(self) -> None:
+        """Open every folder, so that the whole project is shown."""
+        self.open_only(set(self.items()))
+
+    def open_only(self, kept: Container[str]) -> None:
+        """Open the items that are kept open, and close every other one.
+
+        Opening and closing folders moves the items below them, so the
+        selected item is scrolled into view again afterwards.
+
+        Args:
+            kept: The items to open. Opening a note does nothing, as
+                a note holds nothing to show.
+        """
+        for item in self.items():
+            self.tree.item(item, open=item in kept)
+        selection = self.tree.selection()
+        if selection:
+            self.tree.see(selection[0])
 
     @staticmethod
     def shown_files(folder: Folder) -> list[Path]:

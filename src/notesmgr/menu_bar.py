@@ -13,12 +13,17 @@ UNLABELED_TYPES = ('tearoff', 'separator')
 
 
 class MenuEntry(NamedTuple):
-    """One command of a menu, and whether it can be chosen."""
+    """One command of a menu, and whether it can be chosen.
+
+    A separated entry has a line drawn above it, which sets it and
+    the entries after it apart from the entries before it.
+    """
 
     label: str
     command: Callable[[], None]
     accelerator: Optional[str] = None
     enabled: bool = True
+    separated: bool = False
 
 
 class MenuSpec(NamedTuple):
@@ -70,6 +75,8 @@ def entry_menu(parent: tkinter.Misc,
     """
     menu = tkinter.Menu(parent, tearoff=False)
     for entry in entries:
+        if entry.separated:
+            menu.add_separator()
         menu.add_command(label=entry.label, command=entry.command,
                          accelerator=entry.accelerator or '',
                          state=entry_state(entry.enabled))

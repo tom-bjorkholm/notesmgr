@@ -8,8 +8,11 @@ import tkinter
 from pathlib import Path
 from typing import Optional
 import pytest
-from test_notesmgr.helpers import build_folder_project, refuse_choice
+from test_notesmgr.helpers import build_folder_project, refuse_choice, \
+    write_notes
 from test_notesmgr.tk_windows import event_at, show_filled
+from test_notesmgr.tree_folders import ALL_FOLDERS, build_nested, \
+    open_folders
 from notesmgr import explorer_tree as tree_module
 from notesmgr.explorer_drop import Drop
 from notesmgr.explorer_tree import AQUA_RIGHT_CLICKS, EXPLORER_WIDTH, \
@@ -334,3 +337,102 @@ def test_tk_right_click(explorer: ExplorerTree, project: Project,
     assert [item for item, _x, _y in clicked] == [note]
     assert explorer.drag.state.item is None
     assert explorer.selected_path() is None
+
+
+@pytest.fixture(name='nested')
+def fixture_nested(tmp_path: Path) -> Project:
+    """Provide an open project whose folder apple holds a folder deep."""
+    return open_project(build_nested(tmp_path / 'notes'),
+                        refuse_choice).project
+
+
+def test_items_whole_tree(explorer: ExplorerTree, nested: Project) -> None:
+    """Every item is listed once, and a folder before what it holds."""
+    explorer.show(nested)
+    items = list(explorer.items())
+    assert len(set(items)) == len(items)
+    assert items[0] == str(nested.root)
+    deep = nested.root / 'apple' / 'deep'
+    assert items.index(str(deep.parent)) < items.index(str(deep)) < \
+        items.index(str(deep / 'd.md.txt'))
+
+
+def test_folders_shown_open(explorer: ExplorerTree, nested: Project) -> None:
+    """A project shown for the first time is shown with every folder open."""
+    explorer.show(nested)
+    assert open_folders(explorer, nested.root) == ALL_FOLDERS
+
+
+def test_closed_stay_closed(explorer: ExplorerTree, nested: Project) -> None:
+    """A folder that was closed is closed when it is shown again."""
+    explorer.show(nested)
+    explorer.tree.item(str(nested.root / 'apple'), open=False)
+    explorer.show(nested)
+    assert open_folders(explorer, nested.root) == ALL_FOLDERS - {'apple'}
+
+
+def test_new_folder_open(explorer: ExplorerTree, nested: Project) -> None:
+    """A folder that was not shown before is shown open."""
+    explorer.show(nested)
+    explorer.tree.item(str(nested.root / 'apple'), open=False)
+    write_notes(nested.root / 'mango', ['m.md.txt'])
+    explorer.show(open_project(nested.root, refuse_choice).project)
+    assert open_folders(explorer, nested.root) == \
+        ALL_FOLDERS - {'apple'} | {'mango'}
+
+
+@pytest.mark.parametrize('chosen,expected', [
+    (None, {'.'}),
+    ('', {'.'}),
+    ('first.md.txt', {'.'}),
+    ('apple', {'.', 'apple'}),
+    ('apple/a.md.txt', {'.', 'apple'}),
+    ('apple/deep', {'.', 'apple', 'apple/deep'}),
+    ('apple/deep/d.md.txt', {'.', 'apple', 'apple/deep'}),
+    ('zebra/z.md.txt', {'.', 'zebra'})])
+def test_focus_selected(explorer: ExplorerTree, nested: Project,
+                        chosen: Optional[str], expected: set[str]) -> None:
+    """Only the current folder and the folders above it stay open.
+
+    The current folder is the selected folder or the folder of the
+    selected note, and the root folder when nothing is selected, so
+    neither the folders beside it nor those below it stay open.
+    """
+    explorer.show(nested)
+    explorer.select(None if chosen is None else nested.root / chosen)
+    explorer.focus_selected()
+    assert open_folders(explorer, nested.root) == expected
+
+
+def test_focus_keeps_select(explorer: ExplorerTree, nested: Project) -> None:
+    """Focusing on the current folder leaves the same item selected."""
+    explorer.show(nested)
+    note = nested.root / 'apple' / 'deep' / 'd.md.txt'
+    explorer.select(note)
+    explorer.focus_selected()
+    assert explorer.selected_path() == note
+
+
+def test_focus_shown_again(explorer: ExplorerTree, nested: Project) -> None:
+    """The folders that focusing closed are closed when shown again."""
+    explorer.show(nested)
+    explorer.select(nested.root / 'zebra')
+    explorer.focus_selected()
+    explorer.show(nested)
+    assert open_folders(explorer, nested.root) == {'.', 'zebra'}
+
+
+def test_open_all(explorer: ExplorerTree, nested: Project) -> None:
+    """Showing all folders opens every folder that focusing closed."""
+    explorer.show(nested)
+    explorer.select(None)
+    explorer.focus_selected()
+    explorer.open_all()
+    assert open_folders(explorer, nested.root) == ALL_FOLDERS
+
+
+def test_focus_no_project(explorer: ExplorerTree) -> None:
+    """With no project shown there is nothing to open or close."""
+    explorer.focus_selected()
+    explorer.open_all()
+    assert not explorer.tree.get_children('')

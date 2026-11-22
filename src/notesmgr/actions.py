@@ -42,13 +42,19 @@ RENAME_FOLDER = 'Rename folder…'
 DELETE_FOLDER = 'Delete folder'
 """What the action that takes an empty folder away is called."""
 
+FOCUS_FOLDER = 'Focus on current folder'
+"""What the action that closes all folders but the current one is called."""
+
+SHOW_ALL = 'Show all folders'
+"""What the action that opens every folder of the explorer is called."""
+
 ON_NOTE = (COPY_RAW, COPY_FORMATTED, EDIT)
 """What can be done with any note that is shown, template or not."""
 
 ON_PLAIN = (DUPLICATE, RENAME, DELETE, MOVE_UP, MOVE_DOWN)
 """What can be done with a note that is no template of a folder."""
 
-ON_PROJECT = (NEW, NEW_FOLDER)
+ON_PROJECT = (NEW, NEW_FOLDER, FOCUS_FOLDER, SHOW_ALL)
 """What can be done as long as there is a project to do it in."""
 
 ON_FOLDER = (RENAME_FOLDER, DELETE_FOLDER)
