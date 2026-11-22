@@ -88,6 +88,25 @@ class ExplorerTree:
         self.tree.see(str(path))
         return path
 
+    def nearest_shown(self, path: Optional[Path]) -> Optional[Path]:
+        """Return a path, or the nearest folder above it that is shown.
+
+        Another program can take away or rename what was selected, and
+        the folder that held it is then the nearest place to carry on.
+
+        Args:
+            path: What was asked for, None for nothing at all.
+
+        Returns:
+            The path itself when the tree shows it, otherwise the
+            nearest folder above it that the tree shows, and None
+            when there is no such folder or no path at all.
+        """
+        if path is None:
+            return None
+        return next((item for item in (path, *path.parents)
+                     if self.tree.exists(str(item))), None)
+
     def drop_at(self, dragged: Path, over: Optional[Path],
                 lower: bool) -> Optional[Drop]:
         """Return where a dragged item would land, None for nowhere.

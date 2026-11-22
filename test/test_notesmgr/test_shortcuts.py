@@ -84,12 +84,21 @@ def test_shifted_keys(window_system: str, expected: Shortcut) -> None:
     assert action_shortcuts(window_system)[NEW_FOLDER] == expected
 
 
+@pytest.mark.parametrize('window_system,expected', [
+    ('aqua', Shortcut(('<Command-r>',), 'Cmd+R')),
+    ('win32', Shortcut(('<Control-r>',), 'Ctrl+R')),
+    ('x11', Shortcut(('<Control-r>',), 'Ctrl+R'))])
+def test_refresh_keys(window_system: str, expected: Shortcut) -> None:
+    """Refreshing the project is Cmd+R on macOS and Ctrl+R elsewhere."""
+    assert window_shortcuts(window_system).refresh == expected
+
+
 @pytest.mark.parametrize('window_system', WINDOW_SYSTEMS)
 def test_no_key_twice(window_system: str) -> None:
     """No two shortcuts share a key sequence or what they are shown as."""
     keys = window_shortcuts(window_system)
-    shortcuts = [keys.quit, keys.larger, keys.smaller, keys.normal,
-                 *keys.actions.values()]
+    shortcuts = [keys.quit, keys.refresh, keys.larger, keys.smaller,
+                 keys.normal, *keys.actions.values()]
     bound = [sequence for shortcut in shortcuts
              for sequence in shortcut.sequences]
     assert len(set(bound)) == len(bound)

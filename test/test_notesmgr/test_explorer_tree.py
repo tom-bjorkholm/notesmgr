@@ -177,6 +177,32 @@ def test_select_what_is_gone(explorer: ExplorerTree, project: Project) \
     assert explorer.selected_path() is None
 
 
+@pytest.mark.parametrize('asked,expected', [
+    ('first.md.txt', 'first.md.txt'),
+    ('apple', 'apple'),
+    ('apple/gone.md.txt', 'apple'),
+    ('apple/gone/deeper.md.txt', 'apple'),
+    ('gone/z.md.txt', '')])
+def test_nearest_shown(explorer: ExplorerTree, project: Project, asked: str,
+                       expected: str) -> None:
+    """A path is itself when shown, or else the nearest folder above it.
+
+    An empty expected path stands for the root folder of the project.
+    """
+    explorer.show(project)
+    assert explorer.nearest_shown(project.root / asked) == \
+        project.root / expected
+
+
+@pytest.mark.parametrize('outside', [True, False])
+def test_nearest_none(explorer: ExplorerTree, project: Project,
+                      outside: bool) -> None:
+    """No path, and a path outside the project, have nothing near."""
+    explorer.show(project)
+    asked = project.root.parent / 'elsewhere.md.txt' if outside else None
+    assert explorer.nearest_shown(asked) is None
+
+
 def test_select_a_folder(explorer: ExplorerTree, project: Project) -> None:
     """A folder of the project is selected like any other item."""
     explorer.show(project)

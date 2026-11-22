@@ -67,6 +67,29 @@ def test_chooser_after_open(tmp_path: Path, project: Project) -> None:
     assert session.chooser_folder() == project.root
 
 
+def test_closed_forgets(tmp_path: Path, project: Project) -> None:
+    """A session whose project was closed has no project any more."""
+    session = Session(tmp_path)
+    session.opened(project)
+    session.closed()
+    assert session.project is None
+    assert session.config() is None
+
+
+@pytest.mark.parametrize('opened', [True, False])
+def test_chooser_after_close(tmp_path: Path, project: Project,
+                             opened: bool) -> None:
+    """After closing, a chooser starts in the project that was open last.
+
+    Closing with no project open leaves the chooser where it was.
+    """
+    session = Session(tmp_path)
+    if opened:
+        session.opened(project)
+    session.closed()
+    assert session.chooser_folder() == (project.root if opened else tmp_path)
+
+
 def test_config_after_open(tmp_path: Path, project: Project) -> None:
     """The configuration file of the session is the project's own."""
     session = Session(tmp_path)

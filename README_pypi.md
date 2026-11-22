@@ -97,6 +97,7 @@ The other shortcuts are:
 | Shortcut | What it does |
 | --- | --- |
 | `Cmd+Shift+N` | Makes a folder (`Folder` → `New folder…`). |
+| `Cmd+R` | Reads the open project again (`File` → `Refresh project`). |
 | `Cmd++`, `Cmd+-`, `Cmd+0` | Draws the note and the tree larger, smaller, and in the normal size again (`View` menu). |
 | `Cmd+W` on mac, `Ctrl+Q` elsewhere | Quits. |
 | `Tab` | Goes from the tree to the buttons and on to the note. |
@@ -127,6 +128,18 @@ items it holds; that warning answers `No` unless the user chooses
 that file managers create (`.DS_Store`, `.localized`, `Thumbs.db`,
 `desktop.ini`, `.directory`) do not make a folder non-empty. The root
 folder of the project is renamed and deleted outside `notesmgr`.
+
+### Refreshing
+
+`notesmgr` does not notice when the folders of the open project are
+changed by something else: a file manager, a terminal, or `notesmgr`
+on another computer sharing the project through a network or synced
+folder. `File` → `Refresh project` (`Cmd+R` / `Ctrl+R`) reads the
+project again, its configuration included. The selected item stays
+selected; when it is gone, the nearest folder above it that is left is
+selected instead. A project that can no longer be read, because its
+folder or its `notesmgr.cfg` is gone or broken, is closed after the
+reason is shown.
 
 ### Configuration
 
@@ -258,7 +271,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1576 passed, 15 deselected in 8s
+- Test result: 1606 passed, 16 deselected in 8s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

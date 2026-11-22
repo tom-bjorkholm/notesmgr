@@ -27,8 +27,8 @@ from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
     EDIT_CONFIG_ENTRY, FILE_MENU, FOLDER_MENU, HELP_MENU, INITIAL_HEIGHT, \
     INITIAL_WIDTH, MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, \
     NORMAL_SIZE_ENTRY, NOTE_MENU, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, \
-    OPEN_PROJECT_ENTRY, QUIT_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, \
-    VERSION_TITLE, MainWindow, fitted
+    OPEN_PROJECT_ENTRY, QUIT_ENTRY, REFRESH_ENTRY, USER_WIDE_ENTRY, \
+    VERSION_ENTRY, VERSION_TITLE, MainWindow, fitted
 from notesmgr.order_file import read_order_text
 from notesmgr.project import config_path
 from notesmgr.shortcuts import TREE_EDIT_KEYS
@@ -273,6 +273,7 @@ def test_menus_of_the_bar(main_window: MainWindow) -> None:
 @pytest.mark.parametrize('menu,label', [
     (FILE_MENU, NEW_PROJECT_ENTRY),
     (FILE_MENU, OPEN_PROJECT_ENTRY),
+    (FILE_MENU, REFRESH_ENTRY),
     (FILE_MENU, QUIT_ENTRY),
     (NOTE_MENU, EDIT),
     (NOTE_MENU, COPY_RAW),

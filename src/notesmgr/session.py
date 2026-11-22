@@ -47,6 +47,16 @@ class Session:
         """Take a project as the one that is open from now on."""
         self.project = project
 
+    def closed(self) -> None:
+        """Take it that no project is open any more.
+
+        A folder chooser still starts in the project that was open
+        last, as that is where the user was last looking.
+        """
+        if self.project is not None:
+            self.folder = self.project.root
+        self.project = None
+
     def chooser_folder(self) -> Path:
         """Return the folder that a folder chooser is to start in."""
         if self.project is None:

@@ -7,11 +7,11 @@
 import tkinter
 from pathlib import Path
 import pytest
-from test_notesmgr.helpers import build_project
+from test_notesmgr.helpers import build_project, write_notes
 from notesmgr.actions import MOVE_DOWN, NEW_FOLDER
 from notesmgr.main_window import FILE_MENU, FOLDER_MENU, NORMAL_SIZE_ENTRY, \
-    NOTE_MENU, QUIT_ENTRY, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, \
-    ZOOM_STEP, MainWindow, handled
+    NOTE_MENU, QUIT_ENTRY, REFRESH_ENTRY, VIEW_MENU, ZOOM_IN_ENTRY, \
+    ZOOM_OUT_ENTRY, ZOOM_STEP, MainWindow, handled
 from notesmgr.menu_bar import entry_labels
 from notesmgr.order_file import read_order_text
 from notesmgr.shortcuts import TREE_EDIT_KEYS, Shortcut, Shortcuts, \
@@ -108,6 +108,21 @@ def test_quit_key_bound(main_window: MainWindow, shortcut: Shortcut) -> None:
     """The window itself listens for the shortcut, as Tk binds none."""
     assert all(main_window.window.bind(sequence)
                for sequence in shortcut.sequences)
+
+
+def test_refresh_accelerator(main_window: MainWindow, keys: Shortcuts) \
+        -> None:
+    """The refresh entry shows the keys that refresh the project."""
+    menu = main_window.menu_bar.menus[FILE_MENU]
+    assert menu.entrycget(REFRESH_ENTRY, 'accelerator') == keys.refresh.label
+
+
+def test_refresh_key_bound(main_window: MainWindow, keys: Shortcuts) \
+        -> None:
+    """Both the window and the tree listen for the refresh keys."""
+    for sequence in keys.refresh.sequences:
+        assert main_window.window.bind(sequence)
+        assert main_window.explorer.tree.bind(sequence)
 
 
 def test_quit_destroys(main_window: MainWindow) -> None:
@@ -210,6 +225,19 @@ def test_tab_order(shown_window: MainWindow, project: Path) -> None:
     assert visited[0] == 'TButton'
     assert visited[-1] == 'Text'
     assert set(visited) == {'TButton', 'Text'}
+
+
+@pytest.mark.focus_sensitive
+def test_key_refreshes(shown_window: MainWindow, project: Path,
+                       keys: Shortcuts) -> None:
+    """The refresh key shows a note that another program wrote."""
+    shown_window.load_project(project)
+    added = write_notes(project, ['c.md.txt'])[0]
+    tree = shown_window.explorer.tree
+    tree.focus_set()
+    shown_window.window.update()
+    tree.event_generate(keys.refresh.sequences[0], when='now')
+    assert tree.exists(str(added))
 
 
 @pytest.mark.focus_sensitive

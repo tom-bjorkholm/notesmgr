@@ -46,6 +46,7 @@ CONFIG_MENU = 'Configuration'
 HELP_MENU = 'Help'
 NEW_PROJECT_ENTRY = 'New project…'
 OPEN_PROJECT_ENTRY = 'Open project…'
+REFRESH_ENTRY = 'Refresh project'
 QUIT_ENTRY = 'Quit'
 ZOOM_IN_ENTRY = 'Larger text'
 ZOOM_OUT_ENTRY = 'Smaller text'
@@ -132,16 +133,20 @@ class MainWindow:
         entries that act on a folder need a folder, and copying the
         configuration to the user wide location asks for a project
         configuration file to copy, so all of them are greyed out
-        until what they need is selected.
+        until what they need is selected. Refreshing reads the open
+        project again, so it waits for a project to be opened.
         """
         new_entry = MenuEntry(NEW_PROJECT_ENTRY, self.new_project_dialog)
         open_entry = MenuEntry(OPEN_PROJECT_ENTRY, self.open_project_dialog)
+        refresh = MenuEntry(REFRESH_ENTRY, self.refresh, keys.refresh.label,
+                            enabled=False)
         quit_entry = MenuEntry(QUIT_ENTRY, self.quit, keys.quit.label)
         edit_entry = MenuEntry(EDIT_CONFIG_ENTRY, self.edit_configuration)
         user_wide = MenuEntry(USER_WIDE_ENTRY, self.save_user_wide,
                               enabled=False)
         versions = MenuEntry(VERSION_ENTRY, self.show_version)
-        return [MenuSpec(FILE_MENU, [new_entry, open_entry, quit_entry]),
+        return [MenuSpec(FILE_MENU, [new_entry, open_entry, refresh,
+                                     quit_entry]),
                 MenuSpec(NOTE_MENU, self._note_entries(keys)),
                 MenuSpec(FOLDER_MENU, self._folder_entries(keys)),
                 MenuSpec(VIEW_MENU, self._view_entries(keys)),
@@ -219,6 +224,7 @@ class MainWindow:
         opens and closes a selected folder as the tree itself does.
         """
         self._bind(keys.quit, self.quit)
+        self._bind(keys.refresh, self.refresh)
         self._bind(keys.larger, self._zoom_command(ZOOM_STEP))
         self._bind(keys.smaller, self._zoom_command(-ZOOM_STEP))
         self._bind(keys.normal, self._normal_command())
@@ -321,19 +327,32 @@ class MainWindow:
             self.load_project(folder)
 
     def load_project(self, root: Path,
-                     selected: Optional[Path] = None) -> None:
+                     selected: Optional[Path] = None) -> bool:
         """Open an existing project and show what it holds.
 
         Args:
             root: The root folder of the project to open.
             selected: What to select in it, None for nothing at all.
+
+        Returns:
+            Whether the project was opened, which it was not when the
+            user has been told why it could not be.
         """
-        self.opened(partial(open_project, root, self.choose_template),
-                    selected)
+        return self._opened(partial(open_project, root,
+                                    self.choose_template), selected)
 
     def make_project(self, root: Path) -> None:
         """Make a folder into a project, then open it and show it."""
-        self.opened(partial(create_project, root, self.choose_template))
+        self._opened(partial(create_project, root, self.choose_template))
+
+    def refresh(self) -> None:
+        """Read the open project again, keeping what is selected.
+
+        Another program, or notesmgr on another computer sharing the
+        folder, can change the project while it is open, and notesmgr
+        hears nothing of it, so the user asks for it to be read again.
+        """
+        self.reopen(self.explorer.selected_path())
 
     def reopen(self, selected: Optional[Path]) -> None:
         """Show the open project again, selecting one item of it.
@@ -341,25 +360,52 @@ class MainWindow:
         Every command changes the files of the project, so the whole
         project is read again rather than the tree being mended item
         by item. That way the tree says what the folders really hold,
-        whatever another program did to them meanwhile.
+        whatever another program did to them meanwhile. A project that
+        can no longer be read is closed, once the user has been told
+        why, so that no command acts on a tree that is not there.
 
         Args:
             selected: What to select once it is shown again, None to
                 select nothing at all.
         """
         project = self.session.project
-        if project is not None:
-            self.load_project(project.root, selected)
+        if project is None:
+            return
+        if not self.load_project(project.root, selected):
+            self._close_project()
 
-    def opened(self, opening: Callable[[], OpenReport],
-               selected: Optional[Path] = None) -> None:
-        """Show what an opening gave, or say why it gave nothing."""
+    def _close_project(self) -> None:
+        """Show no project at all, and offer nothing that needs one."""
+        self.session.closed()
+        self._offer_project(False)
+        self.show_project(None)
+        self.explorer.show(None)
+        self.select(None)
+
+    def _offer_project(self, is_open: bool) -> None:
+        """Offer the entries that need an open project, or grey them out.
+
+        Args:
+            is_open: Whether there is a project open now.
+        """
+        set_enabled(self.menu_bar.menus[FILE_MENU], REFRESH_ENTRY, is_open)
+        set_enabled(self.menu_bar.menus[CONFIG_MENU], USER_WIDE_ENTRY, is_open)
+
+    def _opened(self, opening: Callable[[], OpenReport],
+                selected: Optional[Path] = None) -> bool:
+        """Show what an opening gave, or say why it gave nothing.
+
+        Returns:
+            Whether a project was shown, which it was not when the
+            user has been told why the opening gave nothing.
+        """
         try:
             report = opening()
         except NotesmgrError as error:
             show_error(self.window, PROJECT_TITLE, str(error))
-            return
-        self.show_opened(report, selected)
+            return False
+        self._show_opened(report, selected)
+        return True
 
     def choose_template(self, folder: Path,
                         templates: Sequence[Path]) -> Optional[Path]:
@@ -377,15 +423,20 @@ class MainWindow:
         chosen = ask_choice(self.window, TEMPLATE_TITLE, question, names)
         return None if chosen is None else folder / chosen
 
-    def show_opened(self, report: OpenReport,
-                    selected: Optional[Path]) -> None:
-        """Show a project that was opened, and what opening it did."""
+    def _show_opened(self, report: OpenReport,
+                     selected: Optional[Path]) -> None:
+        """Show a project that was opened, and what opening it did.
+
+        What was to be selected may have been taken away or renamed
+        by another program, and the nearest folder above it that is
+        still there is then selected instead.
+        """
         self.session.opened(report.project)
-        set_enabled(self.menu_bar.menus[CONFIG_MENU], USER_WIDE_ENTRY, True)
+        self._offer_project(True)
         self.show_project(report.project.root.name)
         self.explorer.show(report.project)
-        self.select(selected)
-        self.tell_about_opening(report)
+        self.select(self.explorer.nearest_shown(selected))
+        self._tell_about_opening(report)
 
     def select(self, path: Optional[Path]) -> None:
         """Select one item of the tree, and show what is selected.
@@ -400,7 +451,7 @@ class MainWindow:
         """
         self.show_selected(self.explorer.select(path))
 
-    def tell_about_opening(self, report: OpenReport) -> None:
+    def _tell_about_opening(self, report: OpenReport) -> None:
         """Tell what opening a project changed and what it could not do."""
         changed = changed_message(report)
         if changed:

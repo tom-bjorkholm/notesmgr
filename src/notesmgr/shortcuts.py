@@ -18,6 +18,9 @@ ZOOM_OUT_KEYS = ('minus', 'KP_Subtract')
 NORMAL_SIZE_KEYS = ('Key-0', 'KP_0')
 """What Tk calls the keys that ask for the note in its first size."""
 
+REFRESH_KEYS = ('r',)
+"""What Tk calls the key that asks for the open project to be read again."""
+
 TREE_EDIT_KEYS = ('<Return>', '<KP_Enter>')
 """What Tk calls the keys of the tree that edit the selected note."""
 
@@ -59,6 +62,7 @@ class Shortcuts(NamedTuple):
     """
 
     quit: Shortcut
+    refresh: Shortcut
     larger: Shortcut
     smaller: Shortcut
     normal: Shortcut
@@ -125,6 +129,7 @@ def window_shortcuts(window_system: str) -> Shortcuts:
     """
     return Shortcuts(
         quit=quit_shortcut(window_system),
+        refresh=held_shortcut(window_system, REFRESH_KEYS, 'R'),
         larger=held_shortcut(window_system, ZOOM_IN_KEYS, '+'),
         smaller=held_shortcut(window_system, ZOOM_OUT_KEYS, '-'),
         normal=held_shortcut(window_system, NORMAL_SIZE_KEYS, '0'),

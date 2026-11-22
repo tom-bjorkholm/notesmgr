@@ -16,12 +16,10 @@
     * [open\_project\_dialog](#notesmgr.main_window.MainWindow.open_project_dialog)
     * [load\_project](#notesmgr.main_window.MainWindow.load_project)
     * [make\_project](#notesmgr.main_window.MainWindow.make_project)
+    * [refresh](#notesmgr.main_window.MainWindow.refresh)
     * [reopen](#notesmgr.main_window.MainWindow.reopen)
-    * [opened](#notesmgr.main_window.MainWindow.opened)
     * [choose\_template](#notesmgr.main_window.MainWindow.choose_template)
-    * [show\_opened](#notesmgr.main_window.MainWindow.show_opened)
     * [select](#notesmgr.main_window.MainWindow.select)
-    * [tell\_about\_opening](#notesmgr.main_window.MainWindow.tell_about_opening)
     * [edit\_configuration](#notesmgr.main_window.MainWindow.edit_configuration)
     * [save\_user\_wide](#notesmgr.main_window.MainWindow.save_user_wide)
     * [show\_version](#notesmgr.main_window.MainWindow.show_version)
@@ -160,6 +158,7 @@
   * [ZOOM\_IN\_KEYS](#notesmgr.shortcuts.ZOOM_IN_KEYS)
   * [ZOOM\_OUT\_KEYS](#notesmgr.shortcuts.ZOOM_OUT_KEYS)
   * [NORMAL\_SIZE\_KEYS](#notesmgr.shortcuts.NORMAL_SIZE_KEYS)
+  * [REFRESH\_KEYS](#notesmgr.shortcuts.REFRESH_KEYS)
   * [TREE\_EDIT\_KEYS](#notesmgr.shortcuts.TREE_EDIT_KEYS)
   * [ACTION\_KEYS](#notesmgr.shortcuts.ACTION_KEYS)
   * [Shortcut](#notesmgr.shortcuts.Shortcut)
@@ -205,6 +204,7 @@
   * [Session](#notesmgr.session.Session)
     * [\_\_init\_\_](#notesmgr.session.Session.__init__)
     * [opened](#notesmgr.session.Session.opened)
+    * [closed](#notesmgr.session.Session.closed)
     * [chooser\_folder](#notesmgr.session.Session.chooser_folder)
     * [config\_file](#notesmgr.session.Session.config_file)
     * [config](#notesmgr.session.Session.config)
@@ -466,6 +466,7 @@
     * [selection\_changed](#notesmgr.explorer_tree.ExplorerTree.selection_changed)
     * [selected\_path](#notesmgr.explorer_tree.ExplorerTree.selected_path)
     * [select](#notesmgr.explorer_tree.ExplorerTree.select)
+    * [nearest\_shown](#notesmgr.explorer_tree.ExplorerTree.nearest_shown)
     * [drop\_at](#notesmgr.explorer_tree.ExplorerTree.drop_at)
     * [zoom](#notesmgr.explorer_tree.ExplorerTree.zoom)
     * [zoom\_normal](#notesmgr.explorer_tree.ExplorerTree.zoom_normal)
@@ -852,7 +853,7 @@ Ask for a project folder and open the project in it.
 #### load\_project
 
 ```python
-def load_project(root: Path, selected: Optional[Path] = None) -> None
+def load_project(root: Path, selected: Optional[Path] = None) -> bool
 ```
 
 Open an existing project and show what it holds.
@@ -861,6 +862,12 @@ Open an existing project and show what it holds.
 
 - `root` - The root folder of the project to open.
 - `selected` - What to select in it, None for nothing at all.
+  
+
+**Returns**:
+
+  Whether the project was opened, which it was not when the
+  user has been told why it could not be.
 
 <a id="notesmgr.main_window.MainWindow.make_project"></a>
 
@@ -871,6 +878,20 @@ def make_project(root: Path) -> None
 ```
 
 Make a folder into a project, then open it and show it.
+
+<a id="notesmgr.main_window.MainWindow.refresh"></a>
+
+#### refresh
+
+```python
+def refresh() -> None
+```
+
+Read the open project again, keeping what is selected.
+
+Another program, or notesmgr on another computer sharing the
+folder, can change the project while it is open, and notesmgr
+hears nothing of it, so the user asks for it to be read again.
 
 <a id="notesmgr.main_window.MainWindow.reopen"></a>
 
@@ -885,23 +906,14 @@ Show the open project again, selecting one item of it.
 Every command changes the files of the project, so the whole
 project is read again rather than the tree being mended item
 by item. That way the tree says what the folders really hold,
-whatever another program did to them meanwhile.
+whatever another program did to them meanwhile. A project that
+can no longer be read is closed, once the user has been told
+why, so that no command acts on a tree that is not there.
 
 **Arguments**:
 
 - `selected` - What to select once it is shown again, None to
   select nothing at all.
-
-<a id="notesmgr.main_window.MainWindow.opened"></a>
-
-#### opened
-
-```python
-def opened(opening: Callable[[], OpenReport],
-           selected: Optional[Path] = None) -> None
-```
-
-Show what an opening gave, or say why it gave nothing.
 
 <a id="notesmgr.main_window.MainWindow.choose_template"></a>
 
@@ -923,16 +935,6 @@ Ask which of the templates of a folder is the one to keep.
 
   The template to keep, None when the user chose none.
 
-<a id="notesmgr.main_window.MainWindow.show_opened"></a>
-
-#### show\_opened
-
-```python
-def show_opened(report: OpenReport, selected: Optional[Path]) -> None
-```
-
-Show a project that was opened, and what opening it did.
-
 <a id="notesmgr.main_window.MainWindow.select"></a>
 
 #### select
@@ -951,16 +953,6 @@ told here rather than waiting for the event.
 **Arguments**:
 
 - `path` - What to select, None to select nothing at all.
-
-<a id="notesmgr.main_window.MainWindow.tell_about_opening"></a>
-
-#### tell\_about\_opening
-
-```python
-def tell_about_opening(report: OpenReport) -> None
-```
-
-Tell what opening a project changed and what it could not do.
 
 <a id="notesmgr.main_window.MainWindow.edit_configuration"></a>
 
@@ -2786,6 +2778,12 @@ What Tk calls the keys that ask for a smaller note.
 
 What Tk calls the keys that ask for the note in its first size.
 
+<a id="notesmgr.shortcuts.REFRESH_KEYS"></a>
+
+#### REFRESH\_KEYS
+
+What Tk calls the key that asks for the open project to be read again.
+
 <a id="notesmgr.shortcuts.TREE_EDIT_KEYS"></a>
 
 #### TREE\_EDIT\_KEYS
@@ -3346,6 +3344,19 @@ def opened(project: Project) -> None
 ```
 
 Take a project as the one that is open from now on.
+
+<a id="notesmgr.session.Session.closed"></a>
+
+#### closed
+
+```python
+def closed() -> None
+```
+
+Take it that no project is open any more.
+
+A folder chooser still starts in the project that was open
+last, as that is where the user was last looking.
 
 <a id="notesmgr.session.Session.chooser_folder"></a>
 
@@ -6446,6 +6457,30 @@ command made or moved rather than from the top of the tree.
 **Returns**:
 
   What is selected now, None when nothing is.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.nearest_shown"></a>
+
+#### nearest\_shown
+
+```python
+def nearest_shown(path: Optional[Path]) -> Optional[Path]
+```
+
+Return a path, or the nearest folder above it that is shown.
+
+Another program can take away or rename what was selected, and
+the folder that held it is then the nearest place to carry on.
+
+**Arguments**:
+
+- `path` - What was asked for, None for nothing at all.
+  
+
+**Returns**:
+
+  The path itself when the tree shows it, otherwise the
+  nearest folder above it that the tree shows, and None
+  when there is no such folder or no path at all.
 
 <a id="notesmgr.explorer_tree.ExplorerTree.drop_at"></a>
 
