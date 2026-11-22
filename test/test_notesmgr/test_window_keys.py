@@ -8,7 +8,8 @@ import tkinter
 from pathlib import Path
 import pytest
 from test_notesmgr.helpers import build_project, write_notes
-from notesmgr.actions import MOVE_DOWN, NEW_FOLDER
+from notesmgr import commands as commands_module
+from notesmgr.actions import MOVE_DOWN, NEW_FOLDER, RENAME
 from notesmgr.main_window import FILE_MENU, FOLDER_MENU, NORMAL_SIZE_ENTRY, \
     NOTE_MENU, QUIT_ENTRY, REFRESH_ENTRY, VIEW_MENU, ZOOM_IN_ENTRY, \
     ZOOM_OUT_ENTRY, ZOOM_STEP, MainWindow, handled
@@ -253,3 +254,19 @@ def test_key_moves_note(shown_window: MainWindow, project: Path,
     shown_window.window.update()
     assert read_order_text(project) == 'a.md.txt\nb.md.txt\n'
     assert shown_window.explorer.selected_path() == note
+
+
+@pytest.mark.focus_sensitive
+def test_key_renames_note(shown_window: MainWindow, project: Path,
+                          keys: Shortcuts,
+                          monkeypatch: pytest.MonkeyPatch) -> None:
+    """F2, held with nothing, renames the note that is selected."""
+    monkeypatch.setattr(commands_module, 'ask_name', lambda *_args: 'renamed')
+    shown_window.load_project(project, project / 'b.md.txt')
+    tree = shown_window.explorer.tree
+    tree.focus_set()
+    shown_window.window.update()
+    tree.event_generate(keys.actions[RENAME].sequences[0], when='now')
+    shown_window.window.update()
+    assert shown_window.explorer.selected_path() == \
+        project / 'renamed.md.txt'

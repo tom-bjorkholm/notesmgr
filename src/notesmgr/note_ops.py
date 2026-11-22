@@ -6,10 +6,11 @@
 
 import shutil
 from pathlib import Path
-from typing import Sequence
+from typing import Optional, Sequence
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
-from notesmgr.note_file import note_file_name, template_name
+from notesmgr.note_file import note_extension, note_file_name, \
+    template_name
 from notesmgr.order_file import order_text, repair_order_file, write_order
 from notesmgr.project import folder_content, folder_entries
 from notesmgr.trash import send_to_trash
@@ -28,6 +29,9 @@ NOT_TRASHED = 'The note {path} cannot be moved to the trash.\n{reason}'
 
 NOT_MOVED = 'The note {path} cannot be moved.\n{reason}'
 """What is said about a note that could not be moved to a folder."""
+
+NOT_RENAMED = 'The note {path} cannot be renamed.\n{reason}'
+"""What is said about a note that could not be given its new name."""
 
 
 def resync_order(folder: Path) -> list[str]:
@@ -50,25 +54,31 @@ def resync_order(folder: Path) -> list[str]:
     return repair_order_file(folder, folder_content(folder).notes)
 
 
-def free_path(folder: Path, name: str) -> Path:
+def free_path(folder: Path, name: str, renamed: Optional[str] = None) -> Path:
     """Return the file that a name asks for, refusing a taken name.
 
     Two names that differ only in case are one file on macOS and on
     Windows, so a name is taken when the folder holds any name equal
     to it but for its case, whatever this file system makes of it.
+    What is being renamed does not take a name from itself, so that
+    it can be given its own name with another case.
 
     Args:
         folder: The folder that the file is to be in.
         name: The name of the file, extension and all.
+        renamed: The name of what in the folder is being given the
+            name, None when something new is.
 
     Returns:
-        The file to write, which is not there yet.
+        The file to write, which is not there yet unless it is what
+        is being renamed.
 
     Raises:
         NotesmgrError: The folder holds a file of that name already,
             or the folder cannot be read.
     """
-    taken = {path.name.casefold() for path in folder_entries(folder)}
+    taken = {path.name.casefold() for path in folder_entries(folder)
+             if path.name != renamed}
     if name.casefold() in taken:
         raise NotesmgrError(NAME_TAKEN.format(folder=folder, name=name))
     return folder / name
@@ -178,6 +188,55 @@ def delete_note(note: Path) -> None:
     """
     send_to_trash(note, NOT_TRASHED)
     resync_order(note.parent)
+
+
+def renamed_order(names: Sequence[str], old: str, new: str) -> list[str]:
+    """Return an order with one of its notes under another name.
+
+    Args:
+        names: The notes of a folder, in the order they are shown in.
+        old: The name the note had, which may be none of them.
+        new: The name it now has.
+
+    Returns:
+        The order as it is after the rename, the note at its place.
+    """
+    return [new if name == old else name for name in names]
+
+
+def rename_note(note: Path, typed: str) -> Path:
+    """Give a note another name, keeping its place in its folder.
+
+    The note keeps the extension it has, so that renaming it never
+    changes how it is shown, whatever the project calls its notes.
+
+    Args:
+        note: The note to rename.
+        typed: What the user typed as its new name.
+
+    Returns:
+        The note under the name it now has.
+
+    Raises:
+        NotesmgrError: The name names no note with that extension, it
+            is taken already, the note cannot be renamed, or the note
+            order cannot be read or written.
+    """
+    extension = note_extension(note.name)
+    assert extension is not None, f'{note} is no note'
+    name = note_file_name(typed, extension)
+    if name == note.name:
+        return note
+    folder = note.parent
+    order = resync_order(folder)
+    wanted = free_path(folder, name, note.name)
+    try:
+        note.rename(wanted)
+    except OSError as error:
+        raise NotesmgrError(NOT_RENAMED.format(path=note,
+                                               reason=error)) from error
+    write_order(folder, order_text(renamed_order(order, note.name, name)))
+    return wanted
 
 
 def moved_order(names: Sequence[str], name: str, offset: int) -> list[str]:

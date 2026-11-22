@@ -16,7 +16,7 @@ from test_notesmgr.helpers import refuse_choice, write_config, write_file, \
 from notesmgr import commands as commands_module
 from notesmgr import note_panel as panel_module
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
-    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER
+    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, RENAME
 from notesmgr.clipboard_tool import RichText
 from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config import DEFAULT_NOTE_SIZE, MIN_NOTE_SIZE, NoteExtension
@@ -27,7 +27,7 @@ from notesmgr.note_panel import PLAIN_INSTEAD, NotePanel
 from notesmgr.note_text import NOT_UTF8
 from notesmgr.project_ops import open_project
 from notesmgr.session import Session
-from notesmgr.shortcuts import ACTION_KEYS
+from notesmgr.shortcuts import action_shortcuts
 
 NOTE_NAME = 'first.md.txt'
 """Name of the note that these tests show in the panel."""
@@ -41,6 +41,10 @@ TEMPLATE_TEXT = 'Template of the folder\n'
 ROW = [COPY_RAW, COPY_FORMATTED, DUPLICATE, EDIT, NEW, DELETE, MOVE_UP,
        MOVE_DOWN]
 """The buttons of the panel, in the order the README gives them."""
+
+MENU = [COPY_RAW, COPY_FORMATTED, DUPLICATE, RENAME, EDIT, NEW, DELETE,
+        MOVE_UP, MOVE_DOWN]
+"""The actions on a note, in the order the note menu offers them."""
 
 NO_NOTE = [label for label in ROW if label != NEW]
 """The buttons that are greyed out while no note is shown."""
@@ -212,9 +216,9 @@ def test_the_whole_button_row(panel: NotePanel) -> None:
     assert [str(button.cget('text')) for button in row_buttons(panel)] == ROW
 
 
-def test_actions_are_the_row(panel: NotePanel) -> None:
-    """What the panel says its actions are is what its buttons are."""
-    assert [spec.label for spec in panel.actions()] == ROW
+def test_actions_are_the_menu(panel: NotePanel) -> None:
+    """The actions are the buttons and what only the menu offers."""
+    assert [spec.label for spec in panel.actions()] == MENU
 
 
 def test_buttons_start_dead(panel: NotePanel) -> None:
@@ -378,7 +382,7 @@ def test_copy_raw(panel: NotePanel, note: Path) -> None:
 
 def test_every_action_keyed(panel: NotePanel) -> None:
     """Every action that has keys is given a command to run."""
-    assert set(panel.key_commands()) == set(ACTION_KEYS)
+    assert set(panel.key_commands()) == set(action_shortcuts('x11'))
 
 
 def test_copy_key_copies_part(panel: NotePanel) -> None:

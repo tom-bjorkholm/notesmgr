@@ -88,13 +88,21 @@ def test_rename_to_same_name(root: Path) -> None:
     assert (root / 'full' / 'deep.md.txt').is_file()
 
 
+def test_rename_case_only(root: Path) -> None:
+    """A folder can be given its own name in another case."""
+    assert rename_folder(root / 'full', 'Full') == root / 'Full'
+    assert 'Full' in [path.name for path in root.iterdir()]
+    assert 'full' not in [path.name for path in root.iterdir()]
+
+
 def test_rename_root_refused(root: Path) -> None:
     """The root folder is the project itself and is not renamed here."""
     with pytest.raises(NotesmgrError):
         rename_folder(root, 'elsewhere')
 
 
-@pytest.mark.parametrize('typed', ['first.md.txt', '', '.hidden', 'a/b'])
+@pytest.mark.parametrize('typed', ['first.md.txt', 'FIRST.md.txt', '',
+                                   '.hidden', 'a/b'])
 def test_rename_refused(root: Path, typed: str) -> None:
     """A name that is taken or names no folder is refused."""
     with pytest.raises(NotesmgrError):

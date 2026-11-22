@@ -11,10 +11,10 @@ from test_notesmgr.helpers import TEMPLATE_TEXT, build_project, fail_on, \
     write_template
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
-from notesmgr.note_ops import NOT_COPIED, NOT_MOVED, NOT_WRITTEN, \
-    delete_note, duplicate_note, free_path, \
-    moved_order, moved_to, move_note, new_note, new_path, resync_order, \
-    shift_note, template_text
+from notesmgr.note_ops import NOT_COPIED, NOT_MOVED, NOT_RENAMED, \
+    NOT_WRITTEN, delete_note, duplicate_note, free_path, \
+    moved_order, moved_to, move_note, new_note, new_path, rename_note, \
+    renamed_order, resync_order, shift_note, template_text
 from notesmgr.order_file import order_text, read_order_text
 from notesmgr.project_ops import open_project
 
@@ -101,6 +101,13 @@ def test_free_path_taken(root: Path) -> None:
         free_path(root, 'notesmgr.cfg')
     with pytest.raises(NotesmgrError):
         free_path(root, '.NOTES_ORDER.TXT')
+
+
+def test_free_path_renamed(root: Path) -> None:
+    """What is renamed takes no name from itself, only from the rest."""
+    assert free_path(root, 'FIRST.md.txt', NOTES[0]) == root / 'FIRST.md.txt'
+    with pytest.raises(NotesmgrError):
+        free_path(root, 'SECOND.md.txt', NOTES[0])
 
 
 def test_template_text(root: Path) -> None:
@@ -312,3 +319,66 @@ def test_move_what_is_gone(root: Path) -> None:
     assert reports(str(raised.value), NOT_MOVED, gone)
     assert order_of(root) == NOTES
     assert order_of(root / 'sub') == ['other.md.txt']
+
+
+@pytest.mark.parametrize('old,expected', [
+    (NOTES[1], [NOTES[0], 'new.md.txt', NOTES[2]]),
+    ('gone.md.txt', NOTES)])
+def test_renamed_order(old: str, expected: list[str]) -> None:
+    """A renamed note keeps its place, and no other note is touched."""
+    assert renamed_order(NOTES, old, 'new.md.txt') == expected
+
+
+def test_rename_keeps_place(root: Path) -> None:
+    """A renamed note holds what it held, at the place it had."""
+    text = (root / NOTES[1]).read_text(encoding='utf-8')
+    renamed = rename_note(root / NOTES[1], 'middle')
+    assert renamed == root / 'middle.md.txt'
+    assert renamed.read_text(encoding='utf-8') == text
+    assert not (root / NOTES[1]).exists()
+    assert order_of(root) == [NOTES[0], 'middle.md.txt', NOTES[2]]
+
+
+@pytest.mark.parametrize('typed', ['second', 'second.md.txt', ' second '])
+def test_rename_to_same_name(root: Path, typed: str) -> None:
+    """Renaming a note to the name it has leaves it as it is."""
+    assert rename_note(root / NOTES[1], typed) == root / NOTES[1]
+    assert order_of(root) == NOTES
+
+
+def test_rename_case_only(root: Path) -> None:
+    """A note can be given its own name in another case."""
+    renamed = rename_note(root / NOTES[1], 'Second')
+    assert renamed == root / 'Second.md.txt'
+    assert 'Second.md.txt' in [path.name for path in root.iterdir()]
+    assert NOTES[1] not in [path.name for path in root.iterdir()]
+    assert order_of(root) == [NOTES[0], 'Second.md.txt', NOTES[2]]
+
+
+def test_rename_own_extension(root: Path) -> None:
+    """A note keeps its own extension, whatever the project's is."""
+    write_file(root / 'plain.txt', 'plain\n')
+    assert rename_note(root / 'plain.txt', 'other') == root / 'other.txt'
+    with pytest.raises(NotesmgrError):
+        rename_note(root / 'other.txt', 'other.md.txt')
+
+
+@pytest.mark.parametrize('typed', [
+    'first', 'FIRST', 'Third.MD.TXT', 'template', 'template.md.txt', '',
+    '  ', '.hidden', 'sub/deep', 'a:b', 'note.md'])
+def test_rename_note_refused(root: Path, typed: str) -> None:
+    """A name that is taken or names no note leaves all as it was."""
+    with pytest.raises(NotesmgrError):
+        rename_note(root / NOTES[1], typed)
+    assert (root / NOTES[1]).is_file()
+    assert order_of(root) == NOTES
+
+
+def test_rename_note_gone(root: Path) -> None:
+    """A note another program took away is told, and nothing renamed."""
+    gone = root / 'gone.md.txt'
+    with pytest.raises(NotesmgrError) as raised:
+        rename_note(gone, 'renamed')
+    assert reports(str(raised.value), NOT_RENAMED, gone)
+    assert not (root / 'renamed.md.txt').exists()
+    assert order_of(root) == NOTES

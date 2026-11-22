@@ -15,6 +15,9 @@ COPY_FORMATTED = 'Copy formatted'
 DUPLICATE = 'Duplicate'
 """What the action that copies the note into the project is called."""
 
+RENAME = 'Rename…'
+"""What the action that gives the note another name is called."""
+
 EDIT = 'Edit'
 """What the action that opens the note in an editor is called."""
 
@@ -42,7 +45,7 @@ DELETE_FOLDER = 'Delete folder'
 ON_NOTE = (COPY_RAW, COPY_FORMATTED, EDIT)
 """What can be done with any note that is shown, template or not."""
 
-ON_PLAIN = (DUPLICATE, DELETE, MOVE_UP, MOVE_DOWN)
+ON_PLAIN = (DUPLICATE, RENAME, DELETE, MOVE_UP, MOVE_DOWN)
 """What can be done with a note that is no template of a folder."""
 
 ON_PROJECT = (NEW, NEW_FOLDER)

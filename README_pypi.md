@@ -92,6 +92,11 @@ and on Windows and Linux they use `Ctrl`.
 | `Up` | `Cmd+Up` | Moves the note one place up. |
 | `Down` | `Cmd+Down` | Moves the note one place down. |
 
+The `Note` menu also has `Rename…` (`F2`, with no `Cmd` or `Ctrl`),
+which gives the note another name. The note keeps its place among the
+notes of its folder and its own file extension. A new name may differ
+from the old one in case alone, and the same goes for `Rename folder…`.
+
 The other shortcuts are:
 
 | Shortcut | What it does |
@@ -103,8 +108,8 @@ The other shortcuts are:
 | `Tab` | Goes from the tree to the buttons and on to the note. |
 
 The template of a folder is shown, edited and copied like any note,
-but it cannot be duplicated, deleted or moved: every folder has exactly
-one template.
+but it cannot be duplicated, renamed, deleted or moved: every folder has
+exactly one template.
 
 ### Dragging
 
@@ -271,7 +276,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1606 passed, 16 deselected in 8s
+- Test result: 1662 passed, 17 deselected in 9s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

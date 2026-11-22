@@ -434,6 +434,50 @@ def test_rename_folder(commands: Commands, root: Path,
     assert reopened == [root / 'renamed']
 
 
+def test_rename_note(commands: Commands, root: Path,
+                     monkeypatch: pytest.MonkeyPatch,
+                     reopened: list[Optional[Path]]) -> None:
+    """A note is renamed, offered under its name without extension."""
+    given = answer_name(monkeypatch, 'renamed')
+    commands.select(root / NOTES[1])
+    commands.rename_note()
+    assert given == ['second']
+    assert reopened == [root / 'renamed.md.txt']
+    assert read_order_text(root) == f'{NOTES[0]}\nrenamed.md.txt\n'
+
+
+@pytest.mark.parametrize('selected', [None, TEMPLATE, 'sub'])
+def test_rename_no_note(commands: Commands, root: Path,
+                        monkeypatch: pytest.MonkeyPatch,
+                        selected: Optional[str]) -> None:
+    """A folder or the template of one is no note to rename."""
+    given = answer_name(monkeypatch, 'renamed')
+    commands.select(None if selected is None else root / selected)
+    commands.rename_note()
+    assert not given
+
+
+def test_rename_note_cancel(commands: Commands, root: Path,
+                            reopened: list[Optional[Path]]) -> None:
+    """A new name that is not given leaves the note as it was."""
+    commands.select(root / NOTES[0])
+    commands.rename_note()
+    assert (root / NOTES[0]).is_file()
+    assert reopened == []
+
+
+def test_rename_note_refused(commands: Commands, root: Path, errors: list[str],
+                             monkeypatch: pytest.MonkeyPatch,
+                             reopened: list[Optional[Path]]) -> None:
+    """A name that is taken is reported, and nothing renamed."""
+    answer_name(monkeypatch, 'Second')
+    commands.select(root / NOTES[0])
+    commands.rename_note()
+    assert len(errors) == 1
+    assert (root / NOTES[0]).is_file()
+    assert reopened == []
+
+
 def test_rename_no_folder(commands: Commands, root: Path,
                           monkeypatch: pytest.MonkeyPatch) -> None:
     """With no folder selected there is no folder to rename."""

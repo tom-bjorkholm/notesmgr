@@ -7,8 +7,8 @@
 import pytest
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, \
     DELETE_FOLDER, DUPLICATE, EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, \
-    NOTHING, ON_FOLDER, ON_NOTE, ON_PLAIN, ON_PROJECT, RENAME_FOLDER, \
-    Selected, offered
+    NOTHING, ON_FOLDER, ON_NOTE, ON_PLAIN, ON_PROJECT, RENAME, \
+    RENAME_FOLDER, Selected, offered
 
 EVERY_ACTION = ON_NOTE + ON_PLAIN + ON_PROJECT + ON_FOLDER
 """Every action that the buttons and the menu entries offer."""
@@ -23,8 +23,8 @@ def test_every_action_named() -> None:
     """Every action belongs to one group, and to one group only."""
     assert len(set(EVERY_ACTION)) == len(EVERY_ACTION)
     assert set(EVERY_ACTION) == {COPY_RAW, COPY_FORMATTED, DUPLICATE, EDIT,
-                                 NEW, DELETE, MOVE_UP, MOVE_DOWN, NEW_FOLDER,
-                                 RENAME_FOLDER, DELETE_FOLDER}
+                                 RENAME, NEW, DELETE, MOVE_UP, MOVE_DOWN,
+                                 NEW_FOLDER, RENAME_FOLDER, DELETE_FOLDER}
 
 
 @pytest.mark.parametrize('selected,expected', [

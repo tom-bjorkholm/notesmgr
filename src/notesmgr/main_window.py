@@ -154,12 +154,13 @@ class MainWindow:
                 MenuSpec(HELP_MENU, [versions])]
 
     def _note_entries(self, keys: Shortcuts) -> list[MenuEntry]:
-        """Return one entry of the note menu for every working button.
+        """Return one entry of the note menu for every action on a note.
 
         The note menu and the button row do the same things, so they
         are described in one place, which is the panel that holds the
-        buttons. A button that was described with no command has
-        nothing to do, and is left out of the menu until it has.
+        buttons, though the row leaves a few of them to the menu. An
+        action that was described with no command has nothing to do,
+        and is left out of the menu until it has.
         """
         return [MenuEntry(spec.label, spec.command,
                           accelerator(keys, spec.label), enabled=False)

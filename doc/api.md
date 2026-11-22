@@ -133,6 +133,7 @@
   * [NOT\_COPIED](#notesmgr.note_ops.NOT_COPIED)
   * [NOT\_TRASHED](#notesmgr.note_ops.NOT_TRASHED)
   * [NOT\_MOVED](#notesmgr.note_ops.NOT_MOVED)
+  * [NOT\_RENAMED](#notesmgr.note_ops.NOT_RENAMED)
   * [resync\_order](#notesmgr.note_ops.resync_order)
   * [free\_path](#notesmgr.note_ops.free_path)
   * [new\_path](#notesmgr.note_ops.new_path)
@@ -140,6 +141,8 @@
   * [new\_note](#notesmgr.note_ops.new_note)
   * [duplicate\_note](#notesmgr.note_ops.duplicate_note)
   * [delete\_note](#notesmgr.note_ops.delete_note)
+  * [renamed\_order](#notesmgr.note_ops.renamed_order)
+  * [rename\_note](#notesmgr.note_ops.rename_note)
   * [moved\_order](#notesmgr.note_ops.moved_order)
   * [moved\_to](#notesmgr.note_ops.moved_to)
   * [reordered](#notesmgr.note_ops.reordered)
@@ -161,6 +164,7 @@
   * [REFRESH\_KEYS](#notesmgr.shortcuts.REFRESH_KEYS)
   * [TREE\_EDIT\_KEYS](#notesmgr.shortcuts.TREE_EDIT_KEYS)
   * [ACTION\_KEYS](#notesmgr.shortcuts.ACTION_KEYS)
+  * [UNHELD\_KEYS](#notesmgr.shortcuts.UNHELD_KEYS)
   * [Shortcut](#notesmgr.shortcuts.Shortcut)
   * [Shortcuts](#notesmgr.shortcuts.Shortcuts)
   * [tk\_window\_system](#notesmgr.shortcuts.tk_window_system)
@@ -212,6 +216,7 @@
   * [COPY\_RAW](#notesmgr.actions.COPY_RAW)
   * [COPY\_FORMATTED](#notesmgr.actions.COPY_FORMATTED)
   * [DUPLICATE](#notesmgr.actions.DUPLICATE)
+  * [RENAME](#notesmgr.actions.RENAME)
   * [EDIT](#notesmgr.actions.EDIT)
   * [NEW](#notesmgr.actions.NEW)
   * [DELETE](#notesmgr.actions.DELETE)
@@ -340,6 +345,7 @@
 * [notesmgr.note\_panel](#notesmgr.note_panel)
   * [PADDING](#notesmgr.note_panel.PADDING)
   * [PLAIN\_INSTEAD](#notesmgr.note_panel.PLAIN_INSTEAD)
+  * [MENU\_ONLY](#notesmgr.note_panel.MENU_ONLY)
   * [NotePanel](#notesmgr.note_panel.NotePanel)
     * [\_\_init\_\_](#notesmgr.note_panel.NotePanel.__init__)
     * [actions](#notesmgr.note_panel.NotePanel.actions)
@@ -555,7 +561,7 @@
   * [ASK\_NEW\_NOTE](#notesmgr.commands.ASK_NEW_NOTE)
   * [ASK\_DELETE\_NOTE](#notesmgr.commands.ASK_DELETE_NOTE)
   * [ASK\_NEW\_FOLDER](#notesmgr.commands.ASK_NEW_FOLDER)
-  * [ASK\_RENAME\_FOLDER](#notesmgr.commands.ASK_RENAME_FOLDER)
+  * [ASK\_RENAME](#notesmgr.commands.ASK_RENAME)
   * [ASK\_DELETE\_FOLDER](#notesmgr.commands.ASK_DELETE_FOLDER)
   * [WARN\_FULL\_FOLDER](#notesmgr.commands.WARN_FULL_FOLDER)
   * [ASK\_DELETE\_FULL](#notesmgr.commands.ASK_DELETE_FULL)
@@ -579,10 +585,10 @@
     * [edit](#notesmgr.commands.Commands.edit)
     * [new\_note](#notesmgr.commands.Commands.new_note)
     * [duplicate\_note](#notesmgr.commands.Commands.duplicate_note)
+    * [rename\_note](#notesmgr.commands.Commands.rename_note)
     * [delete\_note](#notesmgr.commands.Commands.delete_note)
     * [move\_up](#notesmgr.commands.Commands.move_up)
     * [move\_down](#notesmgr.commands.Commands.move_down)
-    * [move](#notesmgr.commands.Commands.move)
     * [drop](#notesmgr.commands.Commands.drop)
     * [new\_folder](#notesmgr.commands.Commands.new_folder)
     * [rename\_folder](#notesmgr.commands.Commands.rename_folder)
@@ -2339,6 +2345,12 @@ What is said about a note that the trash would not take.
 
 What is said about a note that could not be moved to a folder.
 
+<a id="notesmgr.note_ops.NOT_RENAMED"></a>
+
+#### NOT\_RENAMED
+
+What is said about a note that could not be given its new name.
+
 <a id="notesmgr.note_ops.resync_order"></a>
 
 #### resync\_order
@@ -2373,7 +2385,7 @@ does is exactly what is wanted then, so it is done here as well.
 #### free\_path
 
 ```python
-def free_path(folder: Path, name: str) -> Path
+def free_path(folder: Path, name: str, renamed: Optional[str] = None) -> Path
 ```
 
 Return the file that a name asks for, refusing a taken name.
@@ -2381,16 +2393,21 @@ Return the file that a name asks for, refusing a taken name.
 Two names that differ only in case are one file on macOS and on
 Windows, so a name is taken when the folder holds any name equal
 to it but for its case, whatever this file system makes of it.
+What is being renamed does not take a name from itself, so that
+it can be given its own name with another case.
 
 **Arguments**:
 
 - `folder` - The folder that the file is to be in.
 - `name` - The name of the file, extension and all.
+- `renamed` - The name of what in the folder is being given the
+  name, None when something new is.
   
 
 **Returns**:
 
-  The file to write, which is not there yet.
+  The file to write, which is not there yet unless it is what
+  is being renamed.
   
 
 **Raises**:
@@ -2525,6 +2542,57 @@ Move a note to the trash, and out of the order of its folder.
 
 - `NotesmgrError` - The trash would not take the note, or the note
   order cannot be written.
+
+<a id="notesmgr.note_ops.renamed_order"></a>
+
+#### renamed\_order
+
+```python
+def renamed_order(names: Sequence[str], old: str, new: str) -> list[str]
+```
+
+Return an order with one of its notes under another name.
+
+**Arguments**:
+
+- `names` - The notes of a folder, in the order they are shown in.
+- `old` - The name the note had, which may be none of them.
+- `new` - The name it now has.
+  
+
+**Returns**:
+
+  The order as it is after the rename, the note at its place.
+
+<a id="notesmgr.note_ops.rename_note"></a>
+
+#### rename\_note
+
+```python
+def rename_note(note: Path, typed: str) -> Path
+```
+
+Give a note another name, keeping its place in its folder.
+
+The note keeps the extension it has, so that renaming it never
+changes how it is shown, whatever the project calls its notes.
+
+**Arguments**:
+
+- `note` - The note to rename.
+- `typed` - What the user typed as its new name.
+  
+
+**Returns**:
+
+  The note under the name it now has.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The name names no note with that extension, it
+  is taken already, the note cannot be renamed, or the note
+  order cannot be read or written.
 
 <a id="notesmgr.note_ops.moved_order"></a>
 
@@ -2798,6 +2866,15 @@ The key of each action held with Cmd or Ctrl, and what it is called.
 
 A capital letter is what Tk calls a letter typed with the shift key
 held down, so the shift key is named along with it.
+
+<a id="notesmgr.shortcuts.UNHELD_KEYS"></a>
+
+#### UNHELD\_KEYS
+
+The key of each action typed with nothing held, by what Tk calls it.
+
+F2 renames what is selected in the file managers of Windows and Linux,
+and a function key types nothing, so it needs no Cmd or Ctrl held.
 
 <a id="notesmgr.shortcuts.Shortcut"></a>
 
@@ -3415,6 +3492,12 @@ What the action that copies the note formatted is called.
 #### DUPLICATE
 
 What the action that copies the note into the project is called.
+
+<a id="notesmgr.actions.RENAME"></a>
+
+#### RENAME
+
+What the action that gives the note another name is called.
 
 <a id="notesmgr.actions.EDIT"></a>
 
@@ -4874,6 +4957,15 @@ Space in pixels left around what the panel shows.
 
 What is said when the formatting could not be carried along.
 
+<a id="notesmgr.note_panel.MENU_ONLY"></a>
+
+#### MENU\_ONLY
+
+The actions on a note that the note menu offers but no button does.
+
+The row of buttons is kept to what is done all the time, so that it
+fits on as few rows as possible in a narrow panel.
+
 <a id="notesmgr.note_panel.NotePanel"></a>
 
 ## NotePanel Objects
@@ -4913,10 +5005,13 @@ Build the panel in a frame of its own inside a parent widget.
 #### actions
 
 ```python
-def actions() -> Sequence[ButtonSpec]
+def actions() -> list[ButtonSpec]
 ```
 
-Return what the buttons of the panel are and what they do.
+Return the actions on a note and what they do.
+
+They are what the note menu offers, in its order, which is
+every button of the panel and the actions in MENU_ONLY.
 
 <a id="notesmgr.note_panel.NotePanel.key_commands"></a>
 
@@ -7550,11 +7645,11 @@ What the user is asked before a note is taken away.
 
 What the user is asked when making a folder.
 
-<a id="notesmgr.commands.ASK_RENAME_FOLDER"></a>
+<a id="notesmgr.commands.ASK_RENAME"></a>
 
-#### ASK\_RENAME\_FOLDER
+#### ASK\_RENAME
 
-What the user is asked when renaming a folder.
+What the user is asked when renaming a note or a folder.
 
 <a id="notesmgr.commands.ASK_DELETE_FOLDER"></a>
 
@@ -7828,6 +7923,16 @@ def duplicate_note() -> None
 
 Copy the selected note into a folder of the project.
 
+<a id="notesmgr.commands.Commands.rename_note"></a>
+
+#### rename\_note
+
+```python
+def rename_note() -> None
+```
+
+Give the selected note another name, keeping its extension.
+
 <a id="notesmgr.commands.Commands.delete_note"></a>
 
 #### delete\_note
@@ -7857,16 +7962,6 @@ def move_down() -> None
 ```
 
 Move the selected note one place down in its folder.
-
-<a id="notesmgr.commands.Commands.move"></a>
-
-#### move
-
-```python
-def move(offset: int) -> None
-```
-
-Move the selected note so many places in its folder.
 
 <a id="notesmgr.commands.Commands.drop"></a>
 
@@ -8807,8 +8902,9 @@ def rename_folder(folder: Path, typed: str) -> Path
 Give a folder of the project another name.
 
 Nothing outside a folder names it, so a folder is renamed whether
-it holds anything or not. The root folder is the project itself
-rather than a folder in it, and is renamed from the outside.
+it holds anything or not, and a name that differs from its own
+only in case is a name it can have. The root folder is the project
+itself rather than a folder in it, and is renamed from the outside.
 
 **Arguments**:
 

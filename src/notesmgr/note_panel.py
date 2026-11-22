@@ -7,9 +7,9 @@
 import tkinter
 from pathlib import Path
 from tkinter import ttk
-from typing import AbstractSet, Callable, Optional, Sequence
+from typing import AbstractSet, Callable, Optional
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
-    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER
+    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, RENAME
 from notesmgr.button_row import ButtonRow, ButtonSpec
 from notesmgr.commands import Commands
 from notesmgr.config import DEFAULT_NOTE_SIZE
@@ -26,6 +26,13 @@ PADDING = 8
 
 PLAIN_INSTEAD = '{reason}\nThe note was copied as plain text instead.'
 """What is said when the formatting could not be carried along."""
+
+MENU_ONLY = frozenset({RENAME})
+"""The actions on a note that the note menu offers but no button does.
+
+The row of buttons is kept to what is done all the time, so that it
+fits on as few rows as possible in a narrow panel.
+"""
 
 
 class NotePanel:
@@ -51,7 +58,8 @@ class NotePanel:
         self.session = session
         self.commands = commands
         self.frame = ttk.Frame(parent)
-        self.row = ButtonRow(self.frame, self._button_specs())
+        self.row = ButtonRow(self.frame, [spec for spec in self.actions()
+                                          if spec.label not in MENU_ONLY])
         self.row.frame.pack(side=tkinter.TOP, fill=tkinter.X, padx=PADDING,
                             pady=PADDING)
         self.path_label = ttk.Label(self.frame, anchor=tkinter.W)
@@ -61,21 +69,22 @@ class NotePanel:
                              padx=PADDING, pady=PADDING)
         self.watch = FileWatch(self.frame, self.reload)
 
-    def _button_specs(self) -> list[ButtonSpec]:
-        """Return the buttons of the row in the order they are shown."""
+    def actions(self) -> list[ButtonSpec]:
+        """Return the actions on a note and what they do.
+
+        They are what the note menu offers, in its order, which is
+        every button of the panel and the actions in MENU_ONLY.
+        """
         commands = self.commands
         return [ButtonSpec(COPY_RAW, self.copy_raw),
                 ButtonSpec(COPY_FORMATTED, self.copy_formatted),
                 ButtonSpec(DUPLICATE, commands.duplicate_note),
+                ButtonSpec(RENAME, commands.rename_note),
                 ButtonSpec(EDIT, self.edit_note),
                 ButtonSpec(NEW, commands.new_note),
                 ButtonSpec(DELETE, commands.delete_note),
                 ButtonSpec(MOVE_UP, commands.move_up),
                 ButtonSpec(MOVE_DOWN, commands.move_down)]
-
-    def actions(self) -> Sequence[ButtonSpec]:
-        """Return what the buttons of the panel are and what they do."""
-        return self.row.specs
 
     def key_commands(self) -> dict[str, Callable[[], None]]:
         """Return what the shortcut of each action runs, by action.

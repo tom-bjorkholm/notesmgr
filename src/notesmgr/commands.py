@@ -39,8 +39,8 @@ ASK_DELETE_NOTE = 'Move the note {name} to the trash?'
 ASK_NEW_FOLDER = 'What is the new folder to be called?'
 """What the user is asked when making a folder."""
 
-ASK_RENAME_FOLDER = 'What is the folder {name} to be called?'
-"""What the user is asked when renaming a folder."""
+ASK_RENAME = 'What is the {kind} {name} to be called?'
+"""What the user is asked when renaming a note or a folder."""
 
 ASK_DELETE_FOLDER = 'Move the folder {name} to the trash?'
 """What the user is asked before an empty folder is taken away."""
@@ -270,6 +270,29 @@ class Commands:
         return [shown_folder(project.root, path)
                 for path in folder_paths(project.tree)]
 
+    def rename_note(self) -> None:
+        """Give the selected note another name, keeping its extension."""
+        note = self.plain_note()
+        if note is not None:
+            self._rename(NOTE_TITLE, note, note_stem(note.name),
+                         note_ops.rename_note)
+
+    def _rename(self, title: str, path: Path, given: str,
+                renaming: Callable[[Path, str], Path]) -> None:
+        """Ask what a note or a folder is to be called, and rename it.
+
+        Args:
+            title: What the window asking is called, which is also
+                what the question calls the note or the folder.
+            path: The note or the folder to rename.
+            given: What the field holds before anything is typed.
+            renaming: What renames it, given what the user typed.
+        """
+        asked = ASK_RENAME.format(kind=title.lower(), name=path.name)
+        typed = ask_name(self.window, title, asked, given)
+        if typed is not None:
+            self.done(partial(renaming, path, typed))
+
     def delete_note(self) -> None:
         """Move the selected note to the trash, once the user is sure."""
         note = self.plain_note()
@@ -281,13 +304,13 @@ class Commands:
 
     def move_up(self) -> None:
         """Move the selected note one place up in its folder."""
-        self.move(-1)
+        self._move(-1)
 
     def move_down(self) -> None:
         """Move the selected note one place down in its folder."""
-        self.move(1)
+        self._move(1)
 
-    def move(self, offset: int) -> None:
+    def _move(self, offset: int) -> None:
         """Move the selected note so many places in its folder."""
         note = self.plain_note()
         if note is not None:
@@ -316,12 +339,9 @@ class Commands:
     def rename_folder(self) -> None:
         """Give the selected folder another name."""
         folder = self.chosen_folder()
-        if folder is None:
-            return
-        asked = ASK_RENAME_FOLDER.format(name=folder.name)
-        typed = ask_name(self.window, FOLDER_TITLE, asked, folder.name)
-        if typed is not None:
-            self.done(partial(folder_ops.rename_folder, folder, typed))
+        if folder is not None:
+            self._rename(FOLDER_TITLE, folder, folder.name,
+                         folder_ops.rename_folder)
 
     def delete_folder(self) -> None:
         """Move the selected folder to the trash, once the user is sure.

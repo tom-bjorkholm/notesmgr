@@ -7,7 +7,7 @@
 import tkinter
 from typing import Mapping, NamedTuple, Sequence
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
-    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER
+    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, RENAME
 
 ZOOM_IN_KEYS = ('plus', 'equal', 'KP_Add')
 """What Tk calls the keys that ask for a larger note."""
@@ -38,6 +38,13 @@ ACTION_KEYS: Mapping[str, tuple[str, str]] = {
 
 A capital letter is what Tk calls a letter typed with the shift key
 held down, so the shift key is named along with it.
+"""
+
+UNHELD_KEYS: Mapping[str, str] = {RENAME: 'F2'}
+"""The key of each action typed with nothing held, by what Tk calls it.
+
+F2 renames what is selected in the file managers of Windows and Linux,
+and a function key types nothing, so it needs no Cmd or Ctrl held.
 """
 
 
@@ -115,8 +122,11 @@ def held_shortcut(window_system: str, keysyms: Sequence[str],
 
 def action_shortcuts(window_system: str) -> dict[str, Shortcut]:
     """Return the shortcut of every action that has one, by action."""
-    return {action: held_shortcut(window_system, (keysym,), shown)
+    held = {action: held_shortcut(window_system, (keysym,), shown)
             for action, (keysym, shown) in ACTION_KEYS.items()}
+    unheld = {action: Shortcut((f'<{keysym}>',), keysym)
+              for action, keysym in UNHELD_KEYS.items()}
+    return held | unheld
 
 
 def window_shortcuts(window_system: str) -> Shortcuts:

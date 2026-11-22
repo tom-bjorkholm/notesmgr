@@ -7,10 +7,9 @@
 import tkinter
 import pytest
 from notesmgr.actions import COPY_RAW, NEW_FOLDER, ON_NOTE, ON_PLAIN, \
-    ON_PROJECT
-from notesmgr.shortcuts import ACTION_KEYS, Shortcut, action_shortcuts, \
-    held_shortcut, modifier, quit_shortcut, tk_window_system, \
-    window_shortcuts
+    ON_PROJECT, RENAME
+from notesmgr.shortcuts import Shortcut, action_shortcuts, held_shortcut, \
+    modifier, quit_shortcut, tk_window_system, window_shortcuts
 
 WINDOW_SYSTEMS = ['aqua', 'win32', 'x11']
 """The windowing systems that Tk runs on."""
@@ -61,10 +60,18 @@ def test_window_system_known(top_window: tkinter.Toplevel) -> None:
     assert tk_window_system(top_window) in ('aqua', 'win32', 'x11')
 
 
+@pytest.mark.parametrize('window_system', WINDOW_SYSTEMS)
 @pytest.mark.parametrize('action', [*ON_NOTE, *ON_PLAIN, *ON_PROJECT])
-def test_actions_have_keys(action: str) -> None:
+def test_actions_have_keys(window_system: str, action: str) -> None:
     """Every action of a note and of the project has a key of its own."""
-    assert action in ACTION_KEYS
+    assert action in action_shortcuts(window_system)
+
+
+@pytest.mark.parametrize('window_system', WINDOW_SYSTEMS)
+def test_rename_key(window_system: str) -> None:
+    """Renaming is F2 alone on every platform, as in file managers."""
+    assert action_shortcuts(window_system)[RENAME] == \
+        Shortcut(('<F2>',), 'F2')
 
 
 @pytest.mark.parametrize('window_system,expected', [

@@ -17,7 +17,7 @@ from notesmgr import main_window as window_module
 from notesmgr import note_panel as panel_module
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, \
     DELETE_FOLDER, DUPLICATE, EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, \
-    RENAME_FOLDER
+    RENAME, RENAME_FOLDER
 from notesmgr.clipboard_tool import RichText
 from notesmgr.config import NoteExtension
 from notesmgr.config_files import CONFIG_NAME
@@ -279,6 +279,7 @@ def test_menus_of_the_bar(main_window: MainWindow) -> None:
     (NOTE_MENU, COPY_RAW),
     (NOTE_MENU, COPY_FORMATTED),
     (NOTE_MENU, DUPLICATE),
+    (NOTE_MENU, RENAME),
     (NOTE_MENU, NEW),
     (NOTE_MENU, DELETE),
     (NOTE_MENU, MOVE_UP),
@@ -321,13 +322,13 @@ def order_of(folder: Path) -> list[str]:
     return [] if text is None else text.splitlines()
 
 
-@pytest.mark.parametrize('label', [EDIT, COPY_RAW])
+@pytest.mark.parametrize('label', [EDIT, COPY_RAW, RENAME])
 def test_note_entries_dead(main_window: MainWindow, label: str) -> None:
     """With nothing selected there is no note for an entry to act on."""
     assert note_entry_state(main_window, label) == 'disabled'
 
 
-@pytest.mark.parametrize('label', [EDIT, COPY_RAW])
+@pytest.mark.parametrize('label', [EDIT, COPY_RAW, RENAME])
 def test_note_entries_offered(main_window: MainWindow, project: Path,
                               label: str) -> None:
     """Selecting a note offers the entries that act on one."""

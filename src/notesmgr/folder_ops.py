@@ -101,8 +101,9 @@ def rename_folder(folder: Path, typed: str) -> Path:
     """Give a folder of the project another name.
 
     Nothing outside a folder names it, so a folder is renamed whether
-    it holds anything or not. The root folder is the project itself
-    rather than a folder in it, and is renamed from the outside.
+    it holds anything or not, and a name that differs from its own
+    only in case is a name it can have. The root folder is the project
+    itself rather than a folder in it, and is renamed from the outside.
 
     Args:
         folder: The folder to rename.
@@ -121,7 +122,7 @@ def rename_folder(folder: Path, typed: str) -> Path:
     name = checked_name(typed)
     if name == folder.name:
         return folder
-    wanted = free_path(folder.parent, name)
+    wanted = free_path(folder.parent, name, folder.name)
     try:
         folder.rename(wanted)
     except OSError as error:
