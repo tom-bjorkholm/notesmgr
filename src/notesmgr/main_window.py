@@ -23,6 +23,7 @@ from notesmgr.explorer_drop import Drop
 from notesmgr.explorer_tree import ExplorerTree
 from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar, \
     entry_labels, set_enabled
+from notesmgr.note_file import is_note
 from notesmgr.note_panel import NotePanel
 from notesmgr.project import is_project
 from notesmgr.project_ops import OpenReport, changed_message, \
@@ -44,6 +45,11 @@ FOLDER_MENU = 'Folder'
 VIEW_MENU = 'View'
 CONFIG_MENU = 'Configuration'
 HELP_MENU = 'Help'
+ACTION_MENUS = (NOTE_MENU, FOLDER_MENU)
+"""The menus whose entries act on what is selected in the explorer.
+
+They are also the popup menus of a right-click in the explorer.
+"""
 NEW_PROJECT_ENTRY = 'New project…'
 OPEN_PROJECT_ENTRY = 'Open project…'
 REFRESH_ENTRY = 'Refresh project'
@@ -114,13 +120,14 @@ class MainWindow:
         self.session = Session()
         self.panes = ttk.PanedWindow(window, orient=tkinter.HORIZONTAL)
         self.explorer = ExplorerTree(self.panes, self.show_selected,
-                                     self.dropped)
+                                     self.dropped, self.context_menu)
         hooks = WindowHooks(self.reopen, self.offer_actions)
         commands = Commands(window, self.session, hooks)
         self.note_panel = NotePanel(self.panes, self.session, commands)
         self.config_panel: Optional[TkEditorPanel] = None
         keys = window_shortcuts(tk_window_system(window))
-        self.menu_bar = build_menu_bar(window, self._menu_specs(keys))
+        self.menu_bar = build_menu_bar(window, self._menu_specs(keys),
+                                       ACTION_MENUS)
         self._shape_window()
         self._bind_shortcuts(keys)
         self.show_project(None)
@@ -290,19 +297,38 @@ class MainWindow:
     def offer_actions(self, labels: AbstractSet[str]) -> None:
         """Offer what can be done now, and grey out what cannot.
 
-        The buttons of the panel and the entries of the note and
-        folder menus do the same things, so they are offered and
-        taken back together, whenever another item is selected and
-        whenever the note that is shown is taken away.
+        The buttons of the panel, the entries of the note and folder
+        menus and the entries of the right-click menus do the same
+        things, so they are offered and taken back together, whenever
+        another item is selected and whenever the note that is shown
+        is taken away.
 
         Args:
             labels: What the actions that can be done now are called.
         """
         self.note_panel.offer(labels)
-        for title in (NOTE_MENU, FOLDER_MENU):
-            menu = self.menu_bar.menus[title]
+        menu_bar = self.menu_bar
+        menus = [menu_bar.menus[title] for title in ACTION_MENUS]
+        for menu in menus + list(menu_bar.popups.values()):
             for label in entry_labels(menu):
                 set_enabled(menu, label, label in labels)
+
+    def context_menu(self, path: Path, x_root: int, y_root: int) -> None:
+        """Select a right-clicked item, and show its menu where clicked.
+
+        The item is selected first, so that the menu acts on it and
+        offers what can be done with it. A note and the template of a
+        folder get the note menu, which is what the panel shows them
+        as, and a folder gets the folder menu.
+
+        Args:
+            path: The item of the explorer that was right-clicked.
+            x_root: Where on the screen it was clicked, from the left.
+            y_root: Where on the screen it was clicked, from the top.
+        """
+        self.select(path)
+        title = NOTE_MENU if is_note(path.name) else FOLDER_MENU
+        self.menu_bar.popups[title].tk_popup(x_root, y_root)
 
     def new_project_dialog(self) -> None:
         """Ask for a folder and make a notesmgr project of it.

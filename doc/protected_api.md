@@ -1,6 +1,7 @@
 # Table of Contents
 
 * [notesmgr.main\_window](#notesmgr.main_window)
+  * [ACTION\_MENUS](#notesmgr.main_window.ACTION_MENUS)
   * [fitted](#notesmgr.main_window.fitted)
   * [accelerator](#notesmgr.main_window.accelerator)
   * [handled](#notesmgr.main_window.handled)
@@ -22,6 +23,7 @@
     * [show\_selected](#notesmgr.main_window.MainWindow.show_selected)
     * [dropped](#notesmgr.main_window.MainWindow.dropped)
     * [offer\_actions](#notesmgr.main_window.MainWindow.offer_actions)
+    * [context\_menu](#notesmgr.main_window.MainWindow.context_menu)
     * [new\_project\_dialog](#notesmgr.main_window.MainWindow.new_project_dialog)
     * [open\_project\_dialog](#notesmgr.main_window.MainWindow.open_project_dialog)
     * [load\_project](#notesmgr.main_window.MainWindow.load_project)
@@ -62,6 +64,7 @@
   * [MenuSpec](#notesmgr.menu_bar.MenuSpec)
   * [MenuBar](#notesmgr.menu_bar.MenuBar)
   * [entry\_state](#notesmgr.menu_bar.entry_state)
+  * [entry\_menu](#notesmgr.menu_bar.entry_menu)
   * [build\_menu](#notesmgr.menu_bar.build_menu)
   * [build\_menu\_bar](#notesmgr.menu_bar.build_menu_bar)
   * [set\_enabled](#notesmgr.menu_bar.set_enabled)
@@ -515,8 +518,12 @@
 * [notesmgr.explorer\_tree](#notesmgr.explorer_tree)
   * [EXPLORER\_WIDTH](#notesmgr.explorer_tree.EXPLORER_WIDTH)
   * [SELECT\_EVENT](#notesmgr.explorer_tree.SELECT_EVENT)
+  * [RIGHT\_CLICKS](#notesmgr.explorer_tree.RIGHT_CLICKS)
+  * [AQUA\_RIGHT\_CLICKS](#notesmgr.explorer_tree.AQUA_RIGHT_CLICKS)
+  * [context\_clicks](#notesmgr.explorer_tree.context_clicks)
   * [ExplorerTree](#notesmgr.explorer_tree.ExplorerTree)
     * [\_\_init\_\_](#notesmgr.explorer_tree.ExplorerTree.__init__)
+    * [context\_click](#notesmgr.explorer_tree.ExplorerTree.context_click)
     * [selection\_changed](#notesmgr.explorer_tree.ExplorerTree.selection_changed)
     * [selected\_path](#notesmgr.explorer_tree.ExplorerTree.selected_path)
     * [select](#notesmgr.explorer_tree.ExplorerTree.select)
@@ -748,6 +755,14 @@
 # notesmgr.main\_window
 
 The main window of the notesmgr application.
+
+<a id="notesmgr.main_window.ACTION_MENUS"></a>
+
+#### ACTION\_MENUS
+
+The menus whose entries act on what is selected in the explorer.
+
+They are also the popup menus of a right-click in the explorer.
 
 <a id="notesmgr.main_window.fitted"></a>
 
@@ -1019,14 +1034,36 @@ def offer_actions(labels: AbstractSet[str]) -> None
 
 Offer what can be done now, and grey out what cannot.
 
-The buttons of the panel and the entries of the note and
-folder menus do the same things, so they are offered and
-taken back together, whenever another item is selected and
-whenever the note that is shown is taken away.
+The buttons of the panel, the entries of the note and folder
+menus and the entries of the right-click menus do the same
+things, so they are offered and taken back together, whenever
+another item is selected and whenever the note that is shown
+is taken away.
 
 **Arguments**:
 
 - `labels` - What the actions that can be done now are called.
+
+<a id="notesmgr.main_window.MainWindow.context_menu"></a>
+
+#### context\_menu
+
+```python
+def context_menu(path: Path, x_root: int, y_root: int) -> None
+```
+
+Select a right-clicked item, and show its menu where clicked.
+
+The item is selected first, so that the menu acts on it and
+offers what can be done with it. A note and the template of a
+folder get the note menu, which is what the panel shows them
+as, and a folder gets the folder menu.
+
+**Arguments**:
+
+- `path` - The item of the explorer that was right-clicked.
+- `x_root` - Where on the screen it was clicked, from the left.
+- `y_root` - Where on the screen it was clicked, from the top.
 
 <a id="notesmgr.main_window.MainWindow.new_project_dialog"></a>
 
@@ -1492,10 +1529,12 @@ One menu of a menu bar and the commands it holds.
 class MenuBar(NamedTuple)
 ```
 
-The menu bar widget of a window and its menus by title.
+The menu bar widget of a window, its menus and popup menus.
 
 The menus are kept by title so that an entry which only makes
 sense in some states can be greyed out and offered again later.
+A popup menu holds what the menu of the same title holds, to be
+shown wherever the user right-clicks something it acts on.
 
 <a id="notesmgr.menu_bar.entry_state"></a>
 
@@ -1515,6 +1554,30 @@ Return the Tk state of an entry that can or cannot be chosen.
 **Returns**:
 
   The state that Tk knows that by.
+
+<a id="notesmgr.menu_bar.entry_menu"></a>
+
+#### entry\_menu
+
+```python
+def entry_menu(parent: tkinter.Misc,
+               entries: Sequence[MenuEntry]) -> tkinter.Menu
+```
+
+Create a menu holding the described entries, and nothing else.
+
+The menu is in no menu bar, so it serves as a menu of the menu
+bar once it is added to one, and as a popup menu as it is.
+
+**Arguments**:
+
+- `parent` - The widget that the menu belongs to.
+- `entries` - The commands of the menu, in the order they are shown.
+  
+
+**Returns**:
+
+  The menu that was made.
 
 <a id="notesmgr.menu_bar.build_menu"></a>
 
@@ -1541,8 +1604,10 @@ Create one described menu and add it to a menu bar.
 #### build\_menu\_bar
 
 ```python
-def build_menu_bar(window: Union[tkinter.Tk, tkinter.Toplevel],
-                   menus: Sequence[MenuSpec]) -> MenuBar
+def build_menu_bar(
+    window: Union[tkinter.Tk, tkinter.Toplevel],
+    menus: Sequence[MenuSpec],
+    popups: Container[str] = ()) -> MenuBar
 ```
 
 Build the described menus and install them on a window.
@@ -1554,6 +1619,8 @@ calling Tk for every entry of every menu.
 
 - `window` - The window that gets the menu bar.
 - `menus` - The menus of the menu bar, in the order they are shown.
+- `popups` - The titles of the menus that are also made as popup
+  menus, none by default.
   
 
 **Returns**:
@@ -7089,6 +7156,33 @@ Width in pixels that the explorer asks the main window for.
 
 Tk event saying that another item of the tree is selected now.
 
+<a id="notesmgr.explorer_tree.RIGHT_CLICKS"></a>
+
+#### RIGHT\_CLICKS
+
+Tk events of a right-click on Windows and on the X11 desktops.
+
+<a id="notesmgr.explorer_tree.AQUA_RIGHT_CLICKS"></a>
+
+#### AQUA\_RIGHT\_CLICKS
+
+Tk events of a right-click on macOS.
+
+Tk 8.6 calls the right mouse button of macOS button 2, while Tk 9
+calls it button 3, so both are bound. A click with the control key
+held down is a right-click on macOS as well, and macOS itself turns
+a click with two fingers on a trackpad into a right-click.
+
+<a id="notesmgr.explorer_tree.context_clicks"></a>
+
+#### context\_clicks
+
+```python
+def context_clicks(window_system: str) -> tuple[str, ...]
+```
+
+Return the Tk events of a right-click on a windowing system.
+
 <a id="notesmgr.explorer_tree.ExplorerTree"></a>
 
 ## ExplorerTree Objects
@@ -7109,7 +7203,8 @@ view keeps nothing of its own beside the tree itself.
 
 ```python
 def __init__(parent: tkinter.Misc, on_select: Callable[[Optional[Path]], None],
-             on_drop: Callable[[Path, Drop], None]) -> None
+             on_drop: Callable[[Path, Drop], None],
+             on_context: Callable[[Path, int, int], None]) -> None
 ```
 
 Build the tree in a frame of its own inside a parent widget.
@@ -7121,6 +7216,24 @@ Build the tree in a frame of its own inside a parent widget.
   changes, and told None when nothing is selected.
 - `on_drop` - Told what was dragged in the tree and where it
   was dropped, once the user has let go of it.
+- `on_context` - Told which item was right-clicked, and where
+  on the screen, so that a menu can be shown there.
+
+<a id="notesmgr.explorer_tree.ExplorerTree.context_click"></a>
+
+#### context\_click
+
+```python
+def context_click(event: 'tkinter.Event[ttk.Treeview]') -> str
+```
+
+Ask for the menu of the item that was right-clicked.
+
+A right-click on no item asks for nothing. Tk runs only the
+most exact binding of the tree itself, so a click with the
+control key held down on macOS begins no drag, and the click
+goes no further, so it does not change the selection either
+the way such a click of the tree itself would.
 
 <a id="notesmgr.explorer_tree.ExplorerTree.selection_changed"></a>
 

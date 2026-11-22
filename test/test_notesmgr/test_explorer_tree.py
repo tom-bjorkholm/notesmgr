@@ -9,11 +9,14 @@ from pathlib import Path
 from typing import Optional
 import pytest
 from test_notesmgr.helpers import build_folder_project, refuse_choice
-from test_notesmgr.tk_windows import show_filled
+from test_notesmgr.tk_windows import event_at, show_filled
+from notesmgr import explorer_tree as tree_module
 from notesmgr.explorer_drop import Drop
-from notesmgr.explorer_tree import EXPLORER_WIDTH, SELECT_EVENT, ExplorerTree
+from notesmgr.explorer_tree import AQUA_RIGHT_CLICKS, EXPLORER_WIDTH, \
+    RIGHT_CLICKS, SELECT_EVENT, ExplorerTree, context_clicks
 from notesmgr.project import Project
 from notesmgr.project_ops import open_project
+from notesmgr.shortcuts import tk_window_system
 
 
 @pytest.fixture(name='project')
@@ -35,15 +38,26 @@ def fixture_dropped() -> list[tuple[Path, Drop]]:
     return []
 
 
+@pytest.fixture(name='clicked')
+def fixture_clicked() -> list[tuple[Path, int, int]]:
+    """Provide the list that the tree reports its right-clicks into."""
+    return []
+
+
 @pytest.fixture(name='explorer')
 def fixture_explorer(top_window: tkinter.Toplevel,
                      selected: list[Optional[Path]],
-                     dropped: list[tuple[Path, Drop]]) -> ExplorerTree:
+                     dropped: list[tuple[Path, Drop]],
+                     clicked: list[tuple[Path, int, int]]) -> ExplorerTree:
     """Provide an explorer tree in a hidden window, showing nothing yet."""
     def taken(item: Path, drop: Drop) -> None:
         """Stand in for the window that carries a drop out."""
         dropped.append((item, drop))
-    return ExplorerTree(top_window, selected.append, taken)
+
+    def context(item: Path, x_root: int, y_root: int) -> None:
+        """Stand in for the window that shows the menu of an item."""
+        clicked.append((item, x_root, y_root))
+    return ExplorerTree(top_window, selected.append, taken, context)
 
 
 def items_under(explorer: ExplorerTree, item: str) -> list[str]:
@@ -259,3 +273,64 @@ def test_zoom_smaller(explorer: ExplorerTree) -> None:
     started = explorer.font.size
     explorer.zoom(-2)
     assert explorer.font.size == started - 2
+
+
+@pytest.mark.parametrize('window_system,expected', [
+    ('aqua', AQUA_RIGHT_CLICKS), ('win32', RIGHT_CLICKS),
+    ('x11', RIGHT_CLICKS)])
+def test_context_clicks(window_system: str, expected: tuple[str, ...]) \
+        -> None:
+    """Each windowing system has its own events of a right-click."""
+    assert context_clicks(window_system) == expected
+
+
+def test_right_click_bound(explorer: ExplorerTree) -> None:
+    """The tree listens for every right-click of its windowing system."""
+    bound = explorer.tree.bind()
+    for sequence in context_clicks(tk_window_system(explorer.tree)):
+        assert sequence in bound
+
+
+@pytest.mark.parametrize('hit', [True, False])
+def test_right_click(explorer: ExplorerTree, project: Project,
+                     clicked: list[tuple[Path, int, int]],
+                     monkeypatch: pytest.MonkeyPatch, hit: bool) -> None:
+    """A right-click on an item asks for its menu, elsewhere for none.
+
+    A window that is not on a screen has no rows to click, so which
+    row is at the height clicked is answered here. That Tk calls the
+    handler is tested in a window that is really shown, by
+    test_tk_right_click.
+    """
+    explorer.show(project)
+    note = project.root / 'first.md.txt'
+    monkeypatch.setattr(tree_module, 'row_at', lambda _tree, _height:
+                        note if hit else None)
+    assert explorer.context_click(event_at(5, 10, 20)) == 'break'
+    assert clicked == ([(note, 10, 20)] if hit else [])
+
+
+@pytest.mark.focus_sensitive
+@pytest.mark.parametrize('sequence', sorted(set(AQUA_RIGHT_CLICKS)
+                                            | set(RIGHT_CLICKS)))
+def test_tk_right_click(explorer: ExplorerTree, project: Project,
+                        clicked: list[tuple[Path, int, int]],
+                        sequence: str) -> None:
+    """Tk itself tells of a right-click in a window that is shown.
+
+    A click with the control key held down is a right-click on macOS,
+    so it neither begins a drag nor selects what was clicked, which a
+    click of the tree itself would do.
+    """
+    if sequence not in context_clicks(tk_window_system(explorer.tree)):
+        pytest.skip(f'{sequence} is no right-click on this system')
+    explorer.show(project)
+    show_filled(explorer.frame)
+    note = project.root / 'first.md.txt'
+    box = explorer.tree.bbox(str(note))
+    assert box
+    explorer.tree.event_generate(sequence, x=box[0] + 5, y=box[1] + 2,
+                                 when='now')
+    assert [item for item, _x, _y in clicked] == [note]
+    assert explorer.drag.state.item is None
+    assert explorer.selected_path() is None

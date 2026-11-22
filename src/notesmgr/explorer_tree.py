@@ -8,16 +8,34 @@ import tkinter
 from pathlib import Path
 from tkinter import ttk
 from typing import Callable, Optional
-from notesmgr.explorer_drag import ExplorerDrag
+from notesmgr.explorer_drag import ExplorerDrag, row_at
 from notesmgr.explorer_drop import Drop, drop_target
 from notesmgr.explorer_font import TreeFont
 from notesmgr.project import Folder, Project
+from notesmgr.shortcuts import tk_window_system
 
 EXPLORER_WIDTH = 260
 """Width in pixels that the explorer asks the main window for."""
 
 SELECT_EVENT = '<<TreeviewSelect>>'
 """Tk event saying that another item of the tree is selected now."""
+
+RIGHT_CLICKS = ('<Button-3>',)
+"""Tk events of a right-click on Windows and on the X11 desktops."""
+
+AQUA_RIGHT_CLICKS = ('<Button-2>', '<Button-3>', '<Control-Button-1>')
+"""Tk events of a right-click on macOS.
+
+Tk 8.6 calls the right mouse button of macOS button 2, while Tk 9
+calls it button 3, so both are bound. A click with the control key
+held down is a right-click on macOS as well, and macOS itself turns
+a click with two fingers on a trackpad into a right-click.
+"""
+
+
+def context_clicks(window_system: str) -> tuple[str, ...]:
+    """Return the Tk events of a right-click on a windowing system."""
+    return AQUA_RIGHT_CLICKS if window_system == 'aqua' else RIGHT_CLICKS
 
 
 class ExplorerTree:
@@ -30,7 +48,8 @@ class ExplorerTree:
 
     def __init__(self, parent: tkinter.Misc,
                  on_select: Callable[[Optional[Path]], None],
-                 on_drop: Callable[[Path, Drop], None]) -> None:
+                 on_drop: Callable[[Path, Drop], None],
+                 on_context: Callable[[Path, int, int], None]) -> None:
         """Build the tree in a frame of its own inside a parent widget.
 
         Args:
@@ -39,21 +58,40 @@ class ExplorerTree:
                 changes, and told None when nothing is selected.
             on_drop: Told what was dragged in the tree and where it
                 was dropped, once the user has let go of it.
+            on_context: Told which item was right-clicked, and where
+                on the screen, so that a menu can be shown there.
         """
         self.on_select = on_select
+        self.on_context = on_context
         self.project: Optional[Project] = None
         self.frame = ttk.Frame(parent, width=EXPLORER_WIDTH)
         self.frame.pack_propagate(False)
         self.font = TreeFont(self.frame)
         self.tree = ttk.Treeview(self.frame, show='tree', selectmode='browse',
                                  style=self.font.name)
-        self.scroll = ttk.Scrollbar(self.frame, orient=tkinter.VERTICAL,
-                                    command=self.tree.yview)
-        self.tree.configure(yscrollcommand=self.scroll.set)
-        self.scroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        scroll = ttk.Scrollbar(self.frame, orient=tkinter.VERTICAL,
+                               command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scroll.set)
+        scroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
         self.tree.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
         self.tree.bind(SELECT_EVENT, self.selection_changed)
         self.drag = ExplorerDrag(self.tree, self.drop_at, on_drop)
+        for sequence in context_clicks(tk_window_system(self.tree)):
+            self.tree.bind(sequence, self.context_click)
+
+    def context_click(self, event: 'tkinter.Event[ttk.Treeview]') -> str:
+        """Ask for the menu of the item that was right-clicked.
+
+        A right-click on no item asks for nothing. Tk runs only the
+        most exact binding of the tree itself, so a click with the
+        control key held down on macOS begins no drag, and the click
+        goes no further, so it does not change the selection either
+        the way such a click of the tree itself would.
+        """
+        item = row_at(self.tree, event.y)
+        if item is not None:
+            self.on_context(item, event.x_root, event.y_root)
+        return 'break'
 
     def selection_changed(self, _event: 'tkinter.Event[ttk.Treeview]') -> None:
         """Tell whoever is listening what is selected now."""

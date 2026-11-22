@@ -7,7 +7,7 @@
 import tkinter
 import pytest
 from notesmgr.menu_bar import MenuBar, MenuEntry, MenuSpec, build_menu_bar, \
-    entry_labels, entry_state, set_enabled
+    entry_labels, entry_menu, entry_state, set_enabled
 
 EDIT_MENU = 'Edit'
 """Title of the second menu that these tests build."""
@@ -32,7 +32,7 @@ def fixture_menu_bar(top_window: tkinter.Toplevel,
                            enabled=False)
     return build_menu_bar(top_window,
                           [MenuSpec(FILE_MENU, [open_entry, quit_entry]),
-                           MenuSpec(EDIT_MENU, [copy_entry])])
+                           MenuSpec(EDIT_MENU, [copy_entry])], {FILE_MENU})
 
 
 @pytest.mark.parametrize('enabled,expected', [(True, 'normal'),
@@ -103,7 +103,8 @@ def test_no_tearoff(menu_bar: MenuBar) -> None:
     The default of Tk differs between windowing systems (no tearoff on
     macOS, tearoff on X11), so the menu bar must say it explicitly.
     """
-    menus = [menu_bar.widget, *menu_bar.menus.values()]
+    menus = [menu_bar.widget, *menu_bar.menus.values(),
+             *menu_bar.popups.values()]
     assert not any(menu.cget('tearoff') for menu in menus)
 
 
@@ -121,3 +122,39 @@ def test_labels_skip_others(top_window: tkinter.Toplevel,
     menu.add_separator()
     menu.add_command(label='Quit')
     assert entry_labels(menu) == ['Open', 'Quit']
+
+
+def test_entry_menu(top_window: tkinter.Toplevel, chosen: list[str]) -> None:
+    """A menu of its own holds the described entries, as they are given."""
+    menu = entry_menu(top_window,
+                      [MenuEntry('Open', lambda: chosen.append('Open'),
+                                 'Ctrl+O'),
+                       MenuEntry('Copy', lambda: None, enabled=False)])
+    assert entry_labels(menu) == ['Open', 'Copy']
+    assert menu.entrycget('Open', 'accelerator') == 'Ctrl+O'
+    assert menu.entrycget('Copy', 'state') == 'disabled'
+    assert not menu.cget('tearoff')
+    menu.invoke('Open')
+    assert chosen == ['Open']
+
+
+def test_popups_asked_for(menu_bar: MenuBar) -> None:
+    """Only the menus asked for are made as popup menus as well."""
+    assert set(menu_bar.popups) == {FILE_MENU}
+
+
+def test_popup_is_a_copy(menu_bar: MenuBar, chosen: list[str]) -> None:
+    """A popup menu holds what its menu holds, but is another menu."""
+    popup = menu_bar.popups[FILE_MENU]
+    menu = menu_bar.menus[FILE_MENU]
+    assert str(popup) != str(menu)
+    assert entry_labels(popup) == entry_labels(menu)
+    assert popup.entrycget('Open', 'accelerator') == 'Ctrl+O'
+    popup.invoke('Quit')
+    assert chosen == ['Quit']
+
+
+def test_no_popups_default(top_window: tkinter.Toplevel) -> None:
+    """A menu bar has no popup menus unless they are asked for."""
+    menu_bar = build_menu_bar(top_window, [MenuSpec(FILE_MENU, [])])
+    assert not menu_bar.popups

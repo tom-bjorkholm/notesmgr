@@ -10,7 +10,7 @@ from tkinter import ttk
 from typing import Union
 import pytest
 from test_notesmgr.helpers import build_folder_project, refuse_choice
-from test_notesmgr.tk_windows import show_filled
+from test_notesmgr.tk_windows import event_at, show_filled
 from notesmgr.explorer_drag import DRAG_START, MARK_TAG
 from notesmgr.explorer_drop import Drop
 from notesmgr.explorer_tree import ExplorerTree
@@ -65,7 +65,8 @@ def fixture_explorer(top_window: tkinter.Toplevel, project: Project,
     def taken(item: Path, drop: Drop) -> None:
         """Stand in for the window that carries a drop out."""
         dropped.append((item, drop))
-    explorer = ExplorerTree(top_window, lambda _path: None, taken)
+    explorer = ExplorerTree(top_window, lambda _path: None, taken,
+                            lambda _path, _x, _y: None)
     explorer.show(project)
     return explorer
 
@@ -104,13 +105,6 @@ def shown_rows(tree: ttk.Treeview, item: str = '') -> list[str]:
         rows.append(str(child))
         rows.extend(shown_rows(tree, str(child)))
     return rows
-
-
-def event_at(height: int) -> 'tkinter.Event[ttk.Treeview]':
-    """Return a Tk event of the pointer at a height in the tree."""
-    event: 'tkinter.Event[ttk.Treeview]' = tkinter.Event()
-    event.y = height
-    return event
 
 
 def upper(row: int) -> int:
