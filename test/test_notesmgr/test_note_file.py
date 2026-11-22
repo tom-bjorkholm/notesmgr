@@ -4,13 +4,15 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
+from pathlib import Path
 from typing import Optional
 import pytest
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
 from notesmgr.note_file import NOTE_EXTENSIONS, checked_extension, \
-    checked_name, is_markdown, is_note, is_plain_note, is_template, \
-    note_extension, note_file_name, note_stem, sorted_names, template_name
+    checked_name, is_markdown, is_note, is_note_file, is_plain_note, \
+    is_template, note_extension, note_file_name, note_stem, sorted_names, \
+    template_name
 
 
 def test_longest_first() -> None:
@@ -93,6 +95,26 @@ def test_is_template(name: str, expected: bool) -> None:
     """A template is a note whose name, but for its extension, says so."""
     assert is_template(name) == expected
     assert is_plain_note(name) == (is_note(name) and not expected)
+
+
+@pytest.mark.parametrize('name,kind,expected', [
+    ('a.md', 'file', True),
+    ('a.md.txt', 'file', True),
+    ('template.md', 'file', True),
+    ('a.png', 'file', False),
+    ('a.md', 'folder', False),
+    ('template.md', 'folder', False),
+    ('a', 'folder', False),
+    ('a.md', None, False)])
+def test_is_note_file(tmp_path: Path, name: str, kind: Optional[str],
+                      expected: bool) -> None:
+    """A note file is a file, not a folder, with the name of a note."""
+    path = tmp_path / name
+    if kind == 'file':
+        path.write_text('', encoding='utf-8')
+    elif kind == 'folder':
+        path.mkdir()
+    assert is_note_file(path) == expected
 
 
 @pytest.mark.parametrize('names,expected', [

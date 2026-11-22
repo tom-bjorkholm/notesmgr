@@ -16,7 +16,7 @@ from test_notesmgr.helpers import refuse_choice, write_config, write_file, \
 from notesmgr import commands as commands_module
 from notesmgr import note_panel as panel_module
 from notesmgr.actions import COPY_FORMATTED, COPY_RAW, DELETE, DUPLICATE, \
-    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, RENAME
+    EDIT, MOVE_DOWN, MOVE_UP, NEW, NEW_FOLDER, ON_FOLDER, RENAME
 from notesmgr.clipboard_tool import RichText
 from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config import DEFAULT_NOTE_SIZE, MIN_NOTE_SIZE, NoteExtension
@@ -265,6 +265,20 @@ def test_folder_is_no_note(panel: NotePanel, project: Path,
     assert panel.view.area_text() == ''
     assert panel.note_path() is None
     assert offers[-1] == {NEW, NEW_FOLDER}
+
+
+@pytest.mark.parametrize('name', ['ideas.md.txt', 'template.md'])
+def test_note_named_folder(panel: NotePanel, project: Path, name: str,
+                           offers: list[frozenset[str]]) -> None:
+    """A folder named like a note or a template is still a folder."""
+    folder = project / name
+    folder.mkdir()
+    panel.show_path(folder)
+    assert panel.shown_path() == str(folder)
+    assert panel.view.area_text() == ''
+    assert not panel.view.warning_shown()
+    assert panel.note_path() is None
+    assert offers[-1] == {NEW, NEW_FOLDER, *ON_FOLDER}
 
 
 def test_nothing_selected(panel: NotePanel, note: Path) -> None:

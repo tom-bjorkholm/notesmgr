@@ -23,7 +23,7 @@ from notesmgr.explorer_drop import Drop
 from notesmgr.explorer_tree import ExplorerTree
 from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar, \
     entry_labels, set_enabled
-from notesmgr.note_file import is_note
+from notesmgr.note_file import is_note_file
 from notesmgr.note_panel import NotePanel
 from notesmgr.project import is_project
 from notesmgr.project_ops import OpenReport, changed_message, \
@@ -97,6 +97,26 @@ def accelerator(keys: Shortcuts, action: str) -> Optional[str]:
     """Return what a menu entry shows of its keys, None for no keys."""
     shortcut = keys.actions.get(action)
     return None if shortcut is None else shortcut.label
+
+
+def popup_title(path: Path) -> Optional[str]:
+    """Return which menu a right-click on an item of the explorer shows.
+
+    What the item is on the disk decides it, not what it is named. A
+    folder gets the folder menu even when it is named like a note, a
+    note file and the template of a folder get the note menu, which
+    is what the panel shows them as, and anything else, such as a
+    note that another program has taken away, gets no menu at all.
+
+    Args:
+        path: The item of the explorer that was right-clicked.
+
+    Returns:
+        The title of the menu, None for no menu.
+    """
+    if path.is_dir():
+        return FOLDER_MENU
+    return NOTE_MENU if is_note_file(path) else None
 
 
 def handled(command: Callable[[], None],
@@ -317,9 +337,9 @@ class MainWindow:
         """Select a right-clicked item, and show its menu where clicked.
 
         The item is selected first, so that the menu acts on it and
-        offers what can be done with it. A note and the template of a
-        folder get the note menu, which is what the panel shows them
-        as, and a folder gets the folder menu.
+        offers what can be done with it. Which menu it gets is what
+        popup_title says, and an item that gets none is selected all
+        the same.
 
         Args:
             path: The item of the explorer that was right-clicked.
@@ -327,8 +347,9 @@ class MainWindow:
             y_root: Where on the screen it was clicked, from the top.
         """
         self.select(path)
-        title = NOTE_MENU if is_note(path.name) else FOLDER_MENU
-        self.menu_bar.popups[title].tk_popup(x_root, y_root)
+        title = popup_title(path)
+        if title is not None:
+            self.menu_bar.popups[title].tk_popup(x_root, y_root)
 
     def new_project_dialog(self) -> None:
         """Ask for a folder and make a notesmgr project of it.

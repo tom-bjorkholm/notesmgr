@@ -15,7 +15,7 @@ from notesmgr.commands import Commands
 from notesmgr.config import DEFAULT_NOTE_SIZE
 from notesmgr.errors import NotesmgrError
 from notesmgr.file_watch import FileWatch
-from notesmgr.note_file import is_markdown, is_note
+from notesmgr.note_file import is_markdown, is_note_file
 from notesmgr.note_text import EMPTY_NOTE, NoteText, read_note_text
 from notesmgr.note_view import NoteView
 from notesmgr.rich_clipboard import copy_rich, note_rich_text
@@ -124,12 +124,13 @@ class NotePanel:
 
         Args:
             path: What is selected in the explorer, None for nothing.
-                A folder is shown by its path alone, and a note and
-                the template of a folder are also read and shown.
+                A folder is shown by its path alone, even when it is
+                named like a note, and a note file and the template
+                of a folder are also read and shown.
         """
         self.commands.select(path)
         self.path_label.configure(text='' if path is None else str(path))
-        shown = path if path is not None and is_note(path.name) else None
+        shown = path if path is not None and is_note_file(path) else None
         self.watch.watch(shown)
         self.reload()
 

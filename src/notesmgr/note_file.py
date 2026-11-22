@@ -4,6 +4,7 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
+from pathlib import Path
 from typing import Iterable, Optional
 from notesmgr.config import NoteExtension
 from notesmgr.errors import NotesmgrError
@@ -77,6 +78,21 @@ def note_extension(name: str) -> Optional[NoteExtension]:
 def is_note(name: str) -> bool:
     """Return whether a file name is the name of a note."""
     return note_extension(name) is not None
+
+
+def is_note_file(path: Path) -> bool:
+    """Return whether a path is a note, judged by what is on the disk.
+
+    A folder is no note, whatever it is named, and neither is a path
+    that is gone. The template of a folder is a note file too.
+
+    Args:
+        path: File or folder of a project.
+
+    Returns:
+        Whether it is a file with the name of a note.
+    """
+    return path.is_file() and is_note(path.name)
 
 
 def is_markdown(name: str) -> bool:

@@ -4,6 +4,7 @@
   * [ACTION\_MENUS](#notesmgr.main_window.ACTION_MENUS)
   * [fitted](#notesmgr.main_window.fitted)
   * [accelerator](#notesmgr.main_window.accelerator)
+  * [popup\_title](#notesmgr.main_window.popup_title)
   * [handled](#notesmgr.main_window.handled)
   * [MainWindow](#notesmgr.main_window.MainWindow)
     * [\_\_init\_\_](#notesmgr.main_window.MainWindow.__init__)
@@ -613,6 +614,7 @@
   * [RESERVED](#notesmgr.note_file.RESERVED)
   * [note\_extension](#notesmgr.note_file.note_extension)
   * [is\_note](#notesmgr.note_file.is_note)
+  * [is\_note\_file](#notesmgr.note_file.is_note_file)
   * [is\_markdown](#notesmgr.note_file.is_markdown)
   * [note\_stem](#notesmgr.note_file.note_stem)
   * [template\_name](#notesmgr.note_file.template_name)
@@ -732,6 +734,31 @@ def accelerator(keys: Shortcuts, action: str) -> Optional[str]
 ```
 
 Return what a menu entry shows of its keys, None for no keys.
+
+<a id="notesmgr.main_window.popup_title"></a>
+
+#### popup\_title
+
+```python
+def popup_title(path: Path) -> Optional[str]
+```
+
+Return which menu a right-click on an item of the explorer shows.
+
+What the item is on the disk decides it, not what it is named. A
+folder gets the folder menu even when it is named like a note, a
+note file and the template of a folder get the note menu, which
+is what the panel shows them as, and anything else, such as a
+note that another program has taken away, gets no menu at all.
+
+**Arguments**:
+
+- `path` - The item of the explorer that was right-clicked.
+  
+
+**Returns**:
+
+  The title of the menu, None for no menu.
 
 <a id="notesmgr.main_window.handled"></a>
 
@@ -858,9 +885,9 @@ def context_menu(path: Path, x_root: int, y_root: int) -> None
 Select a right-clicked item, and show its menu where clicked.
 
 The item is selected first, so that the menu acts on it and
-offers what can be done with it. A note and the template of a
-folder get the note menu, which is what the panel shows them
-as, and a folder gets the folder menu.
+offers what can be done with it. Which menu it gets is what
+popup_title says, and an item that gets none is selected all
+the same.
 
 **Arguments**:
 
@@ -5143,8 +5170,9 @@ Show what the explorer has selected.
 **Arguments**:
 
 - `path` - What is selected in the explorer, None for nothing.
-  A folder is shown by its path alone, and a note and
-  the template of a folder are also read and shown.
+  A folder is shown by its path alone, even when it is
+  named like a note, and a note file and the template
+  of a folder are also read and shown.
 
 <a id="notesmgr.note_panel.NotePanel.reload"></a>
 
@@ -8233,6 +8261,28 @@ def is_note(name: str) -> bool
 ```
 
 Return whether a file name is the name of a note.
+
+<a id="notesmgr.note_file.is_note_file"></a>
+
+#### is\_note\_file
+
+```python
+def is_note_file(path: Path) -> bool
+```
+
+Return whether a path is a note, judged by what is on the disk.
+
+A folder is no note, whatever it is named, and neither is a path
+that is gone. The template of a folder is a note file too.
+
+**Arguments**:
+
+- `path` - File or folder of a project.
+  
+
+**Returns**:
+
+  Whether it is a file with the name of a note.
 
 <a id="notesmgr.note_file.is_markdown"></a>
 

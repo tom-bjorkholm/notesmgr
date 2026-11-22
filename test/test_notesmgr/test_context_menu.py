@@ -24,7 +24,13 @@ NOTES = ['b.md.txt', 'a.md.txt']
 TEMPLATE = 'template.md.txt'
 """The template of a folder of the project of these tests."""
 
-ITEMS = [NOTES[0], TEMPLATE, 'sub', '']
+NOTE_NAMED = 'ideas.md.txt'
+"""A folder of the project that is named like a note."""
+
+TEMPLATE_NAMED = 'sub/template.md'
+"""A folder of the project that is named like a template."""
+
+ITEMS = [NOTES[0], TEMPLATE, 'sub', '', NOTE_NAMED, TEMPLATE_NAMED]
 """Items of the project that are right-clicked, relative to its root."""
 
 
@@ -38,11 +44,17 @@ class Popped(NamedTuple):
 
 @pytest.fixture(name='project')
 def fixture_project(tmp_path: Path) -> Path:
-    """Provide a project of two notes and a subfolder holding one."""
+    """Provide a project of two notes and a subfolder holding one.
+
+    There are also folders named like a note and like a template,
+    each with a template of its own, so that opening the project
+    has nothing to add to them.
+    """
     root = build_project(tmp_path / 'notes', NOTES)
     write_notes(root / 'sub', ['deep.md.txt'])
     write_order(root / 'sub', ['deep.md.txt'])
-    write_template(root / 'sub', NoteExtension.MD_TXT)
+    for folder in ('sub', NOTE_NAMED, TEMPLATE_NAMED):
+        write_template(root / folder, NoteExtension.MD_TXT)
     return root
 
 
@@ -107,13 +119,15 @@ def test_tree_asks_window(main_window: MainWindow) -> None:
 
 @pytest.mark.parametrize('item,title', [
     (NOTES[0], NOTE_MENU), (TEMPLATE, NOTE_MENU), ('sub', FOLDER_MENU),
-    ('', FOLDER_MENU)])
+    ('', FOLDER_MENU), (NOTE_NAMED, FOLDER_MENU),
+    (TEMPLATE_NAMED, FOLDER_MENU)])
 def test_context_menu(main_window: MainWindow, project: Path,
                       popped: list[Popped], item: str, title: str) -> None:
     """A right-clicked item is selected and its menu is shown there.
 
     A note and the template of a folder get the note menu, and a
-    folder, the root folder of the project as well, the folder menu.
+    folder, the root folder of the project as well, the folder menu,
+    also when the folder is named like a note or a template.
     """
     main_window.load_project(project)
     path = project / item
@@ -136,6 +150,18 @@ def test_popup_offers(main_window: MainWindow, project: Path,
         for label in entry_labels(menu):
             assert popup.entrycget(label, 'state') == \
                 menu.entrycget(label, 'state')
+
+
+def test_gone_no_popup(main_window: MainWindow, project: Path,
+                       popped: list[Popped]) -> None:
+    """A note that was taken away is selected, but gets no menu."""
+    main_window.load_project(project)
+    gone = project / NOTES[0]
+    gone.unlink()
+    main_window.context_menu(gone, 10, 20)
+    assert not popped
+    assert main_window.explorer.selected_path() == gone
+    assert main_window.note_panel.note_path() is None
 
 
 def test_template_popup(main_window: MainWindow, project: Path,
