@@ -6,14 +6,7 @@
 
 from enum import StrEnum
 from textwrap import wrap
-from typing import Sequence
-
-MAX_COLUMN = 24
-"""Most characters that one column of a table is made wide.
-
-A cell holding more than this is written over several lines instead
-of making the table wider than the panel can show.
-"""
+from typing import NamedTuple, Optional, Sequence
 
 CELL_GAP = ' │ '
 """What is written between two cells of the same row."""
@@ -31,6 +24,24 @@ class Align(StrEnum):
     LEFT = 'left'
     CENTER = 'center'
     RIGHT = 'right'
+
+
+class Table(NamedTuple):
+    """The cells of a table of a note, and how its columns line up.
+
+    The table is kept as cells rather than as text, because how wide
+    its columns are made depends on how wide the area that it is
+    drawn in is. A row is allowed to hold fewer cells than the widest
+    row of the table does, and the headings are the first rows.
+    """
+
+    rows: tuple[tuple[str, ...], ...]
+    aligns: tuple[Align, ...] = ()
+    headings: int = 0
+
+    def holds_text(self) -> bool:
+        """Return whether any cell of the table holds any text."""
+        return any(any(row) for row in self.rows)
 
 
 def cell_align(style: str) -> Align:
@@ -67,13 +78,73 @@ def every_align(aligns: Sequence[Align], columns: int) -> list[Align]:
 
 
 def column_width(rows: Sequence[Sequence[str]], index: int) -> int:
-    """Return how wide one column of a table is made.
+    """Return how wide one column of a table is when nothing is wrapped.
 
-    A column is as wide as its widest cell, up to the most a column
-    may be, and one character wide when all of its cells are empty,
-    so that the line under the headings is drawn for it as well.
+    A column is as wide as its widest cell, and one character wide
+    when all of its cells are empty, so that the line under the
+    headings is drawn for it as well.
     """
-    return max(1, min(MAX_COLUMN, max(len(row[index]) for row in rows)))
+    return max(1, max(len(row[index]) for row in rows))
+
+
+def longest_word(rows: Sequence[Sequence[str]], index: int) -> int:
+    """Return how wide one column must be to break no word, at least 1."""
+    return max([1, *(len(word) for row in rows
+                     for word in row[index].split())])
+
+
+def capped(tops: Sequence[int], floors: Sequence[int],
+           room: int) -> Optional[list[int]]:
+    """Return the widest widths that fit the room under one cap.
+
+    Every column is made as wide as it would like up to a cap that is
+    the same for all of them, but never narrower than its floor, and
+    the cap is as high as lets the columns fit. The narrow columns
+    are then left whole, and the room that is short is taken from the
+    widest ones.
+
+    Args:
+        tops: How wide each column would like to be, at least 1.
+        floors: How narrow each column may be made, at most its top.
+        room: How wide all the columns may be together.
+
+    Returns:
+        The width of each column, or None when not even the floors
+        fit the room.
+    """
+    for cap in range(max(tops), 0, -1):
+        widths = [min(top, max(cap, floor))
+                  for top, floor in zip(tops, floors)]
+        if sum(widths) <= room:
+            return widths
+    return None
+
+
+def column_widths(rows: Sequence[Sequence[str]], columns: int,
+                  room: int) -> list[int]:
+    """Return how wide each column is made to fit the room it has.
+
+    When every column fits as wide as its widest cell, that is how
+    wide it is made. Otherwise the widest columns are cut down, but
+    no column narrower than its longest word, so that the narrow
+    columns are written whole and the long texts are wrapped. When
+    not even the longest words fit, the longest words are cut down
+    the same way, and those words are broken.
+
+    Args:
+        rows: The cells of each row, every row holding every column.
+        columns: How many columns the table has, at least 1.
+        room: How many characters wide all the columns may be
+            together, the gaps between them not counted.
+
+    Returns:
+        The width of each column, at least 1, all of them 1 when not
+        even that fits the room.
+    """
+    wanted = [column_width(rows, index) for index in range(columns)]
+    words = [longest_word(rows, index) for index in range(columns)]
+    return capped(wanted, words, room) or \
+        capped(words, [1] * columns, room) or [1] * columns
 
 
 def wrapped_cell(text: str, width: int) -> list[str]:
@@ -115,31 +186,29 @@ def rule_line(widths: Sequence[int]) -> str:
     return RULE_GAP.join(RULE_CHAR * width for width in widths)
 
 
-def table_text(rows: Sequence[Sequence[str]], aligns: Sequence[Align],
-               headings: int = 0) -> str:
+def table_text(table: Table, width: int) -> str:
     """Return a table written in columns of monospaced text.
 
     Args:
-        rows: The cells of each row, where a row is allowed to hold
-            fewer cells than the widest row of the table does.
-        aligns: Which side of its column each column is written
-            against, as far as the table said.
-        headings: How many rows at the top of the table are heading
-            rows, which is what the line across it is drawn under.
+        table: The cells of the table and how its columns line up.
+        width: How many characters wide the table may be, which it
+            is made wider than only when even one character for
+            each column does not fit.
 
     Returns:
         The lines of the table, and nothing at all for a table that
         holds no cells to write.
     """
-    columns = max((len(row) for row in rows), default=0)
+    columns = max((len(row) for row in table.rows), default=0)
     if not columns:
         return ''
-    cells = squared(rows, columns)
-    widths = [column_width(cells, index) for index in range(columns)]
-    sides = every_align(aligns, columns)
+    cells = squared(table.rows, columns)
+    room = width - len(CELL_GAP) * (columns - 1)
+    widths = column_widths(cells, columns, room)
+    sides = every_align(table.aligns, columns)
     lines: list[str] = []
     for number, row in enumerate(cells):
         lines.extend(row_lines(row, widths, sides))
-        if number + 1 == headings:
+        if number + 1 == table.headings:
             lines.append(rule_line(widths))
     return '\n'.join(lines)

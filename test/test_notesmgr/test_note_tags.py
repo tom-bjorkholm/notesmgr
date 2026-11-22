@@ -188,3 +188,28 @@ def test_every_indent_defined(tags: NoteTags) -> None:
 def test_body_font_size(tags: NoteTags) -> None:
     """The font of the ordinary text of a note is the size it is drawn in."""
     assert int(tags.fonts.font(BODY_KEY).actual('size')) == START_SIZE
+
+
+def letter_width(tags: NoteTags) -> int:
+    """Return how wide one letter of a table is drawn, in pixels."""
+    return tags.fonts.font(FontKey(fixed=True)).measure('0')
+
+
+@pytest.mark.parametrize('letters,expected', [(40, 40), (1, 1), (0, 1)])
+def test_table_columns(tags: NoteTags, letters: int, expected: int) -> None:
+    """As many letters fit as the width holds, and never fewer than 1."""
+    assert tags.table_columns(letters * letter_width(tags), 0) == expected
+
+
+def test_table_columns_indent(tags: NoteTags) -> None:
+    """An indented table has the room of its indentation less."""
+    pixels = 40 * letter_width(tags)
+    indented = (pixels - tags.fonts.indent_step()) // letter_width(tags)
+    assert tags.table_columns(pixels, 1) == indented < 40
+
+
+def test_table_columns_zoom(tags: NoteTags) -> None:
+    """Fewer letters of a table fit a width once they are drawn larger."""
+    pixels = 40 * letter_width(tags)
+    tags.zoom(6)
+    assert tags.table_columns(pixels, 0) < 40

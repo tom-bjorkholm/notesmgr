@@ -50,13 +50,18 @@ plain text.
 1. Start `notesmgr`.
 2. Choose `File` → `New project…` and pick a folder. It can be an empty
    folder or one that already holds notes, which are then taken in.
-3. Press `New` (`Cmd+N` on mac, `Ctrl+N` elsewhere), give the note a
-   name, and write it in the editor that opens.
+3. Press `New` (`Cmd+N` on mac, `Ctrl+N` on Windows and Linux), give
+   the note a name, and write it in the editor that opens.
 4. Select the note in the tree to the left to read it, and press
-   `Copy raw` (`Cmd+C` / `Ctrl+C`) to put it on the clipboard.
+   `Copy raw` (`Cmd+C` on mac, `Ctrl+C` on Windows and Linux) to put it
+   on the clipboard.
 
 Next time, open the project with `File` → `Open project…`, or name it
 on the command line: `notesmgr ~/notes`.
+
+This guide is also in `notesmgr` itself: `Help` → `User guide…` shows
+all of it, and `Help` → `Keyboard shortcuts…` shows the buttons and
+their keyboard shortcuts.
 
 ## Using notesmgr
 
@@ -78,36 +83,37 @@ selected.
 
 ### Buttons and keyboard shortcuts
 
-Every button is also in the `Note` menu. On mac the shortcuts use `Cmd`,
-and on Windows and Linux they use `Ctrl`.
+Every button is also in the `Note` menu. The shortcuts hold down `Cmd`
+on mac and `Ctrl` on Windows and Linux.
 
-| Button | Shortcut | What it does |
-| --- | --- | --- |
-| `Copy raw` | `Cmd+C` | Copies the note as it is written. When part of the note is selected, the key copies just that part. |
-| `Copy formatted` | `Cmd+Shift+C` | Copies the note formatted, for pasting into Mail, Word, Slack and the like. |
-| `Duplicate` | `Cmd+D` | Copies the note, under a name and into a folder you choose. |
-| `Edit` | `Cmd+E` | Opens the note in your editor. `Return` in the tree does the same. |
-| `New` | `Cmd+N` | Makes a note from the template of the folder and opens it in your editor. |
-| `Delete` | `Cmd+Backspace` | Moves the note to the trash, after asking. |
-| `Up` | `Cmd+Up` | Moves the note one place up. |
-| `Down` | `Cmd+Down` | Moves the note one place down. |
+| Button | mac | Windows and Linux | What it does |
+| --- | --- | --- | --- |
+| `Copy raw` | `Cmd+C` | `Ctrl+C` | Copies the note as it is written. When part of the note is selected, the key copies just that part. |
+| `Copy formatted` | `Cmd+Shift+C` | `Ctrl+Shift+C` | Copies the note formatted, for pasting into Mail, Word, Slack and the like. |
+| `Duplicate` | `Cmd+D` | `Ctrl+D` | Copies the note, under a name and into a folder you choose. |
+| `Edit` | `Cmd+E` | `Ctrl+E` | Opens the note in your editor. `Return` in the tree does the same. |
+| `New` | `Cmd+N` | `Ctrl+N` | Makes a note from the template of the folder and opens it in your editor. |
+| `Delete` | `Cmd+Backspace` | `Ctrl+Backspace` | Moves the note to the trash, after asking. |
+| `Up` | `Cmd+Up` | `Ctrl+Up` | Moves the note one place up. |
+| `Down` | `Cmd+Down` | `Ctrl+Down` | Moves the note one place down. |
 
-The `Note` menu also has `Rename…` (`F2`, with no `Cmd` or `Ctrl`),
-which gives the note another name. The note keeps its place among the
-notes of its folder and its own file extension. A new name may differ
-from the old one in case alone, and the same goes for `Rename folder…`.
+The `Note` menu also has `Rename…` (`F2` on every system, with no `Cmd`
+or `Ctrl`), which gives the note another name. The note keeps its place
+among the notes of its folder and its own file extension. A new name may
+differ from the old one in case alone, and the same goes for
+`Rename folder…`.
 
 The other shortcuts are:
 
-| Shortcut | What it does |
-| --- | --- |
-| `Cmd+Shift+N` | Makes a folder (`Folder` → `New folder…`). |
-| `Cmd+L` | Closes every folder but the current one and those above it (`Folder` → `Focus on current folder`). L for local. |
-| `Cmd+Shift+L` | Opens every folder again (`Folder` → `Show all folders`). Shift for the large view. |
-| `Cmd+R` | Reads the open project again (`File` → `Refresh project`). |
-| `Cmd++`, `Cmd+-`, `Cmd+0` | Draws the note and the tree larger, smaller, and in the normal size again (`View` menu). |
-| `Cmd+W` on mac, `Ctrl+Q` elsewhere | Quits. |
-| `Tab` | Goes from the tree to the buttons and on to the note. |
+| mac | Windows and Linux | What it does |
+| --- | --- | --- |
+| `Cmd+Shift+N` | `Ctrl+Shift+N` | Makes a folder (`Folder` → `New folder…`). |
+| `Cmd+L` | `Ctrl+L` | Closes every folder but the current one and those above it (`Folder` → `Focus on current folder`). L for local. |
+| `Cmd+Shift+L` | `Ctrl+Shift+L` | Opens every folder again (`Folder` → `Show all folders`). Shift for the large view. |
+| `Cmd+R` | `Ctrl+R` | Reads the open project again (`File` → `Refresh project`). |
+| `Cmd++`, `Cmd+-`, `Cmd+0` | `Ctrl++`, `Ctrl+-`, `Ctrl+0` | Draws the note and the tree larger, smaller, and in the normal size again (`View` menu). |
+| `Cmd+W` | `Ctrl+Q` | Quits. |
+| `Tab` | `Tab` | Goes from the tree to the buttons and on to the note. |
 
 The template of a folder is shown, edited and copied like any note,
 but it cannot be duplicated, renamed, deleted or moved: every folder has
@@ -286,7 +292,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1763 passed, 41 deselected in 10s
+- Test result: 1849 passed, 43 deselected in 11s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

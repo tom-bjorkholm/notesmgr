@@ -6,12 +6,14 @@
 
 import tkinter
 from contextlib import contextmanager
+from dataclasses import dataclass, field
 from pathlib import Path
 from tkinter import ttk
 from typing import Iterator, Optional, Sequence
 from notesmgr.note_blocks import Block, BlockKind, Span, SpanStyle, \
     markdown_blocks
 from notesmgr.note_image import image_path, shrink_factor
+from notesmgr.note_table import table_text
 from notesmgr.note_tags import GAP_TAG, NoteTags, gap_lines, indent_tag
 from notesmgr.note_text import EMPTY_NOTE, NoteText
 
@@ -46,20 +48,28 @@ MISSING_ALT = 'image'
 IMAGE_PADDING = 4
 """Space in pixels left around an image that is drawn in a note."""
 
+EDGE_OPTIONS = ('borderwidth', 'highlightthickness', 'padx')
+"""Options of a text area that leave room on both sides of its text."""
 
-def block_spans(block: Block) -> tuple[Span, ...]:
+
+def block_spans(block: Block, columns: int) -> tuple[Span, ...]:
     """Return everything that is written for one piece of a note.
 
     The bullet or the number of a list item and the line of a rule
     are drawn rather than read, so they are written here and are no
-    part of what the note holds.
+    part of what the note holds. A table is laid out in columns
+    here, as wide as the area it is drawn in lets it be.
 
     Args:
         block: The piece of the note that is to be written.
+        columns: How many letters of a table fit across the area,
+            once the piece is indented.
 
     Returns:
         The runs of text to write, in the order they are written in.
     """
+    if block.table is not None:
+        return (Span(table_text(block.table, columns)),)
     if block.kind is BlockKind.RULE:
         return (Span(RULE_TEXT),)
     if block.prefix:
@@ -70,6 +80,23 @@ def block_spans(block: Block) -> tuple[Span, ...]:
 def image_text(span: Span) -> str:
     """Return how an image is named where the image is not drawn."""
     return IMAGE_TEXT.format(alt=span.text or MISSING_ALT)
+
+
+@dataclass
+class Drawn:
+    """What a note formatted for reading was last drawn from and in.
+
+    The pieces are kept so that the note can be drawn again when its
+    tables are to be laid out to another width, which is how many
+    letters of a table fit across the area, and the pictures are
+    kept because Tk draws a picture that is no longer kept as
+    nothing at all. A note shown as it is written has no pieces.
+    """
+
+    blocks: Sequence[Block] = ()
+    folder: Optional[Path] = None
+    columns: int = 0
+    pictures: list[tkinter.PhotoImage] = field(default_factory=list)
 
 
 class NoteView:
@@ -97,9 +124,9 @@ class NoteView:
                                  state=tkinter.DISABLED, takefocus=True)
         self.tags = NoteTags(self.area)
         self.note = EMPTY_NOTE
-        self.folder: Optional[Path] = None
-        self.pictures: list[tkinter.PhotoImage] = []
+        self.drawn = Drawn()
         self._lay_out()
+        self.area.bind('<Configure>', self._resized, add=True)
 
     def _lay_out(self) -> None:
         """Put the warning above the note and let the note have the room."""
@@ -151,6 +178,7 @@ class NoteView:
 
     def show_text(self, text: str) -> None:
         """Show a text in an area that the user cannot type in."""
+        self.drawn = Drawn()
         with self._writing():
             self.area.insert('1.0', text)
 
@@ -164,14 +192,60 @@ class NoteView:
             folder: The folder that holds the note, which is where
                 an image that the note shows is looked for.
         """
-        self.folder = folder
-        self.pictures = []
+        self.drawn = Drawn(blocks, folder)
+        self._draw_blocks()
+
+    def _draw_blocks(self) -> None:
+        """Draw the pieces of the note, tables as wide as they fit."""
+        self.drawn.pictures = []
+        self.drawn.columns = self.table_columns(0)
         previous: Optional[Block] = None
         with self._writing():
-            for block in blocks:
+            for block in self.drawn.blocks:
                 self._write_gap(block, previous)
                 self._write_block(block)
                 previous = block
+
+    def table_columns(self, depth: int) -> int:
+        """Return how many letters of a table fit across the area.
+
+        An area that Tk has not laid out yet is 1 pixel wide, so the
+        width it asks for is taken instead, which is what it is given
+        when it is shown in a window of its natural size. Whether it
+        is on the screen does not matter: a window is laid out to the
+        size it is given before it is shown, and is not told again.
+
+        Args:
+            depth: How many steps from the left the table is written.
+
+        Returns:
+            How many letters fit, at least 1.
+        """
+        width = self.area.winfo_width()
+        if width <= 1:
+            width = self.area.winfo_reqwidth()
+        edges = sum(self.area.winfo_pixels(self.area.cget(option))
+                    for option in EDGE_OPTIONS)
+        return self.tags.table_columns(width - 2 * edges, depth)
+
+    def relayout(self) -> None:
+        """Lay the tables of the note out again, if the room has changed.
+
+        A note without tables is left alone, as are tables that fit
+        as many letters as they did, because drawing a note again
+        reads its images again. The note is scrolled to where it was.
+        """
+        has_table = any(block.table is not None
+                        for block in self.drawn.blocks)
+        if not has_table or self.table_columns(0) == self.drawn.columns:
+            return
+        top = self.area.yview()[0]
+        self._draw_blocks()
+        self.area.yview_moveto(top)
+
+    def _resized(self, _event: 'tkinter.Event[tkinter.Text]') -> None:
+        """Fit the tables of the note to the area as it is now sized."""
+        self.relayout()
 
     def _write_gap(self, block: Block, previous: Optional[Block]) -> None:
         """Leave room above a piece of a note that follows another."""
@@ -182,7 +256,8 @@ class NoteView:
     def _write_block(self, block: Block) -> None:
         """Write one piece of a note with the tags it is drawn with."""
         indent = indent_tag(block)
-        for span in block_spans(block):
+        columns = self.table_columns(block.indent)
+        for span in block_spans(block, columns):
             self._write_span(block.kind, span, indent)
         self.area.insert(tkinter.END, '\n', (str(block.kind), indent))
 
@@ -225,16 +300,16 @@ class NoteView:
         kept while it is shown, because Tk draws a picture that is
         nothing but the tag of an image no longer.
         """
-        path = image_path(self.folder, span.target)
+        path = image_path(self.drawn.folder, span.target)
         if path is None:
             return None
         try:
             picture = tkinter.PhotoImage(master=self.area, file=path)
         except tkinter.TclError:
             return None
-        drawn = self._fitted(picture)
-        self.pictures.append(drawn)
-        return drawn
+        fitted = self._fitted(picture)
+        self.drawn.pictures.append(fitted)
+        return fitted
 
     def _fitted(self, picture: tkinter.PhotoImage) -> tkinter.PhotoImage:
         """Return a picture drawn small enough to be read in the panel."""
@@ -244,10 +319,12 @@ class NoteView:
     def zoom(self, step: int) -> None:
         """Draw the note so many steps larger, or smaller below zero."""
         self.tags.zoom(step)
+        self.relayout()
 
     def zoom_normal(self) -> None:
         """Draw the note in the size that it started out in."""
         self.tags.normal_size()
+        self.relayout()
 
     def shown_note(self) -> NoteText:
         """Return the note that is shown, warning and all."""

@@ -19,7 +19,7 @@ from html.parser import HTMLParser
 from textwrap import dedent
 from typing import Mapping, NamedTuple, Optional, Sequence
 from notesmgr.markdown_render import note_html
-from notesmgr.note_table import Align, cell_align, table_text
+from notesmgr.note_table import Align, Table, cell_align
 
 
 class SpanStyle(StrEnum):
@@ -68,13 +68,15 @@ class Block(NamedTuple):
     which is how deeply it is nested in lists and block quotes. The
     prefix is the bullet or the number of a list item, and is empty
     for every other kind of piece. A line across the note is a piece
-    holding no text at all.
+    holding no text at all. A table holds its cells rather than text,
+    because how it is laid out depends on how wide it is drawn.
     """
 
     kind: BlockKind
     spans: tuple[Span, ...] = ()
     indent: int = 0
     prefix: str = ''
+    table: Optional[Table] = None
 
 
 HEADINGS: Mapping[str, BlockKind] = {
@@ -211,9 +213,10 @@ class TableReader:
             self.rows[-1].append(squeezed(''.join(self.cell)).strip())
         self.cell = None
 
-    def text(self) -> str:
-        """Return the table written in columns of monospaced text."""
-        return table_text(self.rows, self.aligns, self.headings)
+    def table(self) -> Table:
+        """Return the cells that were read and how the columns line up."""
+        return Table(tuple(tuple(row) for row in self.rows),
+                     tuple(self.aligns), self.headings)
 
 
 def item_prefix(containers: Sequence[Container]) -> str:
@@ -477,11 +480,11 @@ class NoteParser(HTMLParser):
 
     def _close_table(self, table: TableReader) -> None:
         """Put the table that was read among the pieces of the note."""
-        text = table.text()
+        cells = table.table()
         self.table = None
-        if text:
-            self.blocks.append(Block(BlockKind.TABLE, (Span(text),),
-                                     self._depth()))
+        if cells.holds_text():
+            self.blocks.append(Block(BlockKind.TABLE, indent=self._depth(),
+                                     table=cells))
 
 
 def html_blocks(html: str) -> tuple[Block, ...]:

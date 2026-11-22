@@ -354,7 +354,7 @@ def test_image_beside_note(panel: NotePanel, project: Path) -> None:
     (project / 'dot.png').write_bytes(PICTURE)
     note = write_file(project / 'shows.md.txt', '![A dot](dot.png)\n')
     panel.show_path(note)
-    assert len(panel.view.pictures) == 1
+    assert len(panel.view.drawn.pictures) == 1
 
 
 def test_zoom_reaches_note(panel: NotePanel, note: Path) -> None:

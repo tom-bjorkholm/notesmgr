@@ -26,6 +26,7 @@
     * [edit\_configuration](#notesmgr.main_window.MainWindow.edit_configuration)
     * [save\_user\_wide](#notesmgr.main_window.MainWindow.save_user_wide)
     * [show\_version](#notesmgr.main_window.MainWindow.show_version)
+    * [show\_help](#notesmgr.main_window.MainWindow.show_help)
     * [quit](#notesmgr.main_window.MainWindow.quit)
 * [notesmgr.version\_info](#notesmgr.version_info)
   * [MAIN\_PACKAGE](#notesmgr.version_info.MAIN_PACKAGE)
@@ -78,7 +79,7 @@
     * [start\_cell](#notesmgr.note_blocks.TableReader.start_cell)
     * [add\_text](#notesmgr.note_blocks.TableReader.add_text)
     * [end\_cell](#notesmgr.note_blocks.TableReader.end_cell)
-    * [text](#notesmgr.note_blocks.TableReader.text)
+    * [table](#notesmgr.note_blocks.TableReader.table)
   * [item\_prefix](#notesmgr.note_blocks.item_prefix)
   * [NoteParser](#notesmgr.note_blocks.NoteParser)
     * [\_\_init\_\_](#notesmgr.note_blocks.NoteParser.__init__)
@@ -287,6 +288,7 @@
     * [\_\_init\_\_](#notesmgr.note_tags.NoteTags.__init__)
     * [font\_tag\_of](#notesmgr.note_tags.NoteTags.font_tag_of)
     * [span\_tags](#notesmgr.note_tags.NoteTags.span_tags)
+    * [table\_columns](#notesmgr.note_tags.NoteTags.table_columns)
     * [resize](#notesmgr.note_tags.NoteTags.resize)
     * [zoom](#notesmgr.note_tags.NoteTags.zoom)
     * [normal\_size](#notesmgr.note_tags.NoteTags.normal_size)
@@ -310,15 +312,19 @@
   * [OTHER\_EDITOR](#notesmgr.config_defaults.OTHER_EDITOR)
   * [default\_editor](#notesmgr.config_defaults.default_editor)
 * [notesmgr.note\_table](#notesmgr.note_table)
-  * [MAX\_COLUMN](#notesmgr.note_table.MAX_COLUMN)
   * [CELL\_GAP](#notesmgr.note_table.CELL_GAP)
   * [RULE\_GAP](#notesmgr.note_table.RULE_GAP)
   * [RULE\_CHAR](#notesmgr.note_table.RULE_CHAR)
   * [Align](#notesmgr.note_table.Align)
+  * [Table](#notesmgr.note_table.Table)
+    * [holds\_text](#notesmgr.note_table.Table.holds_text)
   * [cell\_align](#notesmgr.note_table.cell_align)
   * [squared](#notesmgr.note_table.squared)
   * [every\_align](#notesmgr.note_table.every_align)
   * [column\_width](#notesmgr.note_table.column_width)
+  * [longest\_word](#notesmgr.note_table.longest_word)
+  * [capped](#notesmgr.note_table.capped)
+  * [column\_widths](#notesmgr.note_table.column_widths)
   * [wrapped\_cell](#notesmgr.note_table.wrapped_cell)
   * [line\_at](#notesmgr.note_table.line_at)
   * [padded\_cell](#notesmgr.note_table.padded_cell)
@@ -462,6 +468,18 @@
   * [order\_text](#notesmgr.order_file.order_text)
   * [write\_order](#notesmgr.order_file.write_order)
   * [repair\_order\_file](#notesmgr.order_file.repair_order_file)
+* [notesmgr.user\_guide](#notesmgr.user_guide)
+  * [LEVELS](#notesmgr.user_guide.LEVELS)
+  * [TEST\_SUMMARY](#notesmgr.user_guide.TEST_SUMMARY)
+  * [SHORTCUTS](#notesmgr.user_guide.SHORTCUTS)
+  * [NO\_GUIDE](#notesmgr.user_guide.NO_GUIDE)
+  * [NO\_SECTION](#notesmgr.user_guide.NO_SECTION)
+  * [readme\_text](#notesmgr.user_guide.readme_text)
+  * [heading\_level](#notesmgr.user_guide.heading_level)
+  * [block\_text](#notesmgr.user_guide.block_text)
+  * [section\_slice](#notesmgr.user_guide.section_slice)
+  * [guide\_blocks](#notesmgr.user_guide.guide_blocks)
+  * [shortcut\_blocks](#notesmgr.user_guide.shortcut_blocks)
 * [notesmgr.failure\_report](#notesmgr.failure_report)
   * [FAILURE\_TITLE](#notesmgr.failure_report.FAILURE_TITLE)
   * [FAILURE\_TEXT](#notesmgr.failure_report.FAILURE_TEXT)
@@ -520,6 +538,9 @@
   * [ENTRY\_WIDTH](#notesmgr.dialogs.ENTRY_WIDTH)
   * [text\_size](#notesmgr.dialogs.text_size)
   * [show\_text](#notesmgr.dialogs.show_text)
+  * [show\_formatted](#notesmgr.dialogs.show_formatted)
+  * [size\_of](#notesmgr.dialogs.size_of)
+  * [closable\_window](#notesmgr.dialogs.closable_window)
   * [show\_error](#notesmgr.dialogs.show_error)
   * [busy\_cursor](#notesmgr.dialogs.busy_cursor)
   * [ask\_folder](#notesmgr.dialogs.ask_folder)
@@ -643,14 +664,18 @@
   * [IMAGE\_TEXT](#notesmgr.note_view.IMAGE_TEXT)
   * [MISSING\_ALT](#notesmgr.note_view.MISSING_ALT)
   * [IMAGE\_PADDING](#notesmgr.note_view.IMAGE_PADDING)
+  * [EDGE\_OPTIONS](#notesmgr.note_view.EDGE_OPTIONS)
   * [block\_spans](#notesmgr.note_view.block_spans)
   * [image\_text](#notesmgr.note_view.image_text)
+  * [Drawn](#notesmgr.note_view.Drawn)
   * [NoteView](#notesmgr.note_view.NoteView)
     * [\_\_init\_\_](#notesmgr.note_view.NoteView.__init__)
     * [show](#notesmgr.note_view.NoteView.show)
     * [show\_warning](#notesmgr.note_view.NoteView.show_warning)
     * [show\_text](#notesmgr.note_view.NoteView.show_text)
     * [show\_blocks](#notesmgr.note_view.NoteView.show_blocks)
+    * [table\_columns](#notesmgr.note_view.NoteView.table_columns)
+    * [relayout](#notesmgr.note_view.NoteView.relayout)
     * [zoom](#notesmgr.note_view.NoteView.zoom)
     * [zoom\_normal](#notesmgr.note_view.NoteView.zoom_normal)
     * [shown\_note](#notesmgr.note_view.NoteView.shown_note)
@@ -1078,6 +1103,22 @@ Gathering the report asks PyPI whether there are newer
 releases, which takes a moment, so the window says that it is
 working while that is going on.
 
+<a id="notesmgr.main_window.MainWindow.show_help"></a>
+
+#### show\_help
+
+```python
+def show_help(title: str, pick: Callable[[str], Sequence[Block]]) -> None
+```
+
+Show the user guide, or a part of it, formatted for reading.
+
+**Arguments**:
+
+- `title` - What the window showing it is called.
+- `pick` - What picks the part to show from the markdown of
+  the guide.
+
 <a id="notesmgr.main_window.MainWindow.quit"></a>
 
 #### quit
@@ -1492,7 +1533,8 @@ The indent is how many steps from the left the piece is written,
 which is how deeply it is nested in lists and block quotes. The
 prefix is the bullet or the number of a list item, and is empty
 for every other kind of piece. A line across the note is a piece
-holding no text at all.
+holding no text at all. A table holds its cells rather than text,
+because how it is laid out depends on how wide it is drawn.
 
 <a id="notesmgr.note_blocks.HEADINGS"></a>
 
@@ -1674,15 +1716,15 @@ def end_cell() -> None
 
 Put the cell that was read at the end of its row.
 
-<a id="notesmgr.note_blocks.TableReader.text"></a>
+<a id="notesmgr.note_blocks.TableReader.table"></a>
 
-#### text
+#### table
 
 ```python
-def text() -> str
+def table() -> Table
 ```
 
-Return the table written in columns of monospaced text.
+Return the cells that were read and how the columns line up.
 
 <a id="notesmgr.note_blocks.item_prefix"></a>
 
@@ -4376,6 +4418,28 @@ Return every tag that one run of text of a piece is drawn with.
   The tags to give the text, the piece it belongs to first
   and what is said about the run of text itself last.
 
+<a id="notesmgr.note_tags.NoteTags.table_columns"></a>
+
+#### table\_columns
+
+```python
+def table_columns(pixels: int, depth: int) -> int
+```
+
+Return how many letters of a table fit across a width.
+
+**Arguments**:
+
+- `pixels` - How wide the text of the area may be.
+- `depth` - How many steps from the left the table is written.
+  
+
+**Returns**:
+
+  How many letters of the font of a table fit across what
+  is left of the width once the table is indented, at
+  least 1.
+
 <a id="notesmgr.note_tags.NoteTags.resize"></a>
 
 #### resize
@@ -4654,15 +4718,6 @@ file is appended to a command that does not place it itself.
 
 Laying a table of a note out in columns of monospaced text.
 
-<a id="notesmgr.note_table.MAX_COLUMN"></a>
-
-#### MAX\_COLUMN
-
-Most characters that one column of a table is made wide.
-
-A cell holding more than this is written over several lines instead
-of making the table wider than the panel can show.
-
 <a id="notesmgr.note_table.CELL_GAP"></a>
 
 #### CELL\_GAP
@@ -4690,6 +4745,31 @@ class Align(StrEnum)
 ```
 
 Which side of its column the text of a cell is written against.
+
+<a id="notesmgr.note_table.Table"></a>
+
+## Table Objects
+
+```python
+class Table(NamedTuple)
+```
+
+The cells of a table of a note, and how its columns line up.
+
+The table is kept as cells rather than as text, because how wide
+its columns are made depends on how wide the area that it is
+drawn in is. A row is allowed to hold fewer cells than the widest
+row of the table does, and the headings are the first rows.
+
+<a id="notesmgr.note_table.Table.holds_text"></a>
+
+#### holds\_text
+
+```python
+def holds_text() -> bool
+```
+
+Return whether any cell of the table holds any text.
 
 <a id="notesmgr.note_table.cell_align"></a>
 
@@ -4744,11 +4824,81 @@ Return an alignment for every column, LEFT for the unsaid ones.
 def column_width(rows: Sequence[Sequence[str]], index: int) -> int
 ```
 
-Return how wide one column of a table is made.
+Return how wide one column of a table is when nothing is wrapped.
 
-A column is as wide as its widest cell, up to the most a column
-may be, and one character wide when all of its cells are empty,
-so that the line under the headings is drawn for it as well.
+A column is as wide as its widest cell, and one character wide
+when all of its cells are empty, so that the line under the
+headings is drawn for it as well.
+
+<a id="notesmgr.note_table.longest_word"></a>
+
+#### longest\_word
+
+```python
+def longest_word(rows: Sequence[Sequence[str]], index: int) -> int
+```
+
+Return how wide one column must be to break no word, at least 1.
+
+<a id="notesmgr.note_table.capped"></a>
+
+#### capped
+
+```python
+def capped(tops: Sequence[int], floors: Sequence[int],
+           room: int) -> Optional[list[int]]
+```
+
+Return the widest widths that fit the room under one cap.
+
+Every column is made as wide as it would like up to a cap that is
+the same for all of them, but never narrower than its floor, and
+the cap is as high as lets the columns fit. The narrow columns
+are then left whole, and the room that is short is taken from the
+widest ones.
+
+**Arguments**:
+
+- `tops` - How wide each column would like to be, at least 1.
+- `floors` - How narrow each column may be made, at most its top.
+- `room` - How wide all the columns may be together.
+  
+
+**Returns**:
+
+  The width of each column, or None when not even the floors
+  fit the room.
+
+<a id="notesmgr.note_table.column_widths"></a>
+
+#### column\_widths
+
+```python
+def column_widths(rows: Sequence[Sequence[str]], columns: int,
+                  room: int) -> list[int]
+```
+
+Return how wide each column is made to fit the room it has.
+
+When every column fits as wide as its widest cell, that is how
+wide it is made. Otherwise the widest columns are cut down, but
+no column narrower than its longest word, so that the narrow
+columns are written whole and the long texts are wrapped. When
+not even the longest words fit, the longest words are cut down
+the same way, and those words are broken.
+
+**Arguments**:
+
+- `rows` - The cells of each row, every row holding every column.
+- `columns` - How many columns the table has, at least 1.
+- `room` - How many characters wide all the columns may be
+  together, the gaps between them not counted.
+  
+
+**Returns**:
+
+  The width of each column, at least 1, all of them 1 when not
+  even that fits the room.
 
 <a id="notesmgr.note_table.wrapped_cell"></a>
 
@@ -4809,21 +4959,17 @@ Return the line that is drawn under the headings of a table.
 #### table\_text
 
 ```python
-def table_text(rows: Sequence[Sequence[str]],
-               aligns: Sequence[Align],
-               headings: int = 0) -> str
+def table_text(table: Table, width: int) -> str
 ```
 
 Return a table written in columns of monospaced text.
 
 **Arguments**:
 
-- `rows` - The cells of each row, where a row is allowed to hold
-  fewer cells than the widest row of the table does.
-- `aligns` - Which side of its column each column is written
-  against, as far as the table said.
-- `headings` - How many rows at the top of the table are heading
-  rows, which is what the line across it is drawn under.
+- `table` - The cells of the table and how its columns line up.
+- `width` - How many characters wide the table may be, which it
+  is made wider than only when even one character for
+  each column does not fit.
   
 
 **Returns**:
@@ -6497,6 +6643,152 @@ untouched as it found them.
 
 - `NotesmgrError` - The order file cannot be read or written.
 
+<a id="notesmgr.user_guide"></a>
+
+# notesmgr.user\_guide
+
+The user guide of notesmgr, as the Help menu shows it.
+
+The user guide is the README that PyPI.org shows, which every
+installed notesmgr carries as the long description of its package,
+so the guide shown is always the one of the version that is run.
+The guide is cut into sections by its headings, as markdown is.
+
+<a id="notesmgr.user_guide.LEVELS"></a>
+
+#### LEVELS
+
+The level of each kind of heading, 1 for the outermost.
+
+<a id="notesmgr.user_guide.TEST_SUMMARY"></a>
+
+#### TEST\_SUMMARY
+
+Heading of the build report at the end of the README.
+
+It tells how notesmgr was tested, which says nothing to a user.
+
+<a id="notesmgr.user_guide.SHORTCUTS"></a>
+
+#### SHORTCUTS
+
+Heading of the section of the guide that lists the shortcuts.
+
+<a id="notesmgr.user_guide.NO_GUIDE"></a>
+
+#### NO\_GUIDE
+
+What is said when the installed package carries no guide.
+
+<a id="notesmgr.user_guide.NO_SECTION"></a>
+
+#### NO\_SECTION
+
+What is said when the guide has lost a section it is asked for.
+
+<a id="notesmgr.user_guide.readme_text"></a>
+
+#### readme\_text
+
+```python
+def readme_text() -> str
+```
+
+Return the markdown of the README of the installed notesmgr.
+
+**Raises**:
+
+- `NotesmgrError` - notesmgr is not installed, or its package
+  carries no README.
+
+<a id="notesmgr.user_guide.heading_level"></a>
+
+#### heading\_level
+
+```python
+def heading_level(block: Block) -> int
+```
+
+Return the level of a heading, 0 for a piece that is none.
+
+<a id="notesmgr.user_guide.block_text"></a>
+
+#### block\_text
+
+```python
+def block_text(block: Block) -> str
+```
+
+Return the text that a piece of a note says, without styles.
+
+<a id="notesmgr.user_guide.section_slice"></a>
+
+#### section\_slice
+
+```python
+def section_slice(blocks: Sequence[Block], title: str) -> slice
+```
+
+Return where the section under a heading is among the pieces.
+
+A section starts with the first heading that says the title and
+ends before the next heading that is as high or higher, which
+leaves its subsections inside it.
+
+**Arguments**:
+
+- `blocks` - The pieces of a markdown text, in order.
+- `title` - What the heading of the section says.
+  
+
+**Returns**:
+
+  The slice of the pieces that the section is, heading
+  included, and an empty slice when no heading says the title.
+
+<a id="notesmgr.user_guide.guide_blocks"></a>
+
+#### guide\_blocks
+
+```python
+def guide_blocks(text: str) -> tuple[Block, ...]
+```
+
+Return the whole user guide, without the test summary.
+
+**Arguments**:
+
+- `text` - The markdown of the README.
+  
+
+**Returns**:
+
+  The pieces that the guide is drawn in.
+
+<a id="notesmgr.user_guide.shortcut_blocks"></a>
+
+#### shortcut\_blocks
+
+```python
+def shortcut_blocks(text: str) -> tuple[Block, ...]
+```
+
+Return the section of the user guide that lists the shortcuts.
+
+**Arguments**:
+
+- `text` - The markdown of the README.
+  
+
+**Returns**:
+
+  The pieces that the section is drawn in, heading included.
+  
+
+**Raises**:
+
+- `NotesmgrError` - The README has no such section.
+
 <a id="notesmgr.failure_report"></a>
 
 # notesmgr.failure\_report
@@ -7158,6 +7450,80 @@ Show a text that cannot be edited, over another window.
 - `parent` - The window that the new window is shown over.
 - `title` - What the new window is called.
 - `text` - What the new window shows.
+  
+
+**Returns**:
+
+  The window that was made, which its own button destroys.
+
+<a id="notesmgr.dialogs.show_formatted"></a>
+
+#### show\_formatted
+
+```python
+def show_formatted(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+                   blocks: Sequence[Block]) -> tkinter.Toplevel
+```
+
+Show a markdown text formatted for reading, over another window.
+
+The text is drawn as a note written in markdown is drawn, and
+like a note it cannot be typed into. Such a text is long and its
+tables are wide, so the window is made as large as its parent.
+
+**Arguments**:
+
+- `parent` - The window that the new window is shown over.
+- `title` - What the new window is called.
+- `blocks` - The pieces that the text is drawn in.
+  
+
+**Returns**:
+
+  The window that was made, which its own button destroys.
+
+<a id="notesmgr.dialogs.size_of"></a>
+
+#### size\_of
+
+```python
+def size_of(window: Union[tkinter.Tk, tkinter.Toplevel]) -> Optional[str]
+```
+
+Return the size of a window as Tk takes a size, None for none.
+
+A window that is not on the screen has no size yet, as Tk calls
+it one pixel wide and high, so another window is not given that.
+
+**Arguments**:
+
+- `window` - The window whose size is wanted.
+  
+
+**Returns**:
+
+  The width and height, such as 1000x700, or None when the
+  window is not on the screen.
+
+<a id="notesmgr.dialogs.closable_window"></a>
+
+#### closable\_window
+
+```python
+def closable_window(parent: Union[tkinter.Tk, tkinter.Toplevel],
+                    title: str) -> tkinter.Toplevel
+```
+
+Make a window over another, with a button that closes it.
+
+The button is packed at the bottom first, so that it stays in
+sight however small the window is made, and what the window
+shows is packed into the room left above it.
+
+**Arguments**:
+
+- `parent` - The window that the new window is shown over.
+- `title` - What the new window is called.
   
 
 **Returns**:
@@ -8652,23 +9018,32 @@ What an image that the note gives no description of is called.
 
 Space in pixels left around an image that is drawn in a note.
 
+<a id="notesmgr.note_view.EDGE_OPTIONS"></a>
+
+#### EDGE\_OPTIONS
+
+Options of a text area that leave room on both sides of its text.
+
 <a id="notesmgr.note_view.block_spans"></a>
 
 #### block\_spans
 
 ```python
-def block_spans(block: Block) -> tuple[Span, ...]
+def block_spans(block: Block, columns: int) -> tuple[Span, ...]
 ```
 
 Return everything that is written for one piece of a note.
 
 The bullet or the number of a list item and the line of a rule
 are drawn rather than read, so they are written here and are no
-part of what the note holds.
+part of what the note holds. A table is laid out in columns
+here, as wide as the area it is drawn in lets it be.
 
 **Arguments**:
 
 - `block` - The piece of the note that is to be written.
+- `columns` - How many letters of a table fit across the area,
+  once the piece is indented.
   
 
 **Returns**:
@@ -8684,6 +9059,23 @@ def image_text(span: Span) -> str
 ```
 
 Return how an image is named where the image is not drawn.
+
+<a id="notesmgr.note_view.Drawn"></a>
+
+## Drawn Objects
+
+```python
+@dataclass
+class Drawn()
+```
+
+What a note formatted for reading was last drawn from and in.
+
+The pieces are kept so that the note can be drawn again when its
+tables are to be laid out to another width, which is how many
+letters of a table fit across the area, and the pictures are
+kept because Tk draws a picture that is no longer kept as
+nothing at all. A note shown as it is written has no pieces.
 
 <a id="notesmgr.note_view.NoteView"></a>
 
@@ -8773,6 +9165,45 @@ Show the pieces that a note formatted for reading is drawn in.
   drawn in.
 - `folder` - The folder that holds the note, which is where
   an image that the note shows is looked for.
+
+<a id="notesmgr.note_view.NoteView.table_columns"></a>
+
+#### table\_columns
+
+```python
+def table_columns(depth: int) -> int
+```
+
+Return how many letters of a table fit across the area.
+
+An area that Tk has not laid out yet is 1 pixel wide, so the
+width it asks for is taken instead, which is what it is given
+when it is shown in a window of its natural size. Whether it
+is on the screen does not matter: a window is laid out to the
+size it is given before it is shown, and is not told again.
+
+**Arguments**:
+
+- `depth` - How many steps from the left the table is written.
+  
+
+**Returns**:
+
+  How many letters fit, at least 1.
+
+<a id="notesmgr.note_view.NoteView.relayout"></a>
+
+#### relayout
+
+```python
+def relayout() -> None
+```
+
+Lay the tables of the note out again, if the room has changed.
+
+A note without tables is left alone, as are tables that fit
+as many letters as they did, because drawing a note again
+reads its images again. The note is scrolled to where it was.
 
 <a id="notesmgr.note_view.NoteView.zoom"></a>
 

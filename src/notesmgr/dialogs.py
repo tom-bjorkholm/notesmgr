@@ -9,6 +9,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Iterator, NamedTuple, Optional, Sequence, Union
+from notesmgr.note_blocks import Block
+from notesmgr.note_view import NoteView
 
 MIN_TEXT_WIDTH = 40
 """Narrowest that a window showing a text is made, in characters."""
@@ -78,15 +80,80 @@ def show_text(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
     Returns:
         The window that was made, which its own button destroys.
     """
-    window = tkinter.Toplevel(parent)
-    window.title(title)
-    window.transient(parent)
+    window = closable_window(parent, title)
     _fill_with_text(window, text)
     return window
 
 
+def show_formatted(parent: Union[tkinter.Tk, tkinter.Toplevel], title: str,
+                   blocks: Sequence[Block]) -> tkinter.Toplevel:
+    """Show a markdown text formatted for reading, over another window.
+
+    The text is drawn as a note written in markdown is drawn, and
+    like a note it cannot be typed into. Such a text is long and its
+    tables are wide, so the window is made as large as its parent.
+
+    Args:
+        parent: The window that the new window is shown over.
+        title: What the new window is called.
+        blocks: The pieces that the text is drawn in.
+
+    Returns:
+        The window that was made, which its own button destroys.
+    """
+    window = closable_window(parent, title)
+    view = NoteView(window)
+    view.show_blocks(blocks)
+    view.frame.pack(fill=tkinter.BOTH, expand=True)
+    size = size_of(parent)
+    if size is not None:
+        window.geometry(size)
+    return window
+
+
+def size_of(window: Union[tkinter.Tk, tkinter.Toplevel]) -> Optional[str]:
+    """Return the size of a window as Tk takes a size, None for none.
+
+    A window that is not on the screen has no size yet, as Tk calls
+    it one pixel wide and high, so another window is not given that.
+
+    Args:
+        window: The window whose size is wanted.
+
+    Returns:
+        The width and height, such as 1000x700, or None when the
+        window is not on the screen.
+    """
+    if not window.winfo_ismapped():
+        return None
+    return f'{window.winfo_width()}x{window.winfo_height()}'
+
+
+def closable_window(parent: Union[tkinter.Tk, tkinter.Toplevel],
+                    title: str) -> tkinter.Toplevel:
+    """Make a window over another, with a button that closes it.
+
+    The button is packed at the bottom first, so that it stays in
+    sight however small the window is made, and what the window
+    shows is packed into the room left above it.
+
+    Args:
+        parent: The window that the new window is shown over.
+        title: What the new window is called.
+
+    Returns:
+        The window that was made, which its own button destroys.
+    """
+    window = tkinter.Toplevel(parent)
+    window.title(title)
+    window.transient(parent)
+    button = ttk.Button(window, text=CLOSE_LABEL, command=window.destroy)
+    button.pack(side=tkinter.BOTTOM, pady=PADDING)
+    return window
+
+
 def _fill_with_text(window: tkinter.Toplevel, text: str) -> None:
-    """Fill a window with a text, a scroll bar and a close button."""
+    """Fill a window with a text and a scroll bar."""
     width, height = text_size(text)
     area = tkinter.Text(window, width=width, height=height, wrap='none',
                         font='TkFixedFont')
@@ -94,8 +161,6 @@ def _fill_with_text(window: tkinter.Toplevel, text: str) -> None:
     area.configure(yscrollcommand=scroll.set)
     area.insert('1.0', text)
     area.configure(state=tkinter.DISABLED)
-    button = ttk.Button(window, text=CLOSE_LABEL, command=window.destroy)
-    button.pack(side=tkinter.BOTTOM, pady=PADDING)
     scroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
     area.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 

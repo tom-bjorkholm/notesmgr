@@ -226,6 +226,22 @@ class NoteTags:
         return (str(kind), indent, self.font_tag_of(kind, span),
                 *span_styles(span))
 
+    def table_columns(self, pixels: int, depth: int) -> int:
+        """Return how many letters of a table fit across a width.
+
+        Args:
+            pixels: How wide the text of the area may be.
+            depth: How many steps from the left the table is written.
+
+        Returns:
+            How many letters of the font of a table fit across what
+            is left of the width once the table is indented, at
+            least 1.
+        """
+        letter = self.fonts.font(font_key(BlockKind.TABLE)).measure('0')
+        room = pixels - depth * self.fonts.indent_step()
+        return max(1, room // max(1, letter))
+
     def resize(self, size: int) -> int:
         """Draw the note in another size from now on."""
         drawn = self.fonts.resize(size)

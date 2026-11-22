@@ -14,7 +14,9 @@ from notesmgr.dialogs import ACCEPT_LABEL, BUSY_CURSOR, CANCEL_LABEL, \
     CHOOSE_LABEL, MAX_TEXT_HEIGHT, MAX_TEXT_WIDTH, MIN_TEXT_WIDTH, \
     ChoiceDialog, NameFolder, NameFolderDialog, ask_choice, ask_folder, \
     ask_if_sure, ask_name, ask_name_folder, ask_yes_no, busy_cursor, \
-    show_error, show_info, show_text, text_size
+    show_error, show_formatted, show_info, show_text, size_of, text_size
+from notesmgr import dialogs as dialogs_module
+from notesmgr.note_blocks import markdown_blocks
 
 TEMPLATES = ['template.md', 'template.txt']
 """Options of the kind that the choosing window is made to offer."""
@@ -28,6 +30,10 @@ GIVEN = NameFolder('first copy', 'notes')
 REPORT = 'notesmgr 0.0.1\npackaging 25.0\n'
 """A text of the kind that these windows are made to show."""
 
+GUIDE = '# Guide\n\nPress **New**.\n\n| mac | Windows |\n| --- | --- |\n' \
+    '| `Cmd+N` | `Ctrl+N` |\n'
+"""A markdown text of the kind that is shown formatted."""
+
 
 @pytest.fixture(name='shown')
 def fixture_shown(top_window: tkinter.Toplevel) -> Iterator[tkinter.Toplevel]:
@@ -37,6 +43,26 @@ def fixture_shown(top_window: tkinter.Toplevel) -> Iterator[tkinter.Toplevel]:
     yield window
     with suppress(tkinter.TclError):
         window.destroy()
+
+
+@pytest.fixture(name='formatted')
+def fixture_formatted(
+        top_window: tkinter.Toplevel) -> Iterator[tkinter.Toplevel]:
+    """Provide a window showing a formatted text, destroyed after the test."""
+    window = show_formatted(top_window, 'Guide', markdown_blocks(GUIDE))
+    window.withdraw()
+    yield window
+    with suppress(tkinter.TclError):
+        window.destroy()
+
+
+def formatted_area(window: tkinter.Toplevel) -> tkinter.Text:
+    """Return the text widget inside the frame of a formatted window."""
+    areas = [grandchild for child in window.winfo_children()
+             for grandchild in child.winfo_children()
+             if isinstance(grandchild, tkinter.Text)]
+    assert len(areas) == 1
+    return areas[0]
 
 
 def text_area(window: tkinter.Toplevel) -> tkinter.Text:
@@ -75,13 +101,77 @@ def test_text_read_only(shown: tkinter.Toplevel) -> None:
     assert str(text_area(shown).cget('state')) == 'disabled'
 
 
-def test_close_button(shown: tkinter.Toplevel) -> None:
+@pytest.mark.parametrize('fixture', ['shown', 'formatted'])
+def test_close_button(request: pytest.FixtureRequest, fixture: str) -> None:
     """The window holds a button, and pressing it destroys the window."""
-    buttons = [child for child in shown.winfo_children()
+    window = request.getfixturevalue(fixture)
+    assert isinstance(window, tkinter.Toplevel)
+    buttons = [child for child in window.winfo_children()
                if isinstance(child, ttk.Button)]
     assert len(buttons) == 1
     buttons[0].invoke()
-    assert not shown.winfo_exists()
+    assert not window.winfo_exists()
+
+
+def test_formatted_titled(formatted: tkinter.Toplevel) -> None:
+    """The formatted window is called what the caller asked."""
+    assert formatted.title() == 'Guide'
+
+
+def test_formatted_text(formatted: tkinter.Toplevel) -> None:
+    """The text is shown as read, with its markup drawn rather than said."""
+    shown = str(formatted_area(formatted).get('1.0', 'end-1c'))
+    assert shown.startswith('Guide\n')
+    assert 'Press New.' in shown
+    assert 'Ctrl+N' in shown
+    assert '**' not in shown and '`' not in shown
+
+
+def test_formatted_tagged(formatted: tkinter.Toplevel) -> None:
+    """The heading is drawn as a heading, as it is in a note."""
+    area = formatted_area(formatted)
+    assert 'heading1' in area.tag_names('1.0')
+
+
+def test_formatted_read_only(formatted: tkinter.Toplevel) -> None:
+    """The formatted text cannot be typed into."""
+    assert str(formatted_area(formatted).cget('state')) == 'disabled'
+
+
+def test_size_of_hidden(top_window: tkinter.Toplevel) -> None:
+    """A window that is not on the screen has no size to give."""
+    assert size_of(top_window) is None
+
+
+def test_size_of_shown(top_window: tkinter.Toplevel,
+                       monkeypatch: pytest.MonkeyPatch) -> None:
+    """A window on the screen gives its width and height."""
+    monkeypatch.setattr(top_window, 'winfo_ismapped', lambda: True)
+    monkeypatch.setattr(top_window, 'winfo_width', lambda: 1000)
+    monkeypatch.setattr(top_window, 'winfo_height', lambda: 700)
+    assert size_of(top_window) == '1000x700'
+
+
+@pytest.mark.parametrize('size,expected', [('900x600', ['900x600']),
+                                           (None, [])])
+def test_formatted_sized(top_window: tkinter.Toplevel, size: Optional[str],
+                         expected: list[str],
+                         monkeypatch: pytest.MonkeyPatch) -> None:
+    """A formatted window is as large as its parent, when that has a size.
+
+    A hidden window has no size that can be read back, so the size
+    that the window is given is recorded instead.
+    """
+    given: list[str] = []
+
+    def geometry(_window: tkinter.Toplevel, new: str) -> None:
+        """Stand in for giving a window its size."""
+        given.append(new)
+    monkeypatch.setattr(dialogs_module, 'size_of', lambda _parent: size)
+    monkeypatch.setattr(tkinter.Toplevel, 'geometry', geometry)
+    window = show_formatted(top_window, 'Guide', markdown_blocks(GUIDE))
+    window.destroy()
+    assert given == expected
 
 
 def test_show_error(top_window: tkinter.Toplevel,

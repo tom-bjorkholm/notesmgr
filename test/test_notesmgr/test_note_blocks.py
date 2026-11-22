@@ -9,6 +9,7 @@ import pytest
 from notesmgr.note_blocks import Block, BlockKind, Span, SpanStyle, \
     html_blocks, item_prefix, markdown_blocks, squeezed, trimmed
 from notesmgr.note_blocks import Container
+from notesmgr.note_table import Align, Table
 
 HEADING_LEVELS = [(f'{"#" * level} Words', f'heading{level}')
                   for level in range(1, 7)]
@@ -23,6 +24,13 @@ def text_of(block: Block) -> str:
 def texts(blocks: Sequence[Block]) -> list[str]:
     """Return the text of every piece of a note."""
     return [text_of(block) for block in blocks]
+
+
+def table_of(block: Block) -> Table:
+    """Return the cells of a piece that is a table."""
+    assert block.kind is BlockKind.TABLE
+    assert block.table is not None
+    return block.table
 
 
 def kinds(blocks: Sequence[Block]) -> list[BlockKind]:
@@ -214,24 +222,31 @@ def test_a_rule() -> None:
 
 
 def test_a_table() -> None:
-    """A table is one piece, laid out in columns of text."""
+    """A table is one piece holding its cells, laid out when drawn."""
     block = only(markdown_blocks('| a | b |\n| --- | --- |\n| 1 | 2 |\n'))
-    assert block.kind is BlockKind.TABLE
-    lines = text_of(block).split('\n')
-    assert lines[0] == 'a │ b'
-    assert lines[2] == '1 │ 2'
+    assert table_of(block) == Table((('a', 'b'), ('1', '2')),
+                                    (Align.LEFT, Align.LEFT), 1)
+    assert not block.spans
+
+
+def test_table_aligns() -> None:
+    """The colons under the headings say how each column lines up."""
+    block = only(markdown_blocks('| a | b | c |\n| :-: | --: | :-- |\n'
+                                 '| 1 | 2 | 3 |\n'))
+    assert table_of(block).aligns == (Align.CENTER, Align.RIGHT,
+                                      Align.LEFT)
 
 
 def test_table_missing_cell() -> None:
     """A row of a table that names too few cells is filled out."""
     block = only(markdown_blocks('| a | b |\n| --- | --- |\n| 1 |\n'))
-    assert text_of(block).split('\n')[2] == '1 │'
+    assert table_of(block).rows == (('a', 'b'), ('1', ''))
 
 
 def test_table_cell_of_words() -> None:
     """The line breaks inside a cell are blanks, as everywhere else."""
     block = only(markdown_blocks('| a |\n| --- |\n| one  two |\n'))
-    assert text_of(block).split('\n')[2] == 'one two'
+    assert table_of(block).rows[1] == ('one two',)
 
 
 def test_image_is_named() -> None:
@@ -353,7 +368,7 @@ def test_empty_table(html: str) -> None:
 def test_cell_outside_a_row() -> None:
     """A cell that no row of its table holds is drawn nowhere."""
     html = '<table><td>lost</td><tr><td>kept</td></tr></table>'
-    assert texts(html_blocks(html)) == ['kept']
+    assert table_of(only(html_blocks(html))).rows == (('kept',),)
 
 
 def test_table_in_a_quote() -> None:

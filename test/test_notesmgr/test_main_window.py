@@ -24,11 +24,12 @@ from notesmgr.config_files import CONFIG_NAME
 from notesmgr.errors import NotesmgrError
 from notesmgr.explorer_drop import Drop
 from notesmgr.main_window import APPLICATION_NAME, CONFIG_MENU, \
-    EDIT_CONFIG_ENTRY, FILE_MENU, FOLDER_MENU, HELP_MENU, INITIAL_HEIGHT, \
-    INITIAL_WIDTH, MINIMUM_HEIGHT, MINIMUM_WIDTH, NEW_PROJECT_ENTRY, \
-    NORMAL_SIZE_ENTRY, NOTE_MENU, VIEW_MENU, ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, \
-    OPEN_PROJECT_ENTRY, QUIT_ENTRY, REFRESH_ENTRY, USER_WIDE_ENTRY, \
-    VERSION_ENTRY, VERSION_TITLE, MainWindow, fitted
+    EDIT_CONFIG_ENTRY, FILE_MENU, FOLDER_MENU, GUIDE_ENTRY, HELP_MENU, \
+    INITIAL_HEIGHT, INITIAL_WIDTH, MINIMUM_HEIGHT, MINIMUM_WIDTH, \
+    NEW_PROJECT_ENTRY, NORMAL_SIZE_ENTRY, NOTE_MENU, VIEW_MENU, \
+    ZOOM_IN_ENTRY, ZOOM_OUT_ENTRY, OPEN_PROJECT_ENTRY, QUIT_ENTRY, \
+    REFRESH_ENTRY, SHORTCUTS_ENTRY, USER_WIDE_ENTRY, VERSION_ENTRY, \
+    VERSION_TITLE, MainWindow, fitted
 from notesmgr.order_file import read_order_text
 from notesmgr.project import config_path
 from notesmgr.shortcuts import TREE_EDIT_KEYS
@@ -292,6 +293,8 @@ def test_menus_of_the_bar(main_window: MainWindow) -> None:
     (VIEW_MENU, NORMAL_SIZE_ENTRY),
     (CONFIG_MENU, EDIT_CONFIG_ENTRY),
     (CONFIG_MENU, USER_WIDE_ENTRY),
+    (HELP_MENU, GUIDE_ENTRY),
+    (HELP_MENU, SHORTCUTS_ENTRY),
     (HELP_MENU, VERSION_ENTRY)])
 def test_menu_entries(main_window: MainWindow, menu: str, label: str) -> None:
     """Every menu holds the entries that this step has given it."""

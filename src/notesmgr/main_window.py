@@ -18,12 +18,13 @@ from notesmgr.commands import Commands, WindowHooks
 from notesmgr.config_editor import open_config_editor
 from notesmgr.config_files import copy_to_user_wide
 from notesmgr.dialogs import ask_choice, ask_folder, ask_yes_no, \
-    busy_cursor, show_error, show_info, show_text
+    busy_cursor, show_error, show_formatted, show_info, show_text
 from notesmgr.errors import NotesmgrError
 from notesmgr.explorer_drop import Drop
 from notesmgr.explorer_tree import ExplorerTree
 from notesmgr.menu_bar import MenuEntry, MenuSpec, build_menu_bar, \
     entry_labels, set_enabled
+from notesmgr.note_blocks import Block
 from notesmgr.note_file import is_note_file
 from notesmgr.note_panel import NotePanel
 from notesmgr.project import is_project
@@ -32,6 +33,8 @@ from notesmgr.project_ops import OpenReport, changed_message, \
 from notesmgr.session import Session
 from notesmgr.shortcuts import TREE_EDIT_KEYS, Shortcut, Shortcuts, \
     tk_window_system, window_shortcuts
+from notesmgr.user_guide import guide_blocks, readme_text, \
+    shortcut_blocks
 from notesmgr.version_info import version_report
 
 APPLICATION_NAME = 'notesmgr'
@@ -63,6 +66,10 @@ EDIT_CONFIG_ENTRY = 'Edit configuration…'
 USER_WIDE_ENTRY = 'Save configuration as user wide…'
 USER_WIDE_SAVED = 'The configuration of the project is now the user wide\n' \
     'configuration, in the file {path}.'
+GUIDE_ENTRY = 'User guide…'
+GUIDE_TITLE = 'notesmgr user guide'
+SHORTCUTS_ENTRY = 'Keyboard shortcuts…'
+SHORTCUTS_TITLE = 'notesmgr keyboard shortcuts'
 VERSION_ENTRY = 'Version information…'
 VERSION_TITLE = 'notesmgr versions'
 CONFIG_TITLE = 'Configuration'
@@ -172,14 +179,25 @@ class MainWindow:
         edit_entry = MenuEntry(EDIT_CONFIG_ENTRY, self.edit_configuration)
         user_wide = MenuEntry(USER_WIDE_ENTRY, self.save_user_wide,
                               enabled=False)
-        versions = MenuEntry(VERSION_ENTRY, self.show_version)
         return [MenuSpec(FILE_MENU, [new_entry, open_entry, refresh,
                                      quit_entry]),
                 MenuSpec(NOTE_MENU, self._note_entries(keys)),
                 MenuSpec(FOLDER_MENU, self._folder_entries(keys)),
                 MenuSpec(VIEW_MENU, self._view_entries(keys)),
                 MenuSpec(CONFIG_MENU, [edit_entry, user_wide]),
-                MenuSpec(HELP_MENU, [versions])]
+                MenuSpec(HELP_MENU, self._help_entries())]
+
+    def _help_entries(self) -> list[MenuEntry]:
+        """Return the entries of the help menu.
+
+        The user guide is shown whole, and the shortcuts, which are
+        what is looked up most often, are also shown on their own.
+        """
+        guide = partial(self.show_help, GUIDE_TITLE, guide_blocks)
+        shortcuts = partial(self.show_help, SHORTCUTS_TITLE, shortcut_blocks)
+        return [MenuEntry(GUIDE_ENTRY, guide),
+                MenuEntry(SHORTCUTS_ENTRY, shortcuts),
+                MenuEntry(VERSION_ENTRY, self.show_version, separated=True)]
 
     def _note_entries(self, keys: Shortcuts) -> list[MenuEntry]:
         """Return one entry of the note menu for every action on a note.
@@ -587,6 +605,22 @@ class MainWindow:
             show_error(self.window, VERSION_TITLE, str(error))
             return
         show_text(self.window, VERSION_TITLE, report.getvalue())
+
+    def show_help(self, title: str,
+                  pick: Callable[[str], Sequence[Block]]) -> None:
+        """Show the user guide, or a part of it, formatted for reading.
+
+        Args:
+            title: What the window showing it is called.
+            pick: What picks the part to show from the markdown of
+                the guide.
+        """
+        try:
+            blocks = pick(readme_text())
+        except NotesmgrError as error:
+            show_error(self.window, title, str(error))
+            return
+        show_formatted(self.window, title, blocks)
 
     def quit(self) -> None:
         """Destroy the main window, which ends the application."""

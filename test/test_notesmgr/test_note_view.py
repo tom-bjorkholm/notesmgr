@@ -10,7 +10,8 @@ import pytest
 from notesmgr.note_blocks import Block, BlockKind, Span
 from notesmgr.note_tags import GAP_TAG, LINK_TAG, STRIKE_TAG
 from notesmgr.note_text import NoteText
-from notesmgr.note_view import MISSING_ALT, NoteView
+from notesmgr.note_fonts import FontKey
+from notesmgr.note_view import EDGE_OPTIONS, MISSING_ALT, NoteView
 
 WARNING = 'Something about this note is worth saying.'
 """A warning that these tests show above a note."""
@@ -203,7 +204,7 @@ def test_image_is_drawn(view: NoteView, picture: Path) -> None:
     """An image of a note is drawn where the note shows it."""
     view.show(NoteText(f'![A picture]({picture.name})\n'), True,
               picture.parent)
-    assert len(view.pictures) == 1
+    assert len(view.drawn.pictures) == 1
     assert view.area.image_names()
     assert 'A picture' not in view.area_text()
 
@@ -212,7 +213,7 @@ def test_missing_image(view: NoteView, picture: Path) -> None:
     """An image whose file is not there is named by its description."""
     view.show(NoteText('![A picture](no_such_file.png)\n'), True,
               picture.parent)
-    assert not view.pictures
+    assert not view.drawn.pictures
     assert view.area_text() == '[A picture]\n'
 
 
@@ -226,7 +227,7 @@ def test_remote_image(view: NoteView, picture: Path) -> None:
     """An image somewhere on the network is named and never fetched."""
     view.show(NoteText('![Far away](https://example.com/a.png)\n'), True,
               picture.parent)
-    assert not view.pictures
+    assert not view.drawn.pictures
     assert view.area_text() == '[Far away]\n'
 
 
@@ -235,7 +236,7 @@ def test_image_of_wrong_kind(view: NoteView, tmp_path: Path) -> None:
     odd = tmp_path / 'odd.png'
     odd.write_bytes(b'this is no picture')
     view.show(NoteText(f'![Odd]({odd.name})\n'), True, tmp_path)
-    assert not view.pictures
+    assert not view.drawn.pictures
     assert view.area_text() == '[Odd]\n'
 
 
@@ -244,13 +245,13 @@ def test_pictures_are_let_go(view: NoteView, picture: Path) -> None:
     view.show(NoteText(f'![A picture]({picture.name})\n'), True,
               picture.parent)
     view.show(NoteText('Nothing to draw.\n'), formatted=True)
-    assert not view.pictures
+    assert not view.drawn.pictures
 
 
 def test_image_without_folder(view: NoteView) -> None:
     """An image beside a note that is nowhere is named, not drawn."""
     view.show(NoteText('![A picture](beside.png)\n'), formatted=True)
-    assert not view.pictures
+    assert not view.drawn.pictures
     assert view.area_text() == '[A picture]\n'
 
 
@@ -290,3 +291,85 @@ def test_part_selected(view: NoteView) -> None:
 def test_tab_reaches_note(view: NoteView) -> None:
     """Tab reaches the note, which cannot be written in, all the same."""
     assert view.area.cget('takefocus')
+
+
+LONG_TABLE = '| Key | What it does |\n| --- | --- |\n| `Cmd+C` | ' + \
+    ' '.join(['Copies the note as it is written.'] * 10) + ' |\n'
+"""A note holding a table far wider than the area that it is shown in."""
+
+
+def widest_line(view: NoteView) -> int:
+    """Return how many letters the widest line of the area holds."""
+    return max(len(line) for line in view.area_text().split('\n'))
+
+
+def give_width(view: NoteView, monkeypatch: pytest.MonkeyPatch,
+               letters: int) -> None:
+    """Make the area say that it was laid out so many letters wide.
+
+    Tk lays out no area of a hidden window, so the width that it
+    would be given in a window on the screen is stood in for.
+    """
+    letter = view.tags.fonts.font(FontKey(fixed=True)).measure('0')
+    edges = sum(view.area.winfo_pixels(view.area.cget(option))
+                for option in EDGE_OPTIONS)
+    monkeypatch.setattr(view.area, 'winfo_width',
+                        lambda: letters * letter + 2 * edges)
+
+
+def test_table_fits_area(view: NoteView) -> None:
+    """A table is laid out as wide as the area asks to be, and no wider."""
+    view.show(NoteText(LONG_TABLE), formatted=True)
+    assert view.drawn.columns == view.table_columns(0) > 1
+    assert widest_line(view) == view.drawn.columns
+
+
+def test_table_follows_width(view: NoteView,
+                             monkeypatch: pytest.MonkeyPatch) -> None:
+    """A table is laid out again to the width the area is given."""
+    view.show(NoteText(LONG_TABLE), formatted=True)
+    for letters in (50, 120):
+        give_width(view, monkeypatch, letters)
+        view.relayout()
+        assert view.drawn.columns == letters
+        assert widest_line(view) == letters
+
+
+def test_no_table_not_redrawn(view: NoteView,
+                              monkeypatch: pytest.MonkeyPatch) -> None:
+    """A note without tables is not drawn again when the width changes."""
+    view.show(NoteText('# Heading\n\nWords.\n'), formatted=True)
+    drawn = view.drawn.columns
+    give_width(view, monkeypatch, 30)
+    view.relayout()
+    assert view.drawn.columns == drawn
+
+
+def test_raw_not_redrawn(view: NoteView,
+                         monkeypatch: pytest.MonkeyPatch) -> None:
+    """A note shown as written is left as written when the width changes."""
+    view.show(NoteText(LONG_TABLE))
+    give_width(view, monkeypatch, 30)
+    view.relayout()
+    assert view.area_text() == LONG_TABLE
+
+
+def test_zoom_lays_out_again(view: NoteView,
+                             monkeypatch: pytest.MonkeyPatch) -> None:
+    """A table drawn larger is laid out to the letters that still fit."""
+    give_width(view, monkeypatch, 80)
+    view.show(NoteText(LONG_TABLE), formatted=True)
+    view.zoom(6)
+    assert view.drawn.columns < 80
+    assert widest_line(view) == view.drawn.columns
+    view.zoom_normal()
+    assert view.drawn.columns == 80
+
+
+def test_indented_table(view: NoteView,
+                        monkeypatch: pytest.MonkeyPatch) -> None:
+    """A table in a quote has the room of its indentation less."""
+    give_width(view, monkeypatch, 80)
+    view.show(NoteText('> ' + LONG_TABLE.replace('\n', '\n> ')),
+              formatted=True)
+    assert widest_line(view) == view.table_columns(1) < 80

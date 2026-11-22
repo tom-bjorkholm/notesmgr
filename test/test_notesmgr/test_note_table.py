@@ -4,17 +4,33 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
-from typing import Sequence
+from typing import Optional, Sequence
 import pytest
-from notesmgr.note_table import MAX_COLUMN, Align, cell_align, \
-    column_width, every_align, padded_cell, row_lines, rule_line, \
-    squared, table_text, wrapped_cell
+from notesmgr.note_table import CELL_GAP, RULE_GAP, Align, Table, \
+    capped, cell_align, column_width, column_widths, every_align, \
+    longest_word, padded_cell, row_lines, rule_line, squared, table_text, \
+    wrapped_cell
 
-HEAD = ['Construct', 'Yes', 'Note']
+HEAD = ('Construct', 'Yes', 'Note')
 """The heading row of the table that these tests lay out."""
 
-BODY = ['Heading', 'yes', 'six levels']
+BODY = ('Heading', 'yes', 'six levels')
 """A row of the table that these tests lay out."""
+
+WIDE = 200
+"""A width that every table of these tests fits in unwrapped."""
+
+KEYS = Table((('Button', 'mac', 'What it does'),
+              ('Copy raw', 'Cmd+C', 'Copies the note as it is written. '
+               'When part of the note is selected, the key copies just '
+               'that part.')), (), 1)
+"""A table of short columns and one long one, as the guide has."""
+
+
+def widths_of(text: str) -> list[int]:
+    """Return how wide each column is, by the line under the headings."""
+    rule = next(line for line in text.split('\n') if RULE_GAP in line)
+    return [len(part) for part in rule.split(RULE_GAP)]
 
 
 @pytest.mark.parametrize('style,expected', [
@@ -53,10 +69,48 @@ def test_extra_aligns() -> None:
 @pytest.mark.parametrize('cells,expected', [
     (['ab', 'abcd'], 4),
     (['', ''], 1),
-    (['a' * (MAX_COLUMN + 10)], MAX_COLUMN)])
+    (['a' * 100], 100)])
 def test_column_width(cells: Sequence[str], expected: int) -> None:
-    """A column is as wide as its widest cell, up to the most allowed."""
+    """A column is as wide as its widest cell, however wide that is."""
     assert column_width([[cell] for cell in cells], 0) == expected
+
+
+@pytest.mark.parametrize('cells,expected', [
+    (['one three', 'four'], 5),
+    (['', ''], 1),
+    (['  '], 1),
+    (['a' * 30], 30)])
+def test_longest_word(cells: Sequence[str], expected: int) -> None:
+    """A column needs room for its longest word, and at least 1."""
+    assert longest_word([[cell] for cell in cells], 0) == expected
+
+
+@pytest.mark.parametrize('tops,floors,room,expected', [
+    ([2, 4], [1, 1], 6, [2, 4]),
+    ([2, 4], [1, 1], 20, [2, 4]),
+    ([5, 23], [2, 5], 15, [5, 10]),
+    ([7, 9], [4, 6], 12, [6, 6]),
+    ([10, 10], [1, 9], 12, [3, 9]),
+    ([4, 8], [4, 8], 6, None),
+    ([3], [1], 0, None)])
+def test_capped(tops: list[int], floors: list[int], room: int,
+                expected: Optional[list[int]]) -> None:
+    """The widest columns are cut down to fit, none below its floor."""
+    assert capped(tops, floors, room) == expected
+
+
+@pytest.mark.parametrize('rows,room,expected', [
+    ([['ab', 'abcd']], 10, [2, 4]),
+    ([['ab', 'abcd']], 6, [2, 4]),
+    ([['a', 'one two three four']], 12, [1, 11]),
+    ([['ab cd', 'one two three four five']], 15, [5, 10]),
+    ([['aaaa bb', 'cc dddddd']], 12, [6, 6]),
+    ([['aaaa', 'bbbbbbbb']], 6, [3, 3]),
+    ([['aaaa', 'bbbb']], 1, [1, 1])])
+def test_column_widths(rows: list[list[str]], room: int,
+                       expected: list[int]) -> None:
+    """Columns fit the room, keeping words whole while they fit."""
+    assert column_widths(rows, len(rows[0]), room) == expected
 
 
 @pytest.mark.parametrize('text,width,expected', [
@@ -100,13 +154,22 @@ def test_rule_line() -> None:
 
 def test_empty_table() -> None:
     """A table that holds no cells at all is written as nothing."""
-    assert table_text([], []) == ''
-    assert table_text([[]], []) == ''
+    assert table_text(Table(()), WIDE) == ''
+    assert table_text(Table(((),)), WIDE) == ''
+
+
+@pytest.mark.parametrize('rows,expected', [
+    ((), False), (((),), False), ((('', ''),), False),
+    ((('', 'a'),), True)])
+def test_holds_text(rows: tuple[tuple[str, ...], ...], expected: bool) \
+        -> None:
+    """A table holds text when any one of its cells does."""
+    assert Table(rows).holds_text() is expected
 
 
 def test_table_of_headings() -> None:
     """The heading rows are told from the rest by the line under them."""
-    text = table_text([HEAD, BODY], [Align.LEFT] * 3, headings=1)
+    text = table_text(Table((HEAD, BODY), (), 1), WIDE)
     lines = text.split('\n')
     assert len(lines) == 3
     assert set(lines[1]) == {'─', '┼'}
@@ -116,7 +179,7 @@ def test_table_of_headings() -> None:
 
 def test_no_heading_row() -> None:
     """A table with no heading row gets no line drawn across it."""
-    text = table_text([BODY, BODY], [Align.LEFT] * 3)
+    text = table_text(Table((BODY, BODY)), WIDE)
     assert '┼' not in text
     assert len(text.split('\n')) == 2
 
@@ -124,8 +187,9 @@ def test_no_heading_row() -> None:
 def test_columns_line_up() -> None:
     """Every line of the table has its separators in the same place."""
     long_cell = 'a cell with rather a lot of text in it to be wrapped'
-    text = table_text([HEAD, BODY, ['Long', 'yes', long_cell]],
-                      [Align.LEFT, Align.CENTER, Align.RIGHT], headings=1)
+    table = Table((HEAD, BODY, ('Long', 'yes', long_cell)),
+                  (Align.LEFT, Align.CENTER, Align.RIGHT), 1)
+    text = table_text(table, 30)
     places = {tuple(index for index, letter in enumerate(line)
                     if letter in '│┼') for line in text.split('\n')}
     assert len(places) == 1
@@ -133,13 +197,41 @@ def test_columns_line_up() -> None:
 
 def test_missing_cells() -> None:
     """A row that names fewer cells than the table has is filled out."""
-    text = table_text([HEAD, ['Only one']], [Align.LEFT] * 3, headings=1)
+    text = table_text(Table((HEAD, ('Only one',)), (), 1), WIDE)
     assert text.split('\n')[2] == 'Only one  │     │'
 
 
 def test_long_cell_is_wrapped() -> None:
     """A cell too wide for its column is wrapped and nothing is lost."""
     words = ' '.join(f'word{number}' for number in range(20))
-    text = table_text([['a', words]], [Align.LEFT, Align.LEFT])
-    assert max(len(line) for line in text.split('\n')) <= MAX_COLUMN + 10
+    text = table_text(Table((('a', words),)), 40)
+    assert max(len(line) for line in text.split('\n')) <= 40
     assert all(word in text for word in words.split())
+
+
+def test_natural_width() -> None:
+    """A table that fits is as wide as its cells, however wide it may be."""
+    text = table_text(KEYS, WIDE)
+    assert len(text.split('\n')) == 3
+    assert widths_of(text) == [8, 5, len(KEYS.rows[1][2])]
+
+
+@pytest.mark.parametrize('width', [40, 60, 80, 100])
+def test_fits_the_width(width: int) -> None:
+    """A table too wide is wrapped to the width, no line wider."""
+    text = table_text(KEYS, width)
+    assert max(len(line) for line in text.split('\n')) <= width
+    assert widths_of(text)[:2] == [8, 5]
+
+
+def test_long_column_widest() -> None:
+    """The column that would like most room gets the most of it."""
+    widths = widths_of(table_text(KEYS, 60))
+    assert widths == [8, 5, 60 - 8 - 5 - 2 * len(CELL_GAP)]
+
+
+def test_too_narrow() -> None:
+    """A table narrower than its words breaks them to fit."""
+    text = table_text(KEYS, 12)
+    assert max(len(line) for line in text.split('\n')) <= 12
+    assert widths_of(text) == [2, 2, 2]
