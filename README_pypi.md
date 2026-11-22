@@ -292,10 +292,10 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1849 passed, 43 deselected in 10s
+- Test result: 1849 passed, 43 deselected in 9s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
 - No python layout warnings.
 - Built version(s): 0.3.0
-- Build and test using Python 3.13.17
+- Build and test using Python 3.14.9
