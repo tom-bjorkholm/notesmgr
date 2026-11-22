@@ -218,6 +218,7 @@
   * [tk\_window\_system](#notesmgr.shortcuts.tk_window_system)
   * [quit\_shortcut](#notesmgr.shortcuts.quit_shortcut)
   * [modifier](#notesmgr.shortcuts.modifier)
+  * [caps\_lock\_variants](#notesmgr.shortcuts.caps_lock_variants)
   * [held\_shortcut](#notesmgr.shortcuts.held_shortcut)
   * [action\_shortcuts](#notesmgr.shortcuts.action_shortcuts)
   * [window\_shortcuts](#notesmgr.shortcuts.window_shortcuts)
@@ -3623,6 +3624,34 @@ Return the key held down for a shortcut, and what it is called.
 macOS holds the command key down where Windows and the X11
 desktops hold the control key down.
 
+<a id="notesmgr.shortcuts.caps_lock_variants"></a>
+
+#### caps\_lock\_variants
+
+```python
+def caps_lock_variants(keysym: str) -> tuple[str, ...]
+```
+
+Return a key and what it is called when Caps Lock is on.
+
+Caps Lock adds Lock to the keys held down and changes nothing but
+the case of a letter. Tk calls a letter typed with Caps Lock on a
+capital letter, but where Shift is held as well, Windows and most
+Linux desktops call it a small letter, so both are returned. Held
+with Lock, they are more specific than the keys of the shortcuts
+without it, so Cmd+C is never taken for Cmd+Shift+C. A key that is
+not a letter is not changed by Caps Lock and is returned alone.
+
+**Arguments**:
+
+- `keysym` - What Tk calls the key, with Shift- in front of a
+  capital letter typed with the shift key held down.
+  
+
+**Returns**:
+
+  The key, followed by its two variants if it is a letter.
+
 <a id="notesmgr.shortcuts.held_shortcut"></a>
 
 #### held\_shortcut
@@ -3633,6 +3662,9 @@ def held_shortcut(window_system: str, keysyms: Sequence[str],
 ```
 
 Return a shortcut of the held key and the keys that stand for it.
+
+A letter is bound with Caps Lock on as well, so that the shortcut
+works whether Caps Lock is on or not.
 
 **Arguments**:
 

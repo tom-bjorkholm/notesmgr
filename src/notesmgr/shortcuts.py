@@ -91,8 +91,8 @@ def quit_shortcut(window_system: str) -> Shortcut:
     desktops leave a program with Ctrl+Q.
     """
     if window_system == 'aqua':
-        return Shortcut(('<Command-w>',), 'Cmd+W')
-    return Shortcut(('<Control-q>',), 'Ctrl+Q')
+        return held_shortcut(window_system, ('w',), 'W')
+    return held_shortcut(window_system, ('q',), 'Q')
 
 
 def modifier(window_system: str) -> tuple[str, str]:
@@ -106,9 +106,37 @@ def modifier(window_system: str) -> tuple[str, str]:
     return ('Control', 'Ctrl')
 
 
+def caps_lock_variants(keysym: str) -> tuple[str, ...]:
+    """Return a key and what it is called when Caps Lock is on.
+
+    Caps Lock adds Lock to the keys held down and changes nothing but
+    the case of a letter. Tk calls a letter typed with Caps Lock on a
+    capital letter, but where Shift is held as well, Windows and most
+    Linux desktops call it a small letter, so both are returned. Held
+    with Lock, they are more specific than the keys of the shortcuts
+    without it, so Cmd+C is never taken for Cmd+Shift+C. A key that is
+    not a letter is not changed by Caps Lock and is returned alone.
+
+    Args:
+        keysym: What Tk calls the key, with Shift- in front of a
+            capital letter typed with the shift key held down.
+
+    Returns:
+        The key, followed by its two variants if it is a letter.
+    """
+    *held, letter = keysym.split('-')
+    if len(letter) != 1 or not letter.isalpha():
+        return (keysym,)
+    prefix = '-'.join(['Lock', *held, ''])
+    return (keysym, prefix + letter.upper(), prefix + letter.lower())
+
+
 def held_shortcut(window_system: str, keysyms: Sequence[str],
                   shown: str) -> Shortcut:
     """Return a shortcut of the held key and the keys that stand for it.
+
+    A letter is bound with Caps Lock on as well, so that the shortcut
+    works whether Caps Lock is on or not.
 
     Args:
         window_system: The windowing system that Tk is using.
@@ -119,7 +147,8 @@ def held_shortcut(window_system: str, keysyms: Sequence[str],
         The shortcut to bind and to show.
     """
     held, name = modifier(window_system)
-    sequences = tuple(f'<{held}-{keysym}>' for keysym in keysyms)
+    sequences = tuple(f'<{held}-{variant}>' for keysym in keysyms
+                      for variant in caps_lock_variants(keysym))
     return Shortcut(sequences, f'{name}+{shown}')
 
 

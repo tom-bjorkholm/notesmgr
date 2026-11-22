@@ -8,11 +8,19 @@ import tkinter
 import pytest
 from notesmgr.actions import COPY_RAW, FOCUS_FOLDER, NEW_FOLDER, ON_NOTE, \
     ON_PLAIN, ON_PROJECT, RENAME, SHOW_ALL
-from notesmgr.shortcuts import Shortcut, action_shortcuts, held_shortcut, \
-    modifier, quit_shortcut, tk_window_system, window_shortcuts
+from notesmgr.shortcuts import Shortcut, action_shortcuts, \
+    caps_lock_variants, held_shortcut, modifier, quit_shortcut, \
+    tk_window_system, window_shortcuts
 
 WINDOW_SYSTEMS = ['aqua', 'win32', 'x11']
 """The windowing systems that Tk runs on."""
+
+
+def without_lock(shortcut: Shortcut) -> Shortcut:
+    """Return a shortcut without the sequences held with Caps Lock on."""
+    plain = (sequence for sequence in shortcut.sequences
+             if '-Lock-' not in sequence)
+    return Shortcut(tuple(plain), shortcut.label)
 
 
 @pytest.mark.parametrize('window_system,expected', [
@@ -22,7 +30,7 @@ WINDOW_SYSTEMS = ['aqua', 'win32', 'x11']
     ('', Shortcut(('<Control-q>',), 'Ctrl+Q'))])
 def test_quit_shortcut(window_system: str, expected: Shortcut) -> None:
     """The shortcut is Cmd+W on macOS and Ctrl+Q on other systems."""
-    assert quit_shortcut(window_system) == expected
+    assert without_lock(quit_shortcut(window_system)) == expected
 
 
 @pytest.mark.parametrize('window_system,expected', [
@@ -41,6 +49,31 @@ def test_held_shortcut() -> None:
     shortcut = held_shortcut('aqua', ('plus', 'KP_Add'), '+')
     assert shortcut == Shortcut(('<Command-plus>', '<Command-KP_Add>'),
                                 'Cmd++')
+
+
+@pytest.mark.parametrize('window_system,expected', [
+    ('aqua', Shortcut(('<Command-r>', '<Command-Lock-R>',
+                       '<Command-Lock-r>'), 'Cmd+R')),
+    ('win32', Shortcut(('<Control-r>', '<Control-Lock-R>',
+                        '<Control-Lock-r>'), 'Ctrl+R'))])
+def test_held_letter(window_system: str, expected: Shortcut) -> None:
+    """A letter is bound with Caps Lock on as well, in both cases."""
+    assert held_shortcut(window_system, ('r',), 'R') == expected
+
+
+@pytest.mark.parametrize('keysym,expected', [
+    ('c', ('c', 'Lock-C', 'Lock-c')),
+    ('Shift-C', ('Shift-C', 'Lock-Shift-C', 'Lock-Shift-c')),
+    ('Key-0', ('Key-0',)),
+    ('KP_0', ('KP_0',)),
+    ('plus', ('plus',)),
+    ('BackSpace', ('BackSpace',)),
+    ('Up', ('Up',)),
+    ('', ('',))])
+def test_caps_lock_variants(keysym: str, expected: tuple[str, ...]) \
+        -> None:
+    """Only a letter has variants, held with Lock and in both cases."""
+    assert caps_lock_variants(keysym) == expected
 
 
 @pytest.mark.parametrize('window_system', ['aqua', 'win32', 'x11'])
@@ -80,7 +113,8 @@ def test_rename_key(window_system: str) -> None:
     ('x11', Shortcut(('<Control-c>',), 'Ctrl+C'))])
 def test_copy_raw_keys(window_system: str, expected: Shortcut) -> None:
     """Copy raw is the copy key that every platform knows."""
-    assert action_shortcuts(window_system)[COPY_RAW] == expected
+    assert without_lock(action_shortcuts(window_system)[COPY_RAW]) == \
+        expected
 
 
 @pytest.mark.parametrize('window_system,expected', [
@@ -88,7 +122,8 @@ def test_copy_raw_keys(window_system: str, expected: Shortcut) -> None:
     ('x11', Shortcut(('<Control-Shift-N>',), 'Ctrl+Shift+N'))])
 def test_shifted_keys(window_system: str, expected: Shortcut) -> None:
     """A capital letter is bound and shown with the shift key held."""
-    assert action_shortcuts(window_system)[NEW_FOLDER] == expected
+    assert without_lock(action_shortcuts(window_system)[NEW_FOLDER]) == \
+        expected
 
 
 @pytest.mark.parametrize('window_system,action,expected', [
@@ -101,7 +136,8 @@ def test_shifted_keys(window_system: str, expected: Shortcut) -> None:
 def test_focus_keys(window_system: str, action: str,
                     expected: Shortcut) -> None:
     """L focuses on the local folder, and with Shift shows the large view."""
-    assert action_shortcuts(window_system)[action] == expected
+    assert without_lock(action_shortcuts(window_system)[action]) == \
+        expected
 
 
 @pytest.mark.parametrize('window_system,expected', [
@@ -110,7 +146,8 @@ def test_focus_keys(window_system: str, action: str,
     ('x11', Shortcut(('<Control-r>',), 'Ctrl+R'))])
 def test_refresh_keys(window_system: str, expected: Shortcut) -> None:
     """Refreshing the project is Cmd+R on macOS and Ctrl+R elsewhere."""
-    assert window_shortcuts(window_system).refresh == expected
+    assert without_lock(window_shortcuts(window_system).refresh) == \
+        expected
 
 
 @pytest.mark.parametrize('window_system', WINDOW_SYSTEMS)

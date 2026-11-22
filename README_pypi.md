@@ -286,7 +286,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1753 passed, 21 deselected in 10s
+- Test result: 1763 passed, 41 deselected in 10s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
